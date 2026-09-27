@@ -29,6 +29,9 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
     public DateTime? ApprovedAt { get; set; }
     public string? ClosedReason { get; set; }
 
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+
     public void Mapping(Profile profile)
         => profile.CreateMap<GroupBuyingRequest, GroupBuyingRequestResponseDto>()
             .ForMember(dest => dest.NeededPeopleCount,

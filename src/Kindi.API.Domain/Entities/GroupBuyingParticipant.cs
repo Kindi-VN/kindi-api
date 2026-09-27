@@ -16,6 +16,9 @@ public class GroupBuyingParticipant : BaseEntity
 	public string? Email { get; set; }
 	public string? Note { get; set; }
 
+	/// <summary>Mã CTV của link mà người này dùng để tham gia (ghi nhận 1 cấp).</summary>
+	public string? ReferralCode { get; set; }
+
 	/// <summary>Người mở yêu cầu mua chung — admin không thể xóa khỏi nhóm.</summary>
 	public bool IsCreator { get; set; }
 

@@ -102,10 +102,11 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Danh sách bài trong nhóm</summary>
     /// <summary>
-    /// Nhóm ngành đã có bài chuyển tiếp cho bản ghi này (admin) — dùng để cảnh báo trước khi gửi.
+    /// Nhóm ngành đã có bài chuyển tiếp cho bản ghi này — dùng để cảnh báo trước khi gửi.
+    /// Admin xem mọi nhóm; người dùng chỉ thấy nhóm mình đang tham gia.
     /// </summary>
     [HttpGet("forwarded-groups")]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> GetForwardedGroups([FromQuery] Guid refId)
     {
         var data = await _groupService.GetForwardedGroupsAsync(refId);

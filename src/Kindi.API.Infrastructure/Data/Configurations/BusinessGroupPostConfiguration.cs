@@ -26,6 +26,9 @@ public class BusinessGroupPostConfiguration : IEntityTypeConfiguration<BusinessG
         builder.Property(x => x.RefCode)
             .HasMaxLength(30);
 
+        builder.Property(x => x.ReferralCode)
+            .HasMaxLength(30);
+
         builder.Property(x => x.Type)
             .HasConversion<int>()
             .HasDefaultValue(GroupPostType.Discussion);

@@ -17,6 +17,9 @@ public class CreateGroupBuyingRequestDto : IMapFrom<GroupBuyingRequest>
     public string Email { get; set; } = string.Empty;     
     public string? Note { get; set; }
 
+    /// <summary>Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
+
     public void Mapping(Profile profile)
         => profile.CreateMap<CreateGroupBuyingRequestDto, GroupBuyingRequest>();
 }

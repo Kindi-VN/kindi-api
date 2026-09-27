@@ -20,6 +20,9 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
     public PurchaseRequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 

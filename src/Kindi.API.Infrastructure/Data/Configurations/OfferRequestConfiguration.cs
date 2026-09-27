@@ -52,6 +52,9 @@ public class OfferRequestConfiguration : IEntityTypeConfiguration<OfferRequest>
         builder.Property(x => x.Note)
             .HasMaxLength(500);
 
+        builder.Property(x => x.ReferralCode)
+            .HasMaxLength(30);
+
         builder.Property(x => x.Status)
             .HasConversion<int>()
             .HasDefaultValue(OfferStatus.Pending);

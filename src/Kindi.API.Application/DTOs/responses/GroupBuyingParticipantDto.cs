@@ -18,6 +18,10 @@ public class GroupBuyingParticipantDto
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+    /// <summary>Mã CTV đã mang người này vào nhóm (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
     public bool IsCreator { get; set; }
     public bool IsGuestAccount { get; set; }
     public GroupBuyingParticipantStatus Status { get; set; }

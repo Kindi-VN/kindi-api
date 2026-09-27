@@ -13,4 +13,7 @@ public class JoinGroupBuyingRequestDto
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV của link chia sẻ khách dùng để tham gia (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
 }

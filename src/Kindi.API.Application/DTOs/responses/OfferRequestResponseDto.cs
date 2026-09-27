@@ -21,6 +21,9 @@ public class OfferRequestResponseDto : IMapFrom<OfferRequest>
 	public string Zalo { get; set; } = string.Empty;
 	public string? Email { get; set; }
 	public string? Note { get; set; }
+
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
 	public OfferStatus Status { get; set; }
 	public bool IsOfferSent { get; set; }
 	public Guid? BusinessFieldId { get; set; }

@@ -17,17 +17,20 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
+    private readonly IReferralService _referralService;
 
     public CreatePurchaseRequestHandler(
         IRepository<PurchaseRequest> repository,
         IMapper mapper,
         ICurrentUserService currentUserService,
-        IUserService userService)
+        IUserService userService,
+        IReferralService referralService)
     {
         _repository = repository;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _userService = userService;
+        _referralService = referralService;
     }
 
     public async Task<PurchaseRequestResponseDto> Handle(CreatePurchaseRequestCommand request, CancellationToken cancellationToken)
@@ -64,6 +67,8 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         entity.PurchaseRequestCode = CodeGenerator.Generate("PRQ");
         entity.UserId = userId;
         entity.Status = PurchaseRequestStatus.Pending;
+        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
+        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();

@@ -15,12 +15,27 @@ namespace Kindi.API.WebApi.Controllers;
 public class CollaboratorsController : ApiControllerBase
 {
     private readonly ICollaboratorService _collaboratorService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
-    public CollaboratorsController(ICollaboratorService collaboratorService, IStringLocalizer<SharedResource> localizer)
+    public CollaboratorsController(
+        ICollaboratorService collaboratorService,
+        IReferralService referralService,
+        IStringLocalizer<SharedResource> localizer)
     {
         _collaboratorService = collaboratorService;
+        _referralService = referralService;
         _localizer = localizer;
+    }
+
+    /// <summary>
+    /// Mã CTV của tài khoản đang đăng nhập — dùng để gắn vào link chia sẻ.
+    /// </summary>
+    [HttpGet("me/referral-code")]
+    public async Task<IActionResult> GetMyReferralCode()
+    {
+        var referralCode = await _referralService.GetSharerReferralCodeAsync();
+        return Ok(new { referralCode });
     }
 
     /// <summary>

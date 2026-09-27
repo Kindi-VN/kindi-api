@@ -17,6 +17,11 @@ public class BusinessGroupMemberResponseDto : IMapFrom<BusinessGroupMember>
     public string? Email { get; set; }
     public string? Note { get; set; }
 
+    /// <summary>Mã CTV đã mang người này vào nhóm (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
+
     public GroupMemberRole Role { get; set; }
     public GroupMemberStatus Status { get; set; }
     public bool IsGuestAccount { get; set; }

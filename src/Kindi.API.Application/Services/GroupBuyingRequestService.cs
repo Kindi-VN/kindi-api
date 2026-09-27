@@ -31,6 +31,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
     private readonly IQueryService _queryService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public GroupBuyingRequestService(
@@ -42,6 +43,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         ICurrentUserService currentUserService,
         IUserService userService,
         IQueryService queryService,
+        IReferralService referralService,
         IStringLocalizer<SharedResource> localizer)
     {
         _repository = repository;
@@ -52,6 +54,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _currentUserService = currentUserService;
         _userService = userService;
         _queryService = queryService;
+        _referralService = referralService;
         _localizer = localizer;
     }
 
@@ -104,6 +107,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         entity.UserId = Guid.Parse(userId);
         entity.CurrentPeopleCount = 1;
         entity.Status = GroupBuyingStatus.Pending;
+        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
+        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
@@ -119,6 +124,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Zalo = request.Zalo,
             Email = request.Email,
             Note = request.Note,
+            ReferralCode = entity.ReferralCode,
             IsCreator = true,
             IsGuestAccount = isGuestAccount,
             Status = GroupBuyingParticipantStatus.Joined
@@ -274,6 +280,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             ? request.Email.Trim()
             : (string.IsNullOrWhiteSpace(account?.Email) ? null : account!.Email);
 
+        // Mã CTV của link chia sẻ người này dùng để tham gia (mã không tồn tại thì bỏ qua)
+        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+
         if (participant == null)
         {
             participant = new GroupBuyingParticipant
@@ -285,6 +294,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 Zalo = participantZalo,
                 Email = participantEmail,
                 Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+                ReferralCode = referralCode,
                 IsCreator = false,
                 IsGuestAccount = isGuestAccount,
                 Status = GroupBuyingParticipantStatus.Joined
@@ -302,6 +312,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             if (string.IsNullOrWhiteSpace(participant.Zalo)) participant.Zalo = participantZalo;
             if (string.IsNullOrWhiteSpace(participant.Email)) participant.Email = participantEmail;
             if (!string.IsNullOrWhiteSpace(request.Note)) participant.Note = request.Note.Trim();
+            if (referralCode != null) participant.ReferralCode = referralCode;
             _participantRepository.Update(participant);
         }
 
@@ -568,6 +579,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var existing = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId);
         if (existing != null) return;
 
+        // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
+        var collaboratorCode = CodeGenerator.Generate("CTV");
+
         await _collaboratorRepository.AddAsync(new Collaborator
         {
             UserId = userId,
@@ -575,7 +589,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Phone = phone,
             Zalo = zalo,
             Email = email,
-            CollaboratorCode = CodeGenerator.Generate("CTV"),
+            CollaboratorCode = collaboratorCode,
+            ReferralCode = collaboratorCode,
             Status = CollaboratorStatus.Pending,
             Level = 1
         });
@@ -673,6 +688,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         var collaboratorCodes = await LoadCollaboratorCodesAsync(entity.Participants.Select(p => p.UserId));
 
+        // Tên CTV của các mã ghi nhận được ở yêu cầu + từng người tham gia (hiển thị ở màn quản trị).
+        var referralNames = await _referralService.LoadNamesAsync(
+            entity.Participants.Select(p => p.ReferralCode).Append(entity.ReferralCode));
+
         // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
         bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
@@ -692,6 +711,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Zalo) ? MaskPhone(p.Zalo) : p.Zalo,
                 Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Email) ? MaskEmail(p.Email) : p.Email,
                 Note = p.Note,
+                ReferralCode = p.ReferralCode,
+                ReferralName = p.ReferralCode != null && referralNames.TryGetValue(p.ReferralCode, out var referralName)
+                    ? referralName
+                    : null,
                 IsCreator = p.IsCreator,
                 IsGuestAccount = p.IsGuestAccount,
                 Status = p.Status,
@@ -729,6 +752,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             CreatedAt = entity.CreatedAt,
             ApprovedAt = entity.ApprovedAt,
             ClosedReason = entity.ClosedReason,
+            ReferralCode = entity.ReferralCode,
+            ReferralName = entity.ReferralCode != null && referralNames.TryGetValue(entity.ReferralCode, out var requestReferralName)
+                ? requestReferralName
+                : null,
             CreatorName = entity.User?.FullName ?? entity.FullName,
             CreatorPhone = MaskContactOf(entity.UserId) ? MaskPhone(entity.Phone) : entity.Phone,
             CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Zalo) ? MaskPhone(entity.Zalo) : entity.Zalo,

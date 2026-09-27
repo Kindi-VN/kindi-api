@@ -25,6 +25,11 @@ public class GroupBuyingDetailDto
     public DateTime? ApprovedAt { get; set; }
     public string? ClosedReason { get; set; }
 
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
+
     // Người mở nhóm (đầu mối liên hệ)
     public string CreatorName { get; set; } = string.Empty;
     public string CreatorPhone { get; set; } = string.Empty;

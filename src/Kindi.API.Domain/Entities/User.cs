@@ -21,4 +21,7 @@ public class User : BaseEntity
 	public bool MustChangeCredentials { get; set; } = false;
 	public DateTime? LastLoginAt { get; set; }
 	public UserRole Role { get; set; } = UserRole.Customer;
+
+	/// <summary>Mã CTV đã mang tài khoản này tới hệ thống (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
+	public string? ReferralCode { get; set; }
 }

@@ -40,6 +40,7 @@ public class BusinessGroupService : IBusinessGroupService
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
     private readonly IQueryService _queryService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly QueryOptions _queryOptions;
 
@@ -53,6 +54,7 @@ public class BusinessGroupService : IBusinessGroupService
         ICurrentUserService currentUserService,
         IUserService userService,
         IQueryService queryService,
+        IReferralService referralService,
         IStringLocalizer<SharedResource> localizer,
         IOptions<QueryOptions> queryOptions)
     {
@@ -65,6 +67,7 @@ public class BusinessGroupService : IBusinessGroupService
         _currentUserService = currentUserService;
         _userService = userService;
         _queryService = queryService;
+        _referralService = referralService;
         _localizer = localizer;
         _queryOptions = queryOptions.Value;
     }
@@ -201,6 +204,9 @@ public class BusinessGroupService : IBusinessGroupService
 
         var account = await _userService.FindByIdAsync(userId);
 
+        // Mã CTV của link chia sẻ người này dùng để xin vào nhóm (mã không tồn tại thì bỏ qua)
+        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+
         // Thành viên đã có bản ghi trong nhóm → tái kích hoạt thay vì tạo trùng (unique index GroupId+UserId)
         var member = await _memberRepository.GetFirstAsync(m =>
             m.BusinessGroupId == id && m.UserId == userId);
@@ -218,6 +224,7 @@ public class BusinessGroupService : IBusinessGroupService
             member.Zalo = FirstNonEmpty(request.Zalo, account?.Phone, member.Zalo);
             member.Email = FirstNonEmpty(request.Email, account?.Email, member.Email);
             member.Note = request.Note?.Trim();
+            if (referralCode != null) member.ReferralCode = referralCode;
             member.JoinedAt = memberStatus == GroupMemberStatus.Active ? DateTime.UtcNow : null;
             member.RejectionReason = null;
             _memberRepository.Update(member);
@@ -233,6 +240,7 @@ public class BusinessGroupService : IBusinessGroupService
                 Zalo = FirstNonEmpty(request.Zalo, account?.Phone),
                 Email = FirstNonEmpty(request.Email, account?.Email),
                 Note = request.Note?.Trim(),
+                ReferralCode = referralCode,
                 Role = GroupMemberRole.Member,
                 Status = memberStatus,
                 IsGuestAccount = isGuestAccount,
@@ -334,7 +342,9 @@ public class BusinessGroupService : IBusinessGroupService
             .ThenByDescending(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
-        return _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
+        var result = _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
+        await FillReferralNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
+        return result;
     }
 
     public async Task<BusinessGroupPostResponseDto> CreatePostAsync(Guid groupId, CreateBusinessGroupPostDto request)
@@ -380,6 +390,15 @@ public class BusinessGroupService : IBusinessGroupService
             }
         }
 
+        // Bài chuyển tiếp bản ghi gốc: người gửi chính là người chia sẻ
+        // → link chia sẻ kèm mã CTV của họ (admin chia sẻ thì lấy mã của admin).
+        var isSharedPost = post.RefId.HasValue && !string.IsNullOrWhiteSpace(post.RefCode);
+        if (isSharedPost)
+        {
+            post.ReferralCode = await _referralService.GetSharerReferralCodeAsync();
+            post.WithShareLink = request.WithShareLink;
+        }
+
         await _postRepository.AddAsync(post);
         await _postRepository.SaveChangesAsync();
 
@@ -411,9 +430,22 @@ public class BusinessGroupService : IBusinessGroupService
 
         if (groupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
 
+        // Admin xem mọi nhóm; người dùng chỉ thấy nhóm mình đang tham gia.
+        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var me = GetCurrentUserId();
+        var myGroupIds = isAdmin || me == null
+            ? new List<Guid>()
+            : await _queryService.GetAllNoTracking<BusinessGroupMember>()
+                .Where(m => m.UserId == me.Value && m.Status == GroupMemberStatus.Active)
+                .Select(m => m.BusinessGroupId)
+                .ToListAsync();
+
+        if (!isAdmin && myGroupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
+
         return await _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Industry)
             .Contains(x => x.Id, groupIds, _queryOptions)
+            .WhereIf(!isAdmin, x => myGroupIds.Contains(x.Id))
             .OrderBy(x => x.Name)
             .Select(x => new ForwardedGroupResponseDto
             {
@@ -779,7 +811,29 @@ public class BusinessGroupService : IBusinessGroupService
             .ThenBy(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
-        return _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
+        var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
+        await FillReferralNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        return result;
+    }
+
+    /// <summary>Gắn tên CTV theo mã đã ghi nhận trên từng bản ghi (hiển thị ở màn quản trị).</summary>
+    private async Task FillReferralNamesAsync<T>(
+        IEnumerable<T> items,
+        Func<T, string?> getReferralCode,
+        Action<T, string> setReferralName)
+    {
+        var list = items.ToList();
+        if (list.Count == 0) return;
+
+        var names = await _referralService.LoadNamesAsync(list.Select(getReferralCode));
+        if (names.Count == 0) return;
+
+        foreach (var item in list)
+        {
+            var code = getReferralCode(item);
+            if (code != null && names.TryGetValue(code, out var name))
+                setReferralName(item, name);
+        }
     }
 
     public async Task<BusinessGroupMemberResponseDto> UpdateMemberStatusAsync(Guid id, Guid memberId, UpdateGroupMemberStatusDto request)
@@ -991,6 +1045,8 @@ public class BusinessGroupService : IBusinessGroupService
             Zalo = zalo,
             Email = email,
             CollaboratorCode = code,
+            // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
+            ReferralCode = code,
             Status = CollaboratorStatus.Pending,
             IsApproved = false,
             Level = 1

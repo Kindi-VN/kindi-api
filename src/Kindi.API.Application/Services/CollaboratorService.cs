@@ -112,6 +112,8 @@ public class CollaboratorService : ICollaboratorService
         collaborator.Status = CollaboratorStatus.Pending;
         collaborator.IsApproved = false;
         collaborator.Level = 1;
+        // Mã chia sẻ riêng của CTV = mã CTV trên hồ sơ (dùng để gắn vào link chia sẻ).
+        collaborator.ReferralCode = collaborator.CollaboratorCode;
 
         //  Xử lý BusinessField — ưu tiên Id (chọn từ danh sách quản lý tập trung),
         //  fallback sang find-or-create theo tên cho client chưa gửi Id.
