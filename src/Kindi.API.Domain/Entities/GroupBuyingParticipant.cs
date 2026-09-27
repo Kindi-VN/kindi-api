@@ -8,6 +8,9 @@ namespace Kindi.API.Domain.Entities;
 /// </summary>
 public class GroupBuyingParticipant : BaseEntity
 {
+	/// <summary>Mã người tham gia mua chung hiển thị cho người dùng.</summary>
+	public string? GroupBuyingParticipantCode { get; set; }
+
 	public Guid GroupBuyingRequestId { get; set; }
 	public Guid UserId { get; set; }
 	public string FullName { get; set; } = string.Empty;

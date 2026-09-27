@@ -117,6 +117,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         //    để danh sách người tham gia và số người của nhóm luôn nhất quán.
         await _participantRepository.AddAsync(new GroupBuyingParticipant
         {
+            GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
             GroupBuyingRequestId = entity.Id,
             UserId = entity.UserId,
             FullName = request.FullName,
@@ -287,6 +288,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         {
             participant = new GroupBuyingParticipant
             {
+                GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
                 GroupBuyingRequestId = entity.Id,
                 UserId = userId,
                 FullName = participantFullName,
@@ -703,6 +705,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .Select(p => new GroupBuyingParticipantDto
             {
                 Id = p.Id,
+                GroupBuyingParticipantCode = p.GroupBuyingParticipantCode,
                 UserId = p.UserId,
                 UserCode = p.User?.UserCode,
                 CollaboratorCode = collaboratorCodes.TryGetValue(p.UserId, out var code) ? code : null,

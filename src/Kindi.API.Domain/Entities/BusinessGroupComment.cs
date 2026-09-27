@@ -3,6 +3,9 @@
 /// <summary>Bình luận trong bài của nhóm.</summary>
 public class BusinessGroupComment : BaseEntity
 {
+	/// <summary>Mã bình luận hiển thị cho người dùng.</summary>
+	public string? BusinessGroupCommentCode { get; set; }
+
 	public Guid BusinessGroupPostId { get; set; }
 	public Guid UserId { get; set; }
 	public string Content { get; set; } = string.Empty;

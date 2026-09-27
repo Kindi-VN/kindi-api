@@ -8,6 +8,9 @@ namespace Kindi.API.Domain.Entities;
 /// </summary>
 public class BusinessGroupMember : BaseEntity
 {
+	/// <summary>Mã thành viên nhóm hiển thị cho người dùng.</summary>
+	public string? BusinessGroupMemberCode { get; set; }
+
 	public Guid BusinessGroupId { get; set; }
 	public Guid UserId { get; set; }
 

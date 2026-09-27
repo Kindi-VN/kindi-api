@@ -13,6 +13,9 @@ public class BusinessGroupMemberConfiguration : IEntityTypeConfiguration<Busines
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.BusinessGroupMemberCode)
+            .HasMaxLength(30);
+
         builder.Property(x => x.FullName)
             .IsRequired()
             .HasMaxLength(100);
@@ -59,5 +62,9 @@ public class BusinessGroupMemberConfiguration : IEntityTypeConfiguration<Busines
             .IsUnique();
 
         builder.HasIndex(x => x.Status);
+
+        builder.HasIndex(x => x.BusinessGroupMemberCode)
+            .IsUnique()
+            .HasFilter("[BusinessGroupMemberCode] IS NOT NULL");
     }
 }

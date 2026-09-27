@@ -10,6 +10,8 @@ namespace Kindi.API.Application.DTOs.responses;
 public class GroupBuyingParticipantDto
 {
     public Guid Id { get; set; }
+    /// <summary>Mã người tham gia mua chung hiển thị cho người dùng.</summary>
+    public string? GroupBuyingParticipantCode { get; set; }
     public Guid UserId { get; set; }
     public string? UserCode { get; set; }
     public string? CollaboratorCode { get; set; }

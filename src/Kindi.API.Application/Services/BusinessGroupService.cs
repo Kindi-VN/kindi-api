@@ -233,6 +233,7 @@ public class BusinessGroupService : IBusinessGroupService
         {
             member = new BusinessGroupMember
             {
+                BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
                 BusinessGroupId = id,
                 UserId = userId,
                 FullName = FirstNonEmpty(request.FullName, account?.FullName) ?? string.Empty,
@@ -522,6 +523,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var comment = new BusinessGroupComment
         {
+            BusinessGroupCommentCode = CodeGenerator.Generate("GBC"),
             BusinessGroupPostId = postId,
             UserId = me,
             Content = request.Content.Trim(),
@@ -632,6 +634,7 @@ public class BusinessGroupService : IBusinessGroupService
         var account = await _userService.FindByIdAsync(me);
         await _memberRepository.AddAsync(new BusinessGroupMember
         {
+            BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
             BusinessGroupId = group.Id,
             UserId = me,
             FullName = account?.FullName ?? string.Empty,

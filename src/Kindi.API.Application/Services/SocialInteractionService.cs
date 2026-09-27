@@ -51,6 +51,7 @@ public class SocialInteractionService : ISocialInteractionService
         {
             var like = new SocialLike
             {
+                SocialLikeCode = CodeGenerator.Generate("SLK"),
                 PostId = postId,
                 UserId = userId,
                 LikedAt = DateTime.UtcNow
@@ -148,6 +149,7 @@ public class SocialInteractionService : ISocialInteractionService
 
         var share = new SocialShare
         {
+            SocialShareCode = CodeGenerator.Generate("SHR"),
             PostId = postId,
             UserId = userId,
             ShareNote = note,

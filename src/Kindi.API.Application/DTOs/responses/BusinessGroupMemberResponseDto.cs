@@ -8,6 +8,8 @@ namespace Kindi.API.Application.DTOs.responses;
 public class BusinessGroupMemberResponseDto : IMapFrom<BusinessGroupMember>
 {
     public Guid Id { get; set; }
+    /// <summary>Mã thành viên nhóm hiển thị cho người dùng.</summary>
+    public string? BusinessGroupMemberCode { get; set; }
     public Guid BusinessGroupId { get; set; }
     public Guid UserId { get; set; }
 
