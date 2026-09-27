@@ -4,7 +4,8 @@ using Kindi.API.Domain.Enums;
 namespace Kindi.API.Application.DTOs.responses;
 
 /// <summary>
-/// Một người tham gia nhóm mua chung. Thông tin liên hệ đã được che (mask) khi người gọi chưa đăng nhập.
+/// Một người tham gia nhóm mua chung. Thông tin liên hệ đã được che (mask) trừ admin
+/// và chính người đang xem.
 /// </summary>
 public class GroupBuyingParticipantDto
 {

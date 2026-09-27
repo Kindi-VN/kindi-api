@@ -7,6 +7,10 @@ using System.Text.RegularExpressions;
 
 namespace Kindi.API.Application.Validators;
 
+/// <summary>
+/// Thông tin liên hệ (họ tên/SĐT/email) chỉ bắt buộc với khách chưa đăng nhập —
+/// người đã đăng nhập được bù từ hồ sơ tài khoản ở tầng service.
+/// </summary>
 public class CreateGroupBuyingRequestValidator : AbstractValidator<CreateGroupBuyingRequestDto>
 {
     public CreateGroupBuyingRequestValidator(IStringLocalizer<SharedResource> localizer)
@@ -28,20 +32,23 @@ public class CreateGroupBuyingRequestValidator : AbstractValidator<CreateGroupBu
             .GreaterThanOrEqualTo(2).WithMessage(localizer["GroupBuyingRequest_TargetPeopleCountMin"]);
 
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage(localizer["GroupBuyingRequest_FullNameRequired"])
-            .MinimumLength(2).WithMessage(localizer["GroupBuyingRequest_FullNameMinLength"]);
+            .MinimumLength(2).WithMessage(localizer["GroupBuyingRequest_FullNameMinLength"])
+            .MaximumLength(100).WithMessage(localizer["GroupBuyingRequest_FullNameMaxLength"])
+            .When(x => !string.IsNullOrEmpty(x.FullName));
 
         RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage(localizer["GroupBuyingRequest_PhoneRequired"])
-            .Must(phone => Regex.IsMatch(phone, @"^0[0-9]{9,10}$"))
-            .WithMessage(localizer["GroupBuyingRequest_PhoneInvalid"]);
+            .Must(phone => Regex.IsMatch(phone!, @"^0[0-9]{9,10}$"))
+            .WithMessage(localizer["GroupBuyingRequest_PhoneInvalid"])
+            .When(x => !string.IsNullOrEmpty(x.Phone));
 
         RuleFor(x => x.Zalo)
-            .Must(zalo => string.IsNullOrEmpty(zalo) || Regex.IsMatch(zalo, @"^[0-9]{10}$"))
-            .WithMessage(localizer["GroupBuyingRequest_ZaloInvalid"]);
+            .Must(zalo => Regex.IsMatch(zalo!, @"^[0-9]{10}$"))
+            .WithMessage(localizer["GroupBuyingRequest_ZaloInvalid"])
+            .When(x => !string.IsNullOrEmpty(x.Zalo));
 
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(localizer["GroupBuyingRequest_EmailRequired"])
-            .EmailAddress().WithMessage(localizer["GroupBuyingRequest_EmailInvalid"]);
+            .EmailAddress().WithMessage(localizer["GroupBuyingRequest_EmailInvalid"])
+            .MaximumLength(100).WithMessage(localizer["GroupBuyingRequest_EmailMaxLength"])
+            .When(x => !string.IsNullOrEmpty(x.Email));
     }
 }

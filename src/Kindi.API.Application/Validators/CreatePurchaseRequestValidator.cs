@@ -6,6 +6,10 @@ using System.Text.RegularExpressions;
 
 namespace Kindi.API.Application.Validators;
 
+/// <summary>
+/// Thông tin liên hệ (họ tên/SĐT/email) chỉ bắt buộc với khách chưa đăng nhập —
+/// người đã đăng nhập được bù từ hồ sơ tài khoản ở tầng service.
+/// </summary>
 public class CreatePurchaseRequestValidator : AbstractValidator<CreatePurchaseRequestDto>
 {
     public CreatePurchaseRequestValidator(IStringLocalizer<SharedResource> localizer)
@@ -27,21 +31,21 @@ public class CreatePurchaseRequestValidator : AbstractValidator<CreatePurchaseRe
             .MaximumLength(50).WithMessage(localizer["PurchaseRequest_UnitLength"]);
 
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage(localizer["PurchaseRequest_FullNameRequired"])
-            .MinimumLength(2).WithMessage(localizer["PurchaseRequest_FullNameMinLength"]);
+            .MinimumLength(2).WithMessage(localizer["PurchaseRequest_FullNameMinLength"])
+            .When(x => !string.IsNullOrEmpty(x.FullName));
 
         RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage(localizer["PurchaseRequest_PhoneRequired"])
-            .Must(phone => Regex.IsMatch(phone, @"^0[0-9]{9,10}$"))
-            .WithMessage(localizer["PurchaseRequest_PhoneInvalid"]);
+            .Must(phone => Regex.IsMatch(phone!, @"^0[0-9]{9,10}$"))
+            .WithMessage(localizer["PurchaseRequest_PhoneInvalid"])
+            .When(x => !string.IsNullOrEmpty(x.Phone));
 
         RuleFor(x => x.Zalo)
-            .Must(zalo => string.IsNullOrEmpty(zalo) || Regex.IsMatch(zalo, @"^0[0-9]{9,10}$"))
+            .Must(zalo => Regex.IsMatch(zalo!, @"^0[0-9]{9,10}$"))
             .WithMessage(localizer["PurchaseRequest_ZaloInvalid"])
             .When(x => !string.IsNullOrEmpty(x.Zalo));
 
         RuleFor(x => x.Email)
-            .NotEmpty().WithMessage(localizer["PurchaseRequest_EmailRequired"])
-            .EmailAddress().WithMessage(localizer["PurchaseRequest_EmailInvalid"]);
+            .EmailAddress().WithMessage(localizer["PurchaseRequest_EmailInvalid"])
+            .When(x => !string.IsNullOrEmpty(x.Email));
     }
 }

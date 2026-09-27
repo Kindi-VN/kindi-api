@@ -1,5 +1,6 @@
 ﻿// src/Kindi.API.Application/Features/OfferRequests/Commands/CreateOfferRequestCommandHandler.cs
 using AutoMapper;
+using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.responses;
@@ -19,17 +20,20 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
     public CreateOfferRequestCommandHandler(
         IRepository<OfferRequest> repository,
         IMapper mapper,
         ICurrentUserService currentUserService,
-        IUserService userService)
+        IUserService userService,
+        IStringLocalizer<SharedResource> localizer)
     {
         _repository = repository;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _userService = userService;
+        _localizer = localizer;
     }
 
     public async Task<OfferRequestResponseDto> Handle(CreateOfferRequestCommand request, CancellationToken cancellationToken)
@@ -38,6 +42,13 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
         var userId = _currentUserService.UserId;
         if (string.IsNullOrEmpty(userId))
         {
+            // Khách chưa đăng nhập bắt buộc nhập thông tin liên hệ để tạo tài khoản và liên hệ
+            if (string.IsNullOrWhiteSpace(request.FullName))
+                throw new BusinessException(_localizer["OfferRequest_FullNameRequired"]);
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+                throw new BusinessException(_localizer["OfferRequest_PhoneRequired"]);
+
             var userIdGuid = await _userService.GetOrCreateUserAsync(
                 request.FullName,
                 request.Phone,
@@ -45,6 +56,19 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
             );
 
             userId = userIdGuid.ToString();
+        }
+        else
+        {
+            // Người đã đăng nhập không phải nhập lại thông tin → bù từ hồ sơ tài khoản
+            // để bản ghi luôn có họ tên/SĐT/email cho admin liên hệ.
+            var account = await _userService.GetCurrentUserAsync();
+            if (account != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.FullName)) request.FullName = account.FullName;
+                if (string.IsNullOrWhiteSpace(request.Phone)) request.Phone = account.Phone ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(request.Zalo)) request.Zalo = account.Phone;
+                if (string.IsNullOrWhiteSpace(request.Email)) request.Email = account.Email;
+            }
         }
 
         // 2. Map to entity

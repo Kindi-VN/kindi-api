@@ -48,13 +48,25 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     /// <summary>
-    /// Chi tiết mua chung cho người dùng (thông tin liên hệ được che nếu chưa đăng nhập).
+    /// Chi tiết mua chung cho người dùng (thông tin liên hệ chỉ hiển thị đầy đủ với admin,
+    /// người dùng khác chỉ thấy liên hệ của chính mình).
     /// </summary>
     [HttpGet("{id:guid}/public")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPublicDetail(Guid id)
     {
         var result = await _service.GetPublicDetailAsync(id);
+        return Ok(result, _localizer["GroupBuyingRequest_DetailRetrievedSuccess"]);
+    }
+
+    /// <summary>
+    /// Chi tiết mua chung theo mã đơn — dùng cho link chia sẻ (người nhận không cần biết Guid).
+    /// </summary>
+    [HttpGet("code/{code}/public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicDetailByCode(string code)
+    {
+        var result = await _service.GetPublicDetailByCodeAsync(code);
         return Ok(result, _localizer["GroupBuyingRequest_DetailRetrievedSuccess"]);
     }
 
