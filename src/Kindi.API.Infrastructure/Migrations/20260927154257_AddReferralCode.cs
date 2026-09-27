@@ -72,6 +72,9 @@ namespace Kindi.API.Infrastructure.Migrations
                 type: "character varying(30)",
                 maxLength: 30,
                 nullable: true);
+
+            // CTV đã có trước migration này dùng mã chia sẻ riêng bằng mã CTV trên hồ sơ.
+            migrationBuilder.Sql("UPDATE \"Collaborators\" SET \"ReferralCode\" = \"CollaboratorCode\" WHERE \"ReferralCode\" IS NULL AND \"CollaboratorCode\" IS NOT NULL;");
         }
 
         /// <inheritdoc />
