@@ -79,7 +79,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetPublicPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
@@ -327,7 +327,7 @@ public class BusinessGroupService : IBusinessGroupService
         if (query.PrivateOnly && !isAdmin)
             throw new ForbiddenException(_localizer["BusinessGroup_AdminOnly"]);
 
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupPost>()
             .Where(x => x.BusinessGroupId == groupId)
@@ -576,7 +576,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetCommunityPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Community)
@@ -686,7 +686,7 @@ public class BusinessGroupService : IBusinessGroupService
 
     public async Task<PagedList<BusinessGroupResponseDto>> GetAdminPagedAsync(AdminBusinessGroupQueryDto query)
     {
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
@@ -801,7 +801,7 @@ public class BusinessGroupService : IBusinessGroupService
         // Nhóm ngành: admin; Hội nhóm: admin hoặc chủ hội
         EnsureCanManageMembers(group);
 
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
@@ -910,19 +910,6 @@ public class BusinessGroupService : IBusinessGroupService
 
     private Guid? GetCurrentUserId()
         => Guid.TryParse(_currentUserService.UserId, out var id) ? id : null;
-
-    /// <summary>Chuẩn hoá filter: rỗng / "undefined" / "null" / "all" coi như không lọc.</summary>
-    private static string? NormalizeFilter(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var trimmed = value.Trim();
-        return trimmed.ToLowerInvariant() switch
-        {
-            "undefined" or "null" or "nan" or "all" => null,
-            _ => trimmed
-        };
-    }
 
     private static string? FirstNonEmpty(params string?[] values)
     {

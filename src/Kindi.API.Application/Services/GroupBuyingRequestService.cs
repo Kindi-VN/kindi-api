@@ -139,7 +139,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     {
         var me = GetCurrentUserId();
         // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         // Chỉ nhóm đã duyệt (Active) mới lên tab công khai; nhóm của chính mình vẫn thấy
         // (kèm trạng thái "Chờ duyệt") để người tạo theo dõi.
@@ -385,11 +385,12 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
         // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var statusFilter = GroupBuyingStatus.Pending;
-        var hasStatusFilter = !string.IsNullOrEmpty(NormalizeFilter(query.Status))
-            && Enum.TryParse(NormalizeFilter(query.Status), true, out statusFilter);
+        var normalizedStatus = query.Status.NormalizeSearchFilter();
+        var hasStatusFilter = !string.IsNullOrEmpty(normalizedStatus)
+            && Enum.TryParse(normalizedStatus, true, out statusFilter);
 
         // Lọc trước rồi mới include
         var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
@@ -511,37 +512,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     // =====================================================================
     // HELPERS
     // =====================================================================
-
-    /// <summary>
-    /// Bọc keyword thành pattern LIKE, escape % _ \ để ký tự người dùng gõ không bị hiểu là wildcard.
-    /// </summary>
-    private static string? LikePattern(string? keyword)
-    {
-        if (string.IsNullOrWhiteSpace(keyword)) return null;
-
-        var escaped = keyword
-            .Replace("\\", "\\\\")
-            .Replace("%", "\\%")
-            .Replace("_", "\\_");
-
-        return $"%{escaped}%";
-    }
-
-    /// <summary>
-    /// Chuẩn hoá filter dạng chuỗi: coi các giá trị rỗng / "undefined" / "null" / "nan" là KHÔNG lọc.
-    /// Tránh trường hợp client serialize param rỗng thành chuỗi "undefined" rồi lọc sai dữ liệu.
-    /// </summary>
-    private static string? NormalizeFilter(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var trimmed = value.Trim();
-        return trimmed.ToLowerInvariant() switch
-        {
-            "undefined" or "null" or "nan" or "all" => null,
-            _ => trimmed
-        };
-    }
 
     private Guid? GetCurrentUserId()
         => string.IsNullOrEmpty(_currentUserService.UserId)

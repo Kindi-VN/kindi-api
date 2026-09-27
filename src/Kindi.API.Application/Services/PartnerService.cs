@@ -157,7 +157,7 @@ public class PartnerService : IPartnerService
     /// </summary>
     public async Task<PagedList<PublicPartnerResponseDto>> GetPublicPagedAsync(PublicPartnerQueryDto query)
     {
-        var search = NormalizePartnerFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
 
         var q = _queryService.GetAllNoTracking<Partner>()
             .Where(x => x.Status == PartnerStatus.Approved || x.Status == PartnerStatus.Active)
@@ -173,19 +173,6 @@ public class PartnerService : IPartnerService
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         return _mapper.MapPagedList<Partner, PublicPartnerResponseDto>(paged);
-    }
-
-    /// <summary>Chuẩn hoá filter: rỗng / "undefined" / "null" / "all" coi như không lọc.</summary>
-    private static string? NormalizePartnerFilter(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var trimmed = value.Trim();
-        return trimmed.ToLowerInvariant() switch
-        {
-            "undefined" or "null" or "nan" or "all" => null,
-            _ => trimmed
-        };
     }
 
     private string GeneratePartnerCode()
