@@ -131,7 +131,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         });
         await _participantRepository.SaveChangesAsync();
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<PagedList<GroupBuyingFeedItemDto>> GetPublicPagedAsync(GetPublicGroupBuyingRequestsQueryDto query)
@@ -453,7 +455,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             await _repository.SaveChangesAsync();
         }
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<GroupBuyingRequestResponseDto> UpdateAsync(Guid id, UpdateGroupBuyingRequestDto request)
@@ -483,7 +487,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _repository.Update(entity);
         await _repository.SaveChangesAsync();
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<GroupBuyingDetailDto> RemoveParticipantAsync(Guid id, Guid participantId)
