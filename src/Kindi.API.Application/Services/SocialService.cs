@@ -228,6 +228,7 @@ public class SocialService : ISocialService
 
                 post.PostTags.Add(new PostTag
                 {
+                    PostTagCode = CodeGenerator.Generate("PTG"),
                     PostId = post.Id,
                     TagId = tag.Id,
                     Post = post,
@@ -313,6 +314,7 @@ public class SocialService : ISocialService
 
                 post.PostTags.Add(new PostTag
                 {
+                    PostTagCode = CodeGenerator.Generate("PTG"),
                     PostId = post.Id,
                     TagId = tag.Id,
                     Post = post,

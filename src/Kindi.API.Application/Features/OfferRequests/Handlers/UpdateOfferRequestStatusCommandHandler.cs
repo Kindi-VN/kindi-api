@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Features/OfferRequests/Handlers/UpdateOfferRequestStatusCommandHandler.cs
 using AutoMapper;
 using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Application.Features.OfferRequests.Commands;

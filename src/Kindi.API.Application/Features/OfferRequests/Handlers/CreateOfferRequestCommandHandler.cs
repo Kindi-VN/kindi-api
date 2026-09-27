@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Features/OfferRequests/Commands/CreateOfferRequestCommandHandler.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
@@ -20,6 +19,7 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public CreateOfferRequestCommandHandler(
@@ -27,12 +27,14 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
         IMapper mapper,
         ICurrentUserService currentUserService,
         IUserService userService,
+        IReferralService referralService,
         IStringLocalizer<SharedResource> localizer)
     {
         _repository = repository;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _userService = userService;
+        _referralService = referralService;
         _localizer = localizer;
     }
 
@@ -76,6 +78,8 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
         entity.OfferRequestCode = CodeGenerator.Generate("OFR");
         entity.UserId = Guid.Parse(userId);
         entity.Status = OfferStatus.Pending;
+        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
+        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
 
         // 3. Save to database
         await _repository.AddAsync(entity, cancellationToken);

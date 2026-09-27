@@ -315,6 +315,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<string>("BusinessGroupCommentCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<Guid>("BusinessGroupPostId")
                         .HasColumnType("uuid");
 
@@ -349,6 +353,10 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("BusinessGroupCommentCode")
+                        .IsUnique()
+                        .HasFilter("[BusinessGroupCommentCode] IS NOT NULL");
+
                     b.HasIndex("ParentCommentId");
 
                     b.HasIndex("UserId");
@@ -372,6 +380,10 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.Property<Guid>("BusinessGroupId")
                         .HasColumnType("uuid");
+
+                    b.Property<string>("BusinessGroupMemberCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -406,6 +418,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("character varying(15)");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("RejectionReason")
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
@@ -434,6 +450,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasColumnType("character varying(15)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("BusinessGroupMemberCode")
+                        .IsUnique()
+                        .HasFilter("[BusinessGroupMemberCode] IS NOT NULL");
 
                     b.HasIndex("Status");
 
@@ -494,6 +514,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<Guid?>("RefId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("Title")
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
@@ -508,6 +532,9 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.Property<string>("UpdatedBy")
                         .HasColumnType("text");
+
+                    b.Property<bool>("WithShareLink")
+                        .HasColumnType("boolean");
 
                     b.HasKey("Id");
 
@@ -608,6 +635,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -686,6 +717,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<int?>("BusinessType")
                         .HasColumnType("integer");
 
+                    b.Property<string>("CompanyCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<int?>("CompanySize")
                         .HasColumnType("integer");
 
@@ -721,6 +756,10 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasIndex("BusinessFieldId");
 
+                    b.HasIndex("CompanyCode")
+                        .IsUnique()
+                        .HasFilter("\"CompanyCode\" IS NOT NULL");
+
                     b.ToTable("Companies", (string)null);
                 });
 
@@ -745,6 +784,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<string>("GroupBuyingParticipantCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<Guid>("GroupBuyingRequestId")
                         .HasColumnType("uuid");
 
@@ -766,6 +809,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(15)
                         .HasColumnType("character varying(15)");
 
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -785,6 +832,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasColumnType("character varying(15)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GroupBuyingParticipantCode")
+                        .IsUnique()
+                        .HasFilter("[GroupBuyingParticipantCode] IS NOT NULL");
 
                     b.HasIndex("UserId");
 
@@ -849,6 +900,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<string>("ProductName")
                         .IsRequired()
                         .HasColumnType("text");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<int>("Status")
                         .HasColumnType("integer");
@@ -948,6 +1003,10 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -1250,6 +1309,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("PostTagCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1257,6 +1320,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasColumnType("text");
 
                     b.HasKey("PostId", "TagId");
+
+                    b.HasIndex("PostTagCode")
+                        .IsUnique()
+                        .HasFilter("[PostTagCode] IS NOT NULL");
 
                     b.HasIndex("TagId");
 
@@ -1325,6 +1392,10 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1443,6 +1514,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<Guid>("PostId")
                         .HasColumnType("uuid");
 
+                    b.Property<string>("SocialLikeCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1456,9 +1531,13 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasIndex("PostId");
 
+                    b.HasIndex("SocialLikeCode")
+                        .IsUnique()
+                        .HasFilter("[SocialLikeCode] IS NOT NULL");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("SocialLike");
+                    b.ToTable("SocialLike", (string)null);
                 });
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.SocialPost", b =>
@@ -1596,6 +1675,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<DateTime>("SharedAt")
                         .HasColumnType("timestamp with time zone");
 
+                    b.Property<string>("SocialShareCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime?>("UpdatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -1609,9 +1692,13 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasIndex("PostId");
 
+                    b.HasIndex("SocialShareCode")
+                        .IsUnique()
+                        .HasFilter("[SocialShareCode] IS NOT NULL");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("SocialShare");
+                    b.ToTable("SocialShare", (string)null);
                 });
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.Tag", b =>
@@ -1704,6 +1791,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<string>("Phone")
                         .HasMaxLength(20)
                         .HasColumnType("character varying(20)");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<int>("Role")
                         .ValueGeneratedOnAdd()

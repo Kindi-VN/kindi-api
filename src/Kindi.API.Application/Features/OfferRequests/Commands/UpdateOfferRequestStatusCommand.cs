@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Features/OfferRequests/Commands/UpdateOfferRequestStatusCommand.cs
 using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Enums;
 using MediatR;

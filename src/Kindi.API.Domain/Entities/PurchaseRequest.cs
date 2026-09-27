@@ -17,6 +17,10 @@ public class PurchaseRequest : BaseEntity
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
+    public string? ReferralCode { get; set; }
+
     public PurchaseRequestStatus Status { get; set; } = PurchaseRequestStatus.Pending;
     public string? AdminNote { get; set; }
     public Guid? AssignedTo { get; set; }

@@ -7,6 +7,8 @@ namespace Kindi.API.Application.DTOs.responses;
 public class BusinessGroupCommentResponseDto : IMapFrom<BusinessGroupComment>
 {
     public Guid Id { get; set; }
+    /// <summary>Mã bình luận hiển thị cho người dùng.</summary>
+    public string? BusinessGroupCommentCode { get; set; }
     public Guid BusinessGroupPostId { get; set; }
     public Guid UserId { get; set; }
     public string AuthorName { get; set; } = string.Empty;

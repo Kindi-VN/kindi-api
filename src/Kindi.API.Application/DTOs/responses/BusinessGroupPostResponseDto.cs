@@ -18,6 +18,13 @@ public class BusinessGroupPostResponseDto : IMapFrom<BusinessGroupPost>
     public Guid? RefId { get; set; }
     public string? RefCode { get; set; }
 
+    /// <summary>Mã CTV của người chuyển tiếp bản ghi vào nhóm.</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
+    /// <summary>Bài chuyển tiếp kèm link chia sẻ để mời thành viên tham gia bản ghi gốc.</summary>
+    public bool WithShareLink { get; set; }
+
     public bool IsPrivateToAdmin { get; set; }
     public bool IsPinned { get; set; }
     public bool IsHidden { get; set; }

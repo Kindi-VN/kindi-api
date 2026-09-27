@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Features/OfferRequests/Queries/GetOfferRequestByIdQuery.cs
 using Kindi.API.Application.DTOs.responses;
 using MediatR;
 

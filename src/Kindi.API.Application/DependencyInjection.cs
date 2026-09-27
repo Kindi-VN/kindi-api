@@ -56,6 +56,7 @@ public static class DependencyInjection
         services.AddScoped<IPartnerService, PartnerService>();
         services.AddScoped<ISocialService, SocialService>();
         services.AddScoped<ICollaboratorService, CollaboratorService>();
+        services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<ISocialInteractionService, SocialInteractionService>();
         services.AddScoped<IBusinessFieldService, BusinessFieldService>();
         services.AddScoped<IBusinessGroupService, BusinessGroupService>();

@@ -8,6 +8,9 @@ namespace Kindi.API.Domain.Entities;
 /// </summary>
 public class BusinessGroupMember : BaseEntity
 {
+	/// <summary>Mã thành viên nhóm hiển thị cho người dùng.</summary>
+	public string? BusinessGroupMemberCode { get; set; }
+
 	public Guid BusinessGroupId { get; set; }
 	public Guid UserId { get; set; }
 
@@ -16,6 +19,9 @@ public class BusinessGroupMember : BaseEntity
 	public string? Zalo { get; set; }
 	public string? Email { get; set; }
 	public string? Note { get; set; }
+
+	/// <summary>Mã CTV của link mà người này dùng để xin vào nhóm (ghi nhận 1 cấp).</summary>
+	public string? ReferralCode { get; set; }
 
 	public GroupMemberRole Role { get; set; } = GroupMemberRole.Member;
 	public GroupMemberStatus Status { get; set; } = GroupMemberStatus.Pending;

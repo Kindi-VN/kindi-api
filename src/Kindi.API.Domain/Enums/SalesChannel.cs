@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Domain/Enums/SalesChannel.cs
-namespace Kindi.API.Domain.Enums;
+﻿namespace Kindi.API.Domain.Enums;
 
 public enum SalesChannel
 {

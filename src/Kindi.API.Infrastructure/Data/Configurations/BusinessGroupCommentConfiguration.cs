@@ -12,6 +12,9 @@ public class BusinessGroupCommentConfiguration : IEntityTypeConfiguration<Busine
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.BusinessGroupCommentCode)
+            .HasMaxLength(30);
+
         builder.Property(x => x.Content)
             .IsRequired()
             .HasMaxLength(2000);
@@ -32,5 +35,9 @@ public class BusinessGroupCommentConfiguration : IEntityTypeConfiguration<Busine
             .OnDelete(DeleteBehavior.Restrict);
 
         builder.HasIndex(x => new { x.BusinessGroupPostId, x.CreatedAt });
+
+        builder.HasIndex(x => x.BusinessGroupCommentCode)
+            .IsUnique()
+            .HasFilter("[BusinessGroupCommentCode] IS NOT NULL");
     }
 }

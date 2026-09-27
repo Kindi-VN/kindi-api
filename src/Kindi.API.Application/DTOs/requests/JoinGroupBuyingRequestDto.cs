@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/requests/JoinGroupBuyingRequestDto.cs
 namespace Kindi.API.Application.DTOs.requests;
 
 /// <summary>
@@ -13,4 +12,7 @@ public class JoinGroupBuyingRequestDto
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV của link chia sẻ khách dùng để tham gia (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
 }

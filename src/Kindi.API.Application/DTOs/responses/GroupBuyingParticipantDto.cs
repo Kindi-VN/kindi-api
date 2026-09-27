@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/responses/GroupBuyingParticipantDto.cs
 using Kindi.API.Domain.Enums;
 
 namespace Kindi.API.Application.DTOs.responses;
@@ -10,6 +9,8 @@ namespace Kindi.API.Application.DTOs.responses;
 public class GroupBuyingParticipantDto
 {
     public Guid Id { get; set; }
+    /// <summary>Mã người tham gia mua chung hiển thị cho người dùng.</summary>
+    public string? GroupBuyingParticipantCode { get; set; }
     public Guid UserId { get; set; }
     public string? UserCode { get; set; }
     public string? CollaboratorCode { get; set; }
@@ -18,6 +19,10 @@ public class GroupBuyingParticipantDto
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+    /// <summary>Mã CTV đã mang người này vào nhóm (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
     public bool IsCreator { get; set; }
     public bool IsGuestAccount { get; set; }
     public GroupBuyingParticipantStatus Status { get; set; }

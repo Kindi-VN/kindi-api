@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Features/OfferRequests/Commands/CreateOfferRequestCommand.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.requests;
@@ -25,6 +24,9 @@ public class CreateOfferRequestCommand : IRequest<OfferRequestResponseDto>, IMap
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
 
     public void Mapping(Profile profile)
     {

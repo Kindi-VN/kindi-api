@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Features/OfferRequests/Commands/DeleteOfferRequestCommand.cs
 using Kindi.API.Application.DTOs.responses;
 using MediatR;
 

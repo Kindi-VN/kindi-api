@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Services/GroupBuyingRequestService.cs
 using AutoMapper;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
@@ -31,6 +30,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
     private readonly IQueryService _queryService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
 
     public GroupBuyingRequestService(
@@ -42,6 +42,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         ICurrentUserService currentUserService,
         IUserService userService,
         IQueryService queryService,
+        IReferralService referralService,
         IStringLocalizer<SharedResource> localizer)
     {
         _repository = repository;
@@ -52,6 +53,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _currentUserService = currentUserService;
         _userService = userService;
         _queryService = queryService;
+        _referralService = referralService;
         _localizer = localizer;
     }
 
@@ -104,6 +106,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         entity.UserId = Guid.Parse(userId);
         entity.CurrentPeopleCount = 1;
         entity.Status = GroupBuyingStatus.Pending;
+        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
+        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
@@ -112,6 +116,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         //    để danh sách người tham gia và số người của nhóm luôn nhất quán.
         await _participantRepository.AddAsync(new GroupBuyingParticipant
         {
+            GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
             GroupBuyingRequestId = entity.Id,
             UserId = entity.UserId,
             FullName = request.FullName,
@@ -119,20 +124,25 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Zalo = request.Zalo,
             Email = request.Email,
             Note = request.Note,
+            ReferralCode = entity.ReferralCode,
             IsCreator = true,
             IsGuestAccount = isGuestAccount,
             Status = GroupBuyingParticipantStatus.Joined
         });
         await _participantRepository.SaveChangesAsync();
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<PagedList<GroupBuyingFeedItemDto>> GetPublicPagedAsync(GetPublicGroupBuyingRequestsQueryDto query)
     {
         var me = GetCurrentUserId();
-        // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         // Chỉ nhóm đã duyệt (Active) mới lên tab công khai; nhóm của chính mình vẫn thấy
         // (kèm trạng thái "Chờ duyệt") để người tạo theo dõi.
@@ -143,9 +153,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
             .WhereIf(query.MineOnly && me != null, x => x.UserId == me!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.ProductName.ToLower().Contains(search!) ||
-                (x.Note != null && x.Note.ToLower().Contains(search!)) ||
-                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+                (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")))
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);
@@ -167,9 +177,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
     public async Task<GroupBuyingDetailDto> GetPublicDetailByCodeAsync(string code)
     {
-        var normalized = code.Trim().ToUpperInvariant();
+        // So khớp đúng mã (không phân biệt hoa/thường) bằng ILIKE: mẫu là chính từ khoá,
+        // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
+        var normalized = code.Trim().RemoveVietnameseSign().ToLikeEscaped();
         var entity = await _repository.GetFirstWithIncludesAsync(
-            x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToUpper() == normalized,
+            x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), normalized, "\\"),
             includes: q => q.Include(x => x.User)
                 .Include(x => x.BusinessField)
                 .Include(x => x.Participants).ThenInclude(p => p.User));
@@ -274,10 +286,14 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             ? request.Email.Trim()
             : (string.IsNullOrWhiteSpace(account?.Email) ? null : account!.Email);
 
+        // Mã CTV của link chia sẻ người này dùng để tham gia (mã không tồn tại thì bỏ qua)
+        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+
         if (participant == null)
         {
             participant = new GroupBuyingParticipant
             {
+                GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
                 GroupBuyingRequestId = entity.Id,
                 UserId = userId,
                 FullName = participantFullName,
@@ -285,6 +301,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 Zalo = participantZalo,
                 Email = participantEmail,
                 Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
+                ReferralCode = referralCode,
                 IsCreator = false,
                 IsGuestAccount = isGuestAccount,
                 Status = GroupBuyingParticipantStatus.Joined
@@ -302,6 +319,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             if (string.IsNullOrWhiteSpace(participant.Zalo)) participant.Zalo = participantZalo;
             if (string.IsNullOrWhiteSpace(participant.Email)) participant.Email = participantEmail;
             if (!string.IsNullOrWhiteSpace(request.Note)) participant.Note = request.Note.Trim();
+            if (referralCode != null) participant.ReferralCode = referralCode;
             _participantRepository.Update(participant);
         }
 
@@ -371,23 +389,26 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (!isAdmin && string.IsNullOrEmpty(userId))
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
-        // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var statusFilter = GroupBuyingStatus.Pending;
-        var hasStatusFilter = !string.IsNullOrEmpty(NormalizeFilter(query.Status))
-            && Enum.TryParse(NormalizeFilter(query.Status), true, out statusFilter);
+        var normalizedStatus = query.Status.NormalizeSearchFilter();
+        var hasStatusFilter = !string.IsNullOrEmpty(normalizedStatus)
+            && Enum.TryParse(normalizedStatus, true, out statusFilter);
 
         // Lọc trước rồi mới include
         var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)) ||
-                x.ProductName.ToLower().Contains(search!) ||
-                x.FullName.ToLower().Contains(search!) ||
-                x.Phone.ToLower().Contains(search!) ||
-                (x.Email != null && x.Email.ToLower().Contains(search!)))
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
@@ -395,7 +416,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             query.SortBy, query.SortOrder,
             defaultSortBy: "CreatedAt");
 
-        return _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
+        var paged = _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
+        await _referralService.FillNamesAsync(paged.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return paged;
     }
 
     public async Task<GroupBuyingDetailDto> GetDetailAsync(Guid id)
@@ -432,7 +455,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             await _repository.SaveChangesAsync();
         }
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<GroupBuyingRequestResponseDto> UpdateAsync(Guid id, UpdateGroupBuyingRequestDto request)
@@ -462,7 +487,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _repository.Update(entity);
         await _repository.SaveChangesAsync();
 
-        return _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return dto;
     }
 
     public async Task<GroupBuyingDetailDto> RemoveParticipantAsync(Guid id, Guid participantId)
@@ -498,37 +525,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     // =====================================================================
     // HELPERS
     // =====================================================================
-
-    /// <summary>
-    /// Bọc keyword thành pattern LIKE, escape % _ \ để ký tự người dùng gõ không bị hiểu là wildcard.
-    /// </summary>
-    private static string? LikePattern(string? keyword)
-    {
-        if (string.IsNullOrWhiteSpace(keyword)) return null;
-
-        var escaped = keyword
-            .Replace("\\", "\\\\")
-            .Replace("%", "\\%")
-            .Replace("_", "\\_");
-
-        return $"%{escaped}%";
-    }
-
-    /// <summary>
-    /// Chuẩn hoá filter dạng chuỗi: coi các giá trị rỗng / "undefined" / "null" / "nan" là KHÔNG lọc.
-    /// Tránh trường hợp client serialize param rỗng thành chuỗi "undefined" rồi lọc sai dữ liệu.
-    /// </summary>
-    private static string? NormalizeFilter(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var trimmed = value.Trim();
-        return trimmed.ToLowerInvariant() switch
-        {
-            "undefined" or "null" or "nan" or "all" => null,
-            _ => trimmed
-        };
-    }
 
     private Guid? GetCurrentUserId()
         => string.IsNullOrEmpty(_currentUserService.UserId)
@@ -568,6 +564,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var existing = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId);
         if (existing != null) return;
 
+        // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
+        var collaboratorCode = CodeGenerator.Generate("CTV");
+
         await _collaboratorRepository.AddAsync(new Collaborator
         {
             UserId = userId,
@@ -575,7 +574,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Phone = phone,
             Zalo = zalo,
             Email = email,
-            CollaboratorCode = CodeGenerator.Generate("CTV"),
+            CollaboratorCode = collaboratorCode,
+            ReferralCode = collaboratorCode,
             Status = CollaboratorStatus.Pending,
             Level = 1
         });
@@ -673,6 +673,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         var collaboratorCodes = await LoadCollaboratorCodesAsync(entity.Participants.Select(p => p.UserId));
 
+        // Tên CTV của các mã ghi nhận được ở yêu cầu + từng người tham gia (hiển thị ở màn quản trị).
+        var referralNames = await _referralService.LoadNamesAsync(
+            entity.Participants.Select(p => p.ReferralCode).Append(entity.ReferralCode));
+
         // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
         bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
@@ -684,6 +688,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .Select(p => new GroupBuyingParticipantDto
             {
                 Id = p.Id,
+                GroupBuyingParticipantCode = p.GroupBuyingParticipantCode,
                 UserId = p.UserId,
                 UserCode = p.User?.UserCode,
                 CollaboratorCode = collaboratorCodes.TryGetValue(p.UserId, out var code) ? code : null,
@@ -692,6 +697,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Zalo) ? MaskPhone(p.Zalo) : p.Zalo,
                 Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Email) ? MaskEmail(p.Email) : p.Email,
                 Note = p.Note,
+                ReferralCode = p.ReferralCode,
+                ReferralName = p.ReferralCode != null && referralNames.TryGetValue(p.ReferralCode, out var referralName)
+                    ? referralName
+                    : null,
                 IsCreator = p.IsCreator,
                 IsGuestAccount = p.IsGuestAccount,
                 Status = p.Status,
@@ -729,6 +738,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             CreatedAt = entity.CreatedAt,
             ApprovedAt = entity.ApprovedAt,
             ClosedReason = entity.ClosedReason,
+            ReferralCode = entity.ReferralCode,
+            ReferralName = entity.ReferralCode != null && referralNames.TryGetValue(entity.ReferralCode, out var requestReferralName)
+                ? requestReferralName
+                : null,
             CreatorName = entity.User?.FullName ?? entity.FullName,
             CreatorPhone = MaskContactOf(entity.UserId) ? MaskPhone(entity.Phone) : entity.Phone,
             CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Zalo) ? MaskPhone(entity.Zalo) : entity.Zalo,

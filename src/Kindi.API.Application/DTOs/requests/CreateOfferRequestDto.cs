@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/DTOs/requests/CreateOfferRequestDto.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 
@@ -21,6 +20,9 @@ public class CreateOfferRequestDto : IMapFrom<OfferRequest>
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
 
     public void Mapping(Profile profile)
     {

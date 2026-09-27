@@ -19,4 +19,7 @@ public class CreateBusinessGroupPostDto
 
     /// <summary>Yêu cầu kín: chỉ admin đọc được.</summary>
     public bool IsPrivateToAdmin { get; set; }
+
+    /// <summary>Bài chuyển tiếp kèm link chia sẻ để mời thành viên tham gia bản ghi gốc.</summary>
+    public bool WithShareLink { get; set; }
 }

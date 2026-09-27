@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/responses/GroupBuyingRequestResponseDto.cs
 using AutoMapper;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
@@ -28,6 +27,12 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
     public DateTime CreatedAt { get; set; }
     public DateTime? ApprovedAt { get; set; }
     public string? ClosedReason { get; set; }
+
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+
+    /// <summary>Tên chủ thể của mã chia sẻ (CTV hoặc tài khoản) — hiển thị ở màn quản trị.</summary>
+    public string? ReferralName { get; set; }
 
     public void Mapping(Profile profile)
         => profile.CreateMap<GroupBuyingRequest, GroupBuyingRequestResponseDto>()

@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/responses/OfferRequestStatusResponseDto.cs
 using AutoMapper;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;

@@ -1,4 +1,3 @@
-// src/Kindi.API.Infrastructure/Data/Configurations/GroupBuyingParticipantConfiguration.cs
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
@@ -19,6 +18,9 @@ public class GroupBuyingParticipantConfiguration : IEntityTypeConfiguration<Grou
 
         builder.HasKey(x => x.Id);
 
+        builder.Property(x => x.GroupBuyingParticipantCode)
+            .HasMaxLength(30);
+
         builder.Property(x => x.FullName)
             .IsRequired()
             .HasMaxLength(100);
@@ -35,6 +37,9 @@ public class GroupBuyingParticipantConfiguration : IEntityTypeConfiguration<Grou
 
         builder.Property(x => x.Note)
             .HasMaxLength(1000);
+
+        builder.Property(x => x.ReferralCode)
+            .HasMaxLength(30);
 
         builder.Property(x => x.Status)
             .HasConversion<int>()
@@ -53,5 +58,9 @@ public class GroupBuyingParticipantConfiguration : IEntityTypeConfiguration<Grou
         // Mỗi user chỉ có 1 bản ghi trong 1 nhóm (hủy rồi tham gia lại thì tái kích hoạt bản ghi cũ).
         builder.HasIndex(x => new { x.GroupBuyingRequestId, x.UserId })
             .IsUnique();
+
+        builder.HasIndex(x => x.GroupBuyingParticipantCode)
+            .IsUnique()
+            .HasFilter("[GroupBuyingParticipantCode] IS NOT NULL");
     }
 }

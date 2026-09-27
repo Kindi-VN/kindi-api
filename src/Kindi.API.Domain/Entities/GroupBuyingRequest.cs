@@ -16,6 +16,10 @@ public class GroupBuyingRequest : BaseEntity
     public string? Zalo { get; set; }
     public string Email { get; set; } = string.Empty;
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
+    public string? ReferralCode { get; set; }
+
     public GroupBuyingStatus Status { get; set; } = GroupBuyingStatus.Pending;
 
     public Guid? BusinessFieldId { get; set; }

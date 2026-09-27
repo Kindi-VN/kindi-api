@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Services/BusinessGroupService.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
@@ -40,6 +39,7 @@ public class BusinessGroupService : IBusinessGroupService
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
     private readonly IQueryService _queryService;
+    private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly QueryOptions _queryOptions;
 
@@ -53,6 +53,7 @@ public class BusinessGroupService : IBusinessGroupService
         ICurrentUserService currentUserService,
         IUserService userService,
         IQueryService queryService,
+        IReferralService referralService,
         IStringLocalizer<SharedResource> localizer,
         IOptions<QueryOptions> queryOptions)
     {
@@ -65,6 +66,7 @@ public class BusinessGroupService : IBusinessGroupService
         _currentUserService = currentUserService;
         _userService = userService;
         _queryService = queryService;
+        _referralService = referralService;
         _localizer = localizer;
         _queryOptions = queryOptions.Value;
     }
@@ -76,16 +78,19 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetPublicPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
             .Where(x => x.Type == BusinessGroupType.Industry && x.IsActive)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.Description != null && x.Description.ToLower().Contains(search!)) ||
-                (x.BusinessFieldName != null && x.BusinessFieldName.ToLower().Contains(search!)))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
@@ -201,6 +206,9 @@ public class BusinessGroupService : IBusinessGroupService
 
         var account = await _userService.FindByIdAsync(userId);
 
+        // Mã CTV của link chia sẻ người này dùng để xin vào nhóm (mã không tồn tại thì bỏ qua)
+        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+
         // Thành viên đã có bản ghi trong nhóm → tái kích hoạt thay vì tạo trùng (unique index GroupId+UserId)
         var member = await _memberRepository.GetFirstAsync(m =>
             m.BusinessGroupId == id && m.UserId == userId);
@@ -218,6 +226,7 @@ public class BusinessGroupService : IBusinessGroupService
             member.Zalo = FirstNonEmpty(request.Zalo, account?.Phone, member.Zalo);
             member.Email = FirstNonEmpty(request.Email, account?.Email, member.Email);
             member.Note = request.Note?.Trim();
+            if (referralCode != null) member.ReferralCode = referralCode;
             member.JoinedAt = memberStatus == GroupMemberStatus.Active ? DateTime.UtcNow : null;
             member.RejectionReason = null;
             _memberRepository.Update(member);
@@ -226,6 +235,7 @@ public class BusinessGroupService : IBusinessGroupService
         {
             member = new BusinessGroupMember
             {
+                BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
                 BusinessGroupId = id,
                 UserId = userId,
                 FullName = FirstNonEmpty(request.FullName, account?.FullName) ?? string.Empty,
@@ -233,6 +243,7 @@ public class BusinessGroupService : IBusinessGroupService
                 Zalo = FirstNonEmpty(request.Zalo, account?.Phone),
                 Email = FirstNonEmpty(request.Email, account?.Email),
                 Note = request.Note?.Trim(),
+                ReferralCode = referralCode,
                 Role = GroupMemberRole.Member,
                 Status = memberStatus,
                 IsGuestAccount = isGuestAccount,
@@ -318,7 +329,9 @@ public class BusinessGroupService : IBusinessGroupService
         if (query.PrivateOnly && !isAdmin)
             throw new ForbiddenException(_localizer["BusinessGroup_AdminOnly"]);
 
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupPost>()
             .Where(x => x.BusinessGroupId == groupId)
@@ -326,15 +339,17 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.PrivateOnly, x => x.IsPrivateToAdmin)
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.Title != null && x.Title.ToLower().Contains(search!)) ||
-                x.Content.ToLower().Contains(search!) ||
-                (x.RefCode != null && x.RefCode.ToLower().Contains(search!)))
+                (x.Title != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Title), "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Content), "%" + searchTerm + "%", "\\") ||
+                (x.RefCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RefCode), "%" + searchTerm + "%", "\\")))
             .Include(x => x.Author)
             .OrderByDescending(x => x.IsPinned)
             .ThenByDescending(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
-        return _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
+        var result = _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
+        await _referralService.FillNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
+        return result;
     }
 
     public async Task<BusinessGroupPostResponseDto> CreatePostAsync(Guid groupId, CreateBusinessGroupPostDto request)
@@ -380,6 +395,15 @@ public class BusinessGroupService : IBusinessGroupService
             }
         }
 
+        // Bài chuyển tiếp bản ghi gốc: người gửi chính là người chia sẻ
+        // → link chia sẻ kèm mã CTV của họ (admin chia sẻ thì lấy mã của admin).
+        var isSharedPost = post.RefId.HasValue && !string.IsNullOrWhiteSpace(post.RefCode);
+        if (isSharedPost)
+        {
+            post.ReferralCode = await _referralService.GetSharerReferralCodeAsync();
+            post.WithShareLink = request.WithShareLink;
+        }
+
         await _postRepository.AddAsync(post);
         await _postRepository.SaveChangesAsync();
 
@@ -411,9 +435,22 @@ public class BusinessGroupService : IBusinessGroupService
 
         if (groupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
 
+        // Admin xem mọi nhóm; người dùng chỉ thấy nhóm mình đang tham gia.
+        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var me = GetCurrentUserId();
+        var myGroupIds = isAdmin || me == null
+            ? new List<Guid>()
+            : await _queryService.GetAllNoTracking<BusinessGroupMember>()
+                .Where(m => m.UserId == me.Value && m.Status == GroupMemberStatus.Active)
+                .Select(m => m.BusinessGroupId)
+                .ToListAsync();
+
+        if (!isAdmin && myGroupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
+
         return await _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Industry)
             .Contains(x => x.Id, groupIds, _queryOptions)
+            .WhereIf(!isAdmin, x => myGroupIds.Contains(x.Id))
             .OrderBy(x => x.Name)
             .Select(x => new ForwardedGroupResponseDto
             {
@@ -490,6 +527,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var comment = new BusinessGroupComment
         {
+            BusinessGroupCommentCode = CodeGenerator.Generate("GBC"),
             BusinessGroupPostId = postId,
             UserId = me,
             Content = request.Content.Trim(),
@@ -542,14 +580,16 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetCommunityPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Community)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.Topic != null && x.Topic.ToLower().Contains(search!)) ||
-                (x.Description != null && x.Description.ToLower().Contains(search!)));
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
+                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
 
         if (me != null)
         {
@@ -600,6 +640,7 @@ public class BusinessGroupService : IBusinessGroupService
         var account = await _userService.FindByIdAsync(me);
         await _memberRepository.AddAsync(new BusinessGroupMember
         {
+            BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
             BusinessGroupId = group.Id,
             UserId = me,
             FullName = account?.FullName ?? string.Empty,
@@ -651,7 +692,9 @@ public class BusinessGroupService : IBusinessGroupService
 
     public async Task<PagedList<BusinessGroupResponseDto>> GetAdminPagedAsync(AdminBusinessGroupQueryDto query)
     {
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
@@ -659,9 +702,9 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.BusinessGroupCode != null && x.BusinessGroupCode.ToLower().Contains(search!)) ||
-                (x.BusinessFieldName != null && x.BusinessFieldName.ToLower().Contains(search!)))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,
@@ -766,20 +809,24 @@ public class BusinessGroupService : IBusinessGroupService
         // Nhóm ngành: admin; Hội nhóm: admin hoặc chủ hội
         EnsureCanManageMembers(group);
 
-        var search = NormalizeFilter(query.Search)?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.FullName.ToLower().Contains(search!) ||
-                x.Phone.ToLower().Contains(search!) ||
-                (x.Email != null && x.Email.ToLower().Contains(search!)))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
             .OrderBy(x => x.Status)
             .ThenBy(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
-        return _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
+        var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
+        await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        return result;
     }
 
     public async Task<BusinessGroupMemberResponseDto> UpdateMemberStatusAsync(Guid id, Guid memberId, UpdateGroupMemberStatusDto request)
@@ -853,19 +900,6 @@ public class BusinessGroupService : IBusinessGroupService
 
     private Guid? GetCurrentUserId()
         => Guid.TryParse(_currentUserService.UserId, out var id) ? id : null;
-
-    /// <summary>Chuẩn hoá filter: rỗng / "undefined" / "null" / "all" coi như không lọc.</summary>
-    private static string? NormalizeFilter(string? value)
-    {
-        if (string.IsNullOrWhiteSpace(value)) return null;
-
-        var trimmed = value.Trim();
-        return trimmed.ToLowerInvariant() switch
-        {
-            "undefined" or "null" or "nan" or "all" => null,
-            _ => trimmed
-        };
-    }
 
     private static string? FirstNonEmpty(params string?[] values)
     {
@@ -991,6 +1025,8 @@ public class BusinessGroupService : IBusinessGroupService
             Zalo = zalo,
             Email = email,
             CollaboratorCode = code,
+            // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
+            ReferralCode = code,
             Status = CollaboratorStatus.Pending,
             IsApproved = false,
             Level = 1

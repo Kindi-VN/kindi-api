@@ -7,6 +7,7 @@ namespace Kindi.API.Application.DTOs.Responses;
 public class CompanyResponseDto : IMapFrom<Company>
 {
     public Guid Id { get; set; }
+    public string? CompanyCode { get; set; }
     public string Name { get; set; } = string.Empty;
     public string? TaxCode { get; set; }
     public string? Address { get; set; }

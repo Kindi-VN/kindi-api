@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Infrastructure/Data/Configurations/OfferRequestConfiguration.cs
-using Kindi.API.Domain.Entities;
+﻿using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
@@ -51,6 +50,9 @@ public class OfferRequestConfiguration : IEntityTypeConfiguration<OfferRequest>
 
         builder.Property(x => x.Note)
             .HasMaxLength(500);
+
+        builder.Property(x => x.ReferralCode)
+            .HasMaxLength(30);
 
         builder.Property(x => x.Status)
             .HasConversion<int>()

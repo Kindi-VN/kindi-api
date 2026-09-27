@@ -22,6 +22,12 @@ public class BusinessGroupPost : BaseEntity
 	/// <summary>Mã hiển thị của bản ghi được chia sẻ (ví dụ GBR-XXXXXX, OFR-XXXXXX).</summary>
 	public string? RefCode { get; set; }
 
+	/// <summary>Mã CTV của người chuyển tiếp bản ghi vào nhóm (ghi nhận 1 cấp).</summary>
+	public string? ReferralCode { get; set; }
+
+	/// <summary>Bài chuyển tiếp kèm link chia sẻ để mời thành viên tham gia bản ghi gốc.</summary>
+	public bool WithShareLink { get; set; }
+
 	/// <summary>true = yêu cầu kín: chỉ admin đọc được (thành viên gửi riêng cho admin).</summary>
 	public bool IsPrivateToAdmin { get; set; }
 

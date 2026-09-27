@@ -17,11 +17,13 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 {
 	private readonly IQueryService _queryService;
 	private readonly IMapper _mapper;
+	private readonly IReferralService _referralService;
 
-	public GetOfferRequestsHandler(IQueryService queryService, IMapper mapper)
+	public GetOfferRequestsHandler(IQueryService queryService, IMapper mapper, IReferralService referralService)
 	{
 		_queryService = queryService;
 		_mapper = mapper;
+		_referralService = referralService;
 	}
 
 	public async Task<PagedList<OfferRequestResponseDto>> Handle(GetOfferRequestsQuery request, CancellationToken cancellationToken)
@@ -53,6 +55,8 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			defaultSortBy: "CreatedAt",
 			cancellationToken);
 
-		return _mapper.MapPagedList<OfferRequest, OfferRequestResponseDto>(pagedEntities);
+		var result = _mapper.MapPagedList<OfferRequest, OfferRequestResponseDto>(pagedEntities);
+		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		return result;
 	}
 }

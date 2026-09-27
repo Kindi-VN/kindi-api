@@ -49,6 +49,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(x => x.IsActive)
 			.HasDefaultValue(true);
 
+		builder.Property(x => x.ReferralCode)
+			.HasMaxLength(30);
+
 		builder.Property(x => x.MustChangeCredentials)
 			.HasDefaultValue(false);
 

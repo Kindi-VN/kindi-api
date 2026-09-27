@@ -1,4 +1,6 @@
 using AutoMapper;
+using Kindi.API.Application.Common.Extensions;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.Requests;
 using Kindi.API.Application.DTOs.Responses;
@@ -6,6 +8,7 @@ using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kindi.API.Application.Services;
 
@@ -49,8 +52,10 @@ public class CompanyService : ICompanyService
 
         if (existing == null)
         {
-            var upper = nameTrim.ToUpperInvariant();
-            existing = await _companyRepo.GetFirstAsync(c => c.Name.ToUpper() == upper && !c.IsDeleted);
+            // So khớp tên công ty không phân biệt hoa/thường bằng ILIKE: mẫu là tên đã escape,
+            // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
+            var nameLike = nameTrim.RemoveVietnameseSign().ToLikeEscaped();
+            existing = await _companyRepo.GetFirstAsync(c => EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Name), nameLike, "\\") && !c.IsDeleted);
         }
 
         if (existing != null)
@@ -98,6 +103,7 @@ public class CompanyService : ICompanyService
 
         var company = new Company
         {
+            CompanyCode = CodeGenerator.Generate("CMP"),
             Name = nameTrim,
             TaxCode = string.IsNullOrWhiteSpace(taxCode) ? null : taxCode,
             Address = address,
@@ -118,6 +124,7 @@ public class CompanyService : ICompanyService
         var validBusinessFieldId = await ResolveBusinessFieldIdAsync(request.BusinessFieldId);
         var company = new Company
         {
+            CompanyCode = CodeGenerator.Generate("CMP"),
             Name = request.Name.Trim(),
             TaxCode = request.TaxCode,
             Address = request.Address,

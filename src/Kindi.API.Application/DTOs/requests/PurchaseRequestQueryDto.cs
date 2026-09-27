@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/DTOs/requests/PurchaseRequestQueryDto.cs
-using Kindi.API.Domain.Enums;
+﻿using Kindi.API.Domain.Enums;
 
 namespace Kindi.API.Application.DTOs.requests;
 

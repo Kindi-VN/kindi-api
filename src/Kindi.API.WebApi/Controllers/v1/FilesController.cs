@@ -1,4 +1,3 @@
-// src/Kindi.API.WebApi/Controllers/v1/FilesController.cs
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Resources;
 using Microsoft.AspNetCore.Authorization;

@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/requests/GetPublicGroupBuyingRequestsQueryDto.cs
 namespace Kindi.API.Application.DTOs.requests;
 
 /// <summary>

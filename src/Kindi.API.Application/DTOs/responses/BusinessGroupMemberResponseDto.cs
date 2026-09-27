@@ -8,6 +8,8 @@ namespace Kindi.API.Application.DTOs.responses;
 public class BusinessGroupMemberResponseDto : IMapFrom<BusinessGroupMember>
 {
     public Guid Id { get; set; }
+    /// <summary>Mã thành viên nhóm hiển thị cho người dùng.</summary>
+    public string? BusinessGroupMemberCode { get; set; }
     public Guid BusinessGroupId { get; set; }
     public Guid UserId { get; set; }
 
@@ -16,6 +18,11 @@ public class BusinessGroupMemberResponseDto : IMapFrom<BusinessGroupMember>
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV đã mang người này vào nhóm (lấy từ link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
+    public string? ReferralName { get; set; }
 
     public GroupMemberRole Role { get; set; }
     public GroupMemberStatus Status { get; set; }

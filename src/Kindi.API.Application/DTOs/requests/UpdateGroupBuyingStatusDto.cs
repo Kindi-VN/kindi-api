@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/requests/UpdateGroupBuyingStatusDto.cs
 namespace Kindi.API.Application.DTOs.requests;
 
 /// <summary>

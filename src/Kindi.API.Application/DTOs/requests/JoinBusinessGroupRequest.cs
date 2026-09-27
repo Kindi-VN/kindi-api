@@ -11,4 +11,7 @@ public class JoinBusinessGroupRequest
     public string? Zalo { get; set; }
     public string? Email { get; set; }
     public string? Note { get; set; }
+
+    /// <summary>Mã CTV của link chia sẻ khách dùng để xin vào nhóm (không bắt buộc).</summary>
+    public string? ReferralCode { get; set; }
 }

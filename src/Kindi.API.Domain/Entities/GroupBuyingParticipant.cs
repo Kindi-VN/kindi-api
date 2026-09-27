@@ -8,6 +8,9 @@ namespace Kindi.API.Domain.Entities;
 /// </summary>
 public class GroupBuyingParticipant : BaseEntity
 {
+	/// <summary>Mã người tham gia mua chung hiển thị cho người dùng.</summary>
+	public string? GroupBuyingParticipantCode { get; set; }
+
 	public Guid GroupBuyingRequestId { get; set; }
 	public Guid UserId { get; set; }
 	public string FullName { get; set; } = string.Empty;
@@ -15,6 +18,9 @@ public class GroupBuyingParticipant : BaseEntity
 	public string? Zalo { get; set; }
 	public string? Email { get; set; }
 	public string? Note { get; set; }
+
+	/// <summary>Mã CTV của link mà người này dùng để tham gia (ghi nhận 1 cấp).</summary>
+	public string? ReferralCode { get; set; }
 
 	/// <summary>Người mở yêu cầu mua chung — admin không thể xóa khỏi nhóm.</summary>
 	public bool IsCreator { get; set; }
