@@ -16,7 +16,7 @@ public static class DependencyInjection
 		this IServiceCollection services,
 		IConfiguration configuration)
 	{
-		// Database context
+		// Database context (ghi): tracking + audit + soft delete, chạy migration
 		services.AddDbContext<ApplicationDbContext>(options =>
 			options.UseNpgsql(
 				configuration.GetConnectionString("DefaultConnection"),
@@ -24,6 +24,17 @@ public static class DependencyInjection
 
 		services.AddScoped<IApplicationDbContext>(provider =>
 			provider.GetRequiredService<ApplicationDbContext>());
+
+		// Database context (chỉ đọc): dùng cho mọi truy vấn no-tracking.
+		// Có "ConnectionStrings:ReadConnection" thì trỏ sang replica đọc, không thì dùng chung DB ghi.
+		var readConnectionString = configuration.GetConnectionString("ReadConnection");
+		if (string.IsNullOrWhiteSpace(readConnectionString))
+			readConnectionString = configuration.GetConnectionString("DefaultConnection");
+
+		services.AddDbContext<ReadOnlyDbContext>(options => options.UseNpgsql(readConnectionString));
+
+		services.AddScoped<IReadDbContext>(provider =>
+			provider.GetRequiredService<ReadOnlyDbContext>());
 
 		// Generic repository
         services.AddScoped<IUnitOfWork, UnitOfWork>();

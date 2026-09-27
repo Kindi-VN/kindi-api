@@ -131,8 +131,8 @@ public class CategoryController : CrudControllerBase<Category, CategoryDto, Crea
 ### Bước 8: Migration
 
 cd src/Kindi.API.WebApi
-dotnet ef migrations add AddCategoryTable
-dotnet ef database update
+dotnet ef migrations add AddCategoryTable --context ApplicationDbContext
+dotnet ef database update --context ApplicationDbContext
 cd ../..
 
 ## Tóm tắt các file cần thêm hoặc sửa

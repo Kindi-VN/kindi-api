@@ -121,6 +121,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
         var envConfig = new Dictionary<string, string?>
         {
             ["ConnectionStrings:DefaultConnection"] = GetEnvironmentValue("DB_CONNECTION_STRING") ?? GetEnvironmentValue("DATABASE_URL"),
+            ["ConnectionStrings:ReadConnection"] = GetEnvironmentValue("READ_CONNECTION_STRING"),
             ["JwtSettings:Secret"] = GetEnvironmentValue("JWT_SECRET"),
             ["JwtSettings:Issuer"] = GetEnvironmentValue("JWT_ISSUER"),
             ["JwtSettings:Audience"] = GetEnvironmentValue("JWT_AUDIENCE"),
@@ -150,6 +151,11 @@ static void ConfigureServices(WebApplicationBuilder builder)
             : connStr;
         Log.Information("🔗 Connection String: {ConnectionString}", masked);
     }
+
+    // DbContext chỉ đọc dùng connection string riêng nếu có (replica), không thì dùng chung DB ghi
+    var readConnStr = builder.Configuration.GetConnectionString("ReadConnection");
+    Log.Information("📚 Read connection: {ReadConnection}",
+        string.IsNullOrWhiteSpace(readConnStr) ? "(chưa cấu hình → đọc chung DB ghi)" : "(đã cấu hình ReadConnection)");
 
     // Serilog
     Log.Information("📝 Configuring Serilog...");

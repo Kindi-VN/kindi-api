@@ -9,18 +9,23 @@ namespace Kindi.API.Application.Services;
 
 public class QueryService : IQueryService
 {
+    /// <summary>DbContext ghi — chỉ dùng cho truy vấn CÓ tracking (đọc để cập nhật).</summary>
     private readonly IApplicationDbContext _context;
 
-    public QueryService(IApplicationDbContext context)
+    /// <summary>DbContext chỉ đọc — dùng cho mọi truy vấn KHÔNG tracking.</summary>
+    private readonly IReadDbContext _readContext;
+
+    public QueryService(IApplicationDbContext context, IReadDbContext readContext)
     {
         _context = context;
+        _readContext = readContext;
     }
 
     public IQueryable<T> GetQueryable<T>() where T : class
         => _context.Set<T>();
 
     public IQueryable<T> GetQueryableNoTracking<T>() where T : class
-        => _context.Set<T>().AsNoTracking();
+        => _readContext.Set<T>().AsNoTracking();
 
     /// <inheritdoc />
     public IQueryable<T> GetAll<T>() where T : class
