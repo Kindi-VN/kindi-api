@@ -161,18 +161,25 @@ static void ConfigureServices(WebApplicationBuilder builder)
     // Serilog
     Log.Information("📝 Configuring Serilog...");
 
-    // Seq — log tập trung: local dùng mặc định trong appsettings.json (http://localhost:5341),
-    // deploy chỉ cần đặt biến môi trường SEQ_SERVER_URL (+ SEQ_API_KEY nếu Seq bật xác thực).
-    // ServerUrl trống hoặc Enabled=false ⇒ bỏ sink, app vẫn chạy và vẫn ghi console + file.
-    var seqUrl = GetEnvironmentValue("SEQ_SERVER_URL") ?? builder.Configuration["Serilog:Seq:ServerUrl"];
+    // Seq — log tập trung: mặc định luôn bắn về Seq chạy local (http://localhost:5341) ở mọi môi trường.
+    // Đổi đích bằng SEQ_SERVER_URL / Serilog:Seq:ServerUrl (+ SEQ_API_KEY khi Seq bật xác thực);
+    // tắt sink bằng SEQ_ENABLED=false / Serilog:Seq:Enabled=false.
+    // ServerUrl rỗng + Enabled=false ⇒ bỏ sink, app vẫn chạy và vẫn ghi console + file.
+    const string localSeqUrl = "http://localhost:5341";
+
+    var seqUrl = GetEnvironmentValue("SEQ_SERVER_URL");
+    if (string.IsNullOrWhiteSpace(seqUrl)) seqUrl = builder.Configuration["Serilog:Seq:ServerUrl"];
+    if (string.IsNullOrWhiteSpace(seqUrl)) seqUrl = localSeqUrl;
+
     var seqApiKey = GetEnvironmentValue("SEQ_API_KEY") ?? builder.Configuration["Serilog:Seq:ApiKey"];
     var seqMinimumLevel = builder.Configuration.GetValue("Serilog:Seq:MinimumLevel", LogEventLevel.Information);
-    var seqEnabled = builder.Configuration.GetValue("Serilog:Seq:Enabled", true)
-                     && !string.Equals(GetEnvironmentValue("SEQ_ENABLED"), "false", StringComparison.OrdinalIgnoreCase);
 
-    // Production mà chưa cấu hình Seq: tắt sink, tránh bắn log vào localhost trong container
-    if (builder.Environment.IsProduction() && string.IsNullOrWhiteSpace(GetEnvironmentValue("SEQ_SERVER_URL")))
-        seqEnabled = false;
+    // SEQ_ENABLED có mặt thì quyết định hoàn toàn (bật/tắt được cả khi appsettings nói khác),
+    // không có thì lấy theo Serilog:Seq:Enabled.
+    var seqEnabledSetting = GetEnvironmentValue("SEQ_ENABLED");
+    var seqEnabled = seqEnabledSetting != null
+        ? !string.Equals(seqEnabledSetting, "false", StringComparison.OrdinalIgnoreCase)
+        : builder.Configuration.GetValue("Serilog:Seq:Enabled", true);
 
     // Đọc từ appsettings trước, fallback sang env variable
     var telegramToken = builder.Configuration["Telegram:ErrorBot:BotToken"]

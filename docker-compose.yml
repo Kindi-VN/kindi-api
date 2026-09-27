@@ -13,6 +13,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      seq:
+        condition: service_started
+    environment:
+      # API chạy trong network của compose: gọi Seq bằng tên service (Seq lắng nghe cổng 80 trong container),
+      # không dùng localhost vì localhost trong container api là chính nó.
+      SEQ_SERVER_URL: http://seq:80
     healthcheck:
       test: ["CMD-SHELL", "curl -f http://localhost/health || exit 1"]
       interval: 30s
