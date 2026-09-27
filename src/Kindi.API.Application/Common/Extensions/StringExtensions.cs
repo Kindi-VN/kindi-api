@@ -91,19 +91,20 @@ public static class StringExtensions
     }
 
     /// <summary>
-    /// Mẫu tìm kiếm chứa chuỗi cho câu truy vấn dưới DB (LIKE/ILIKE), đã escape
-    /// ký tự đại diện % _ và ký tự escape \.
+    /// Escape ký tự đại diện trong từ khoá tìm kiếm: \, % và _ (dùng cho mẫu LIKE/ILIKE dưới DB).
+    /// Chỉ trả về từ khoá đã escape, KHÔNG bọc sẵn hai dấu % — phía truy vấn tự ghép
+    /// "%" + term + "%" ngay trong biểu thức để EF dịch thành chuỗi nối dưới SQL.
+    /// LƯU Ý: Npgsql sinh ILIKE mặc định là ESCAPE '' (TẮT escape), nên khi dùng từ khoá đã
+    /// escape bắt buộc truyền escape char: EF.Functions.ILike(col, pattern, "\\").
     /// </summary>
-    public static string ToLikePattern(this string? value)
+    public static string ToLikeEscaped(this string? value)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "%";
+            return string.Empty;
 
-        var escaped = value.Trim()
+        return value.Trim()
             .Replace("\\", "\\\\", StringComparison.Ordinal)
             .Replace("%", "\\%", StringComparison.Ordinal)
             .Replace("_", "\\_", StringComparison.Ordinal);
-
-        return $"%{escaped}%";
     }
 }

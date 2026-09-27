@@ -138,8 +138,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<PagedList<GroupBuyingFeedItemDto>> GetPublicPagedAsync(GetPublicGroupBuyingRequestsQueryDto query)
     {
         var me = GetCurrentUserId();
-        // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.ToLikeEscaped();
 
         // Chỉ nhóm đã duyệt (Active) mới lên tab công khai; nhóm của chính mình vẫn thấy
         // (kèm trạng thái "Chờ duyệt") để người tạo theo dõi.
@@ -150,9 +152,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
             .WhereIf(query.MineOnly && me != null, x => x.UserId == me!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.ProductName.ToLower().Contains(search!) ||
-                (x.Note != null && x.Note.ToLower().Contains(search!)) ||
-                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)))
+                EF.Functions.ILike(x.ProductName, "%" + searchTerm + "%", "\\") ||
+                (x.Note != null && EF.Functions.ILike(x.Note, "%" + searchTerm + "%", "\\")) ||
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, "%" + searchTerm + "%", "\\")))
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);
@@ -174,9 +176,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
     public async Task<GroupBuyingDetailDto> GetPublicDetailByCodeAsync(string code)
     {
-        var normalized = code.Trim().ToUpperInvariant();
+        // So khớp đúng mã (không phân biệt hoa/thường) bằng ILIKE: mẫu là chính từ khoá,
+        // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
+        var normalized = code.Trim().ToLikeEscaped();
         var entity = await _repository.GetFirstWithIncludesAsync(
-            x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToUpper() == normalized,
+            x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, normalized, "\\"),
             includes: q => q.Include(x => x.User)
                 .Include(x => x.BusinessField)
                 .Include(x => x.Participants).ThenInclude(p => p.User));
@@ -384,8 +388,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (!isAdmin && string.IsNullOrEmpty(userId))
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
-        // ToLower() + Contains → EF dịch thành lower(col) LIKE '%keyword%' (tìm không phân biệt hoa/thường)
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.ToLikeEscaped();
 
         var statusFilter = GroupBuyingStatus.Pending;
         var normalizedStatus = query.Status.NormalizeSearchFilter();
@@ -397,11 +403,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)) ||
-                x.ProductName.ToLower().Contains(search!) ||
-                x.FullName.ToLower().Contains(search!) ||
-                x.Phone.ToLower().Contains(search!) ||
-                (x.Email != null && x.Email.ToLower().Contains(search!)))
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(x.ProductName, "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(x.FullName, "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(x.Phone, "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(x.Email, "%" + searchTerm + "%", "\\")))
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(

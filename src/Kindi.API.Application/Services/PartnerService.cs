@@ -157,17 +157,20 @@ public class PartnerService : IPartnerService
     /// </summary>
     public async Task<PagedList<PublicPartnerResponseDto>> GetPublicPagedAsync(PublicPartnerQueryDto query)
     {
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<Partner>()
             .Where(x => x.Status == PartnerStatus.Approved || x.Status == PartnerStatus.Active)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.CompanyName.ToLower().Contains(search!) ||
-                x.FullName.ToLower().Contains(search!) ||
-                (x.CompanyAddress != null && x.CompanyAddress.ToLower().Contains(search!)) ||
-                (x.BusinessField != null && x.BusinessField.Name.ToLower().Contains(search!)) ||
-                x.Products.Any(p => !p.IsDeleted && p.Name.ToLower().Contains(search!)))
+                EF.Functions.ILike(x.CompanyName, "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(x.FullName, "%" + searchTerm + "%", "\\") ||
+                (x.CompanyAddress != null && EF.Functions.ILike(x.CompanyAddress, "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessField != null && EF.Functions.ILike(x.BusinessField.Name, "%" + searchTerm + "%", "\\")) ||
+                x.Products.Any(p => !p.IsDeleted && EF.Functions.ILike(p.Name, "%" + searchTerm + "%", "\\")))
             .Include(x => x.BusinessField)
             .Include(x => x.Products);
 
@@ -189,9 +192,12 @@ public class PartnerService : IPartnerService
 
         // Mã giới thiệu có thể là SĐT hoặc UserCode (không phân biệt hoa/thường với code)
         var trimmed = code.Trim();
+        // UserCode so khớp đúng (không phân biệt hoa/thường) bằng ILIKE: mẫu là từ khoá đã
+        // escape, không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
+        var trimmedLike = trimmed.ToLikeEscaped();
         var user = await _userRepo.GetFirstAsync(u =>
             u.Phone == trimmed ||
-            (u.UserCode != null && u.UserCode.ToUpper() == trimmed.ToUpper()));
+            (u.UserCode != null && EF.Functions.ILike(u.UserCode, trimmedLike, "\\")));
         return user != null;
     }
 

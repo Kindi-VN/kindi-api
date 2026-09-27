@@ -79,16 +79,19 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetPublicPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
             .Where(x => x.Type == BusinessGroupType.Industry && x.IsActive)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.Description != null && x.Description.ToLower().Contains(search!)) ||
-                (x.BusinessFieldName != null && x.BusinessFieldName.ToLower().Contains(search!)))
+                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
+                (x.Description != null && EF.Functions.ILike(x.Description, "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(x.BusinessFieldName, "%" + searchTerm + "%", "\\")))
             .WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
@@ -327,7 +330,9 @@ public class BusinessGroupService : IBusinessGroupService
         if (query.PrivateOnly && !isAdmin)
             throw new ForbiddenException(_localizer["BusinessGroup_AdminOnly"]);
 
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupPost>()
             .Where(x => x.BusinessGroupId == groupId)
@@ -335,9 +340,9 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.PrivateOnly, x => x.IsPrivateToAdmin)
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.Title != null && x.Title.ToLower().Contains(search!)) ||
-                x.Content.ToLower().Contains(search!) ||
-                (x.RefCode != null && x.RefCode.ToLower().Contains(search!)))
+                (x.Title != null && EF.Functions.ILike(x.Title, "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(x.Content, "%" + searchTerm + "%", "\\") ||
+                (x.RefCode != null && EF.Functions.ILike(x.RefCode, "%" + searchTerm + "%", "\\")))
             .Include(x => x.Author)
             .OrderByDescending(x => x.IsPinned)
             .ThenByDescending(x => x.CreatedAt);
@@ -576,14 +581,16 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupResponseDto>> GetCommunityPagedAsync(BusinessGroupQueryDto query)
     {
         var me = GetCurrentUserId();
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Community)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.Topic != null && x.Topic.ToLower().Contains(search!)) ||
-                (x.Description != null && x.Description.ToLower().Contains(search!)));
+                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
+                (x.Topic != null && EF.Functions.ILike(x.Topic, "%" + searchTerm + "%", "\\")) ||
+                (x.Description != null && EF.Functions.ILike(x.Description, "%" + searchTerm + "%", "\\")));
 
         if (me != null)
         {
@@ -686,7 +693,9 @@ public class BusinessGroupService : IBusinessGroupService
 
     public async Task<PagedList<BusinessGroupResponseDto>> GetAdminPagedAsync(AdminBusinessGroupQueryDto query)
     {
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
@@ -694,9 +703,9 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.Name.ToLower().Contains(search!) ||
-                (x.BusinessGroupCode != null && x.BusinessGroupCode.ToLower().Contains(search!)) ||
-                (x.BusinessFieldName != null && x.BusinessFieldName.ToLower().Contains(search!)))
+                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
+                (x.BusinessGroupCode != null && EF.Functions.ILike(x.BusinessGroupCode, "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(x.BusinessFieldName, "%" + searchTerm + "%", "\\")))
             .WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,
@@ -801,15 +810,17 @@ public class BusinessGroupService : IBusinessGroupService
         // Nhóm ngành: admin; Hội nhóm: admin hoặc chủ hội
         EnsureCanManageMembers(group);
 
-        var search = query.Search.NormalizeSearchFilter()?.ToLowerInvariant();
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                x.FullName.ToLower().Contains(search!) ||
-                x.Phone.ToLower().Contains(search!) ||
-                (x.Email != null && x.Email.ToLower().Contains(search!)))
+                EF.Functions.ILike(x.FullName, "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(x.Phone, "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(x.Email, "%" + searchTerm + "%", "\\")))
             .OrderBy(x => x.Status)
             .ThenBy(x => x.CreatedAt);
 
