@@ -1,6 +1,7 @@
 using System.Linq.Dynamic.Core;
 using System.Linq.Expressions;
 using System.Reflection;
+using Kindi.API.Application.Common.Configurations;
 
 namespace Kindi.API.Application.Common.Extensions;
 
@@ -123,6 +124,83 @@ public static class QueryableExtensions
     {
         public TOuter? Outer { get; set; }
         public TInner? Inner { get; set; }
+    }
+
+    /// <summary>
+    /// Lọc "chứa một trong các giá trị" — tương đương TVP bên SQL Server: cả danh sách đi xuống DB
+    /// trong MỘT tham số mảng (PostgreSQL sinh ra <c>= ANY(@p)</c>), không sinh mỗi giá trị một tham số.
+    /// VD: <c>query.Contains(x => x.Id, groupIds)</c>. Danh sách rỗng ⇒ không bản ghi nào khớp.
+    /// </summary>
+    public static IQueryable<T> Contains<T, TKey>(
+        this IQueryable<T> source,
+        Expression<Func<T, TKey>> selector,
+        IEnumerable<TKey>? values)
+        => source.Contains(selector, values, QueryOptions.Default);
+
+    /// <summary>
+    /// Như trên, nhận cấu hình <see cref="QueryOptions"/> (lọc trùng, số giá trị tối đa) —
+    /// inject <c>IOptions&lt;QueryOptions&gt;</c> ở service rồi truyền <c>_queryOptions.Value</c>.
+    /// </summary>
+    public static IQueryable<T> Contains<T, TKey>(
+        this IQueryable<T> source,
+        Expression<Func<T, TKey>> selector,
+        IEnumerable<TKey>? values,
+        QueryOptions options)
+    {
+        var keys = PrepareValues(values, options);
+
+        // Không có giá trị nào thì không bản ghi nào khớp
+        if (keys.Count == 0)
+            return source.Where(_ => false);
+
+        return source.Where(BuildContainsPredicate(selector, keys));
+    }
+
+    /// <summary>
+    /// Dựng predicate "thuộc danh sách giá trị". Danh sách được giữ trong một object và truy cập qua
+    /// property để EF đưa xuống DB thành MỘT tham số mảng (PostgreSQL: <c>= ANY(@p)</c>), không nhúng
+    /// từng giá trị vào câu SQL — nhờ vậy SQL ổn định và tận dụng được kế hoạch thực thi đã cache.
+    /// </summary>
+    private static Expression<Func<T, bool>> BuildContainsPredicate<T, TKey>(
+        Expression<Func<T, TKey>> selector,
+        List<TKey> keys)
+    {
+        var holder = new ContainsValues<TKey>();
+        holder.Values.AddRange(keys);
+
+        var valuesAccess = Expression.Property(
+            Expression.Constant(holder), nameof(ContainsValues<TKey>.Values));
+
+        var containsCall = Expression.Call(
+            typeof(Enumerable),
+            nameof(Enumerable.Contains),
+            new[] { typeof(TKey) },
+            valuesAccess,
+            selector.Body);
+
+        return Expression.Lambda<Func<T, bool>>(containsCall, selector.Parameters[0]);
+    }
+
+    /// <summary>Giữ danh sách giá trị của điều kiện chứa để EF tham số hoá thay vì nhúng vào SQL.</summary>
+    private sealed class ContainsValues<TKey>
+    {
+        public List<TKey> Values { get; } = new();
+    }
+
+    /// <summary>Chuẩn hoá danh sách giá trị trước khi truyền xuống DB (lọc trùng, cắt theo cấu hình).</summary>
+    private static List<TKey> PrepareValues<TKey>(IEnumerable<TKey>? values, QueryOptions options)
+    {
+        if (values == null)
+            return new List<TKey>();
+
+        var keys = options.DistinctContainsValues
+            ? values.Distinct().ToList()
+            : values.ToList();
+
+        if (options.MaxContainsValues > 0 && keys.Count > options.MaxContainsValues)
+            keys = keys.Take(options.MaxContainsValues).ToList();
+
+        return keys;
     }
 
     private static string? ResolveSortColumn<T>(string? sortBy)

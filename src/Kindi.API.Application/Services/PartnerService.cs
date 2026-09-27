@@ -217,8 +217,6 @@ public class PartnerService : IPartnerService
 
         var searchUpper = filter.Search?.ToUpperInvariant();
         q = q
-            // Include nav lĩnh vực để map BusinessFieldName trong PartnerResponseDto
-            .Include(x => x.BusinessField)
             // Search filter
             .WhereIf(!string.IsNullOrEmpty(filter.Search), x =>
                 x.FullName.Contains(filter.Search!) ||
@@ -233,10 +231,13 @@ public class PartnerService : IPartnerService
                 (x.BusinessField != null && x.BusinessField.Name.Contains(filter.Search!)) ||
                 (x.BusinessField != null && x.BusinessField.NormalizedName.Contains(searchUpper!)))
             // Status filter
-            .WhereIf(filter.Status.HasValue, x => x.Status == filter.Status!.Value)
+            .WhereIfNotNull(filter.Status, x => x.Status == filter.Status!.Value)
             // Date range filter
-            .WhereIf(filter.FromDate.HasValue, x => x.CreatedAt >= filter.FromDate!.Value.Date.ToUniversalTime())
-            .WhereIf(filter.ToDate.HasValue, x => x.CreatedAt < filter.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
+            .WhereIfNotNull(filter.FromDate, x => x.CreatedAt >= filter.FromDate!.Value.Date.ToUniversalTime())
+            .WhereIfNotNull(filter.ToDate, x => x.CreatedAt < filter.ToDate!.Value.Date.AddDays(1).ToUniversalTime())
+            // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại
+            // Include nav lĩnh vực để map BusinessFieldName trong PartnerResponseDto
+            .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
             filter.PageNumber,

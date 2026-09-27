@@ -28,6 +28,9 @@ public static class DependencyInjection
 		// Add JWT Settings
 		services.Configure<JwtSettings>(configuration.GetSection(JwtSettings.SectionName));
 
+		// Cấu hình cho điều kiện lọc "chứa một trong các giá trị" (số giá trị tối đa, lọc trùng)
+		services.Configure<QueryOptions>(configuration.GetSection(QueryOptions.SectionName));
+
 		var jwtSettings = configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>();
 		if (jwtSettings == null
 			|| string.IsNullOrWhiteSpace(jwtSettings.Secret)

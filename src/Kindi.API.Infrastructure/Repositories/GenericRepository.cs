@@ -80,8 +80,9 @@ public class GenericRepository<T> : IRepository<T> where T : class
         CancellationToken cancellationToken = default)
     {
         IQueryable<T> query = _dbSet;
-        if (includes != null) query = includes(query);
+        // Lọc trước rồi mới join/include: câu SQL chỉ join trên tập đã thu hẹp
         if (predicate != null) query = query.Where(predicate);
+        if (includes != null) query = includes(query);
         if (orderBy != null)
             query = isDescending ? query.OrderByDescending(orderBy) : query.OrderBy(orderBy);
         return await PagedList<T>.CreateAsync(query, pageNumber, pageSize);
@@ -101,8 +102,10 @@ public class GenericRepository<T> : IRepository<T> where T : class
         CancellationToken cancellationToken = default)
     {
         IQueryable<T> query = _dbSet;
+        // Lọc trước rồi mới join/include: câu SQL chỉ join trên tập đã thu hẹp
+        query = query.Where(predicate);
         if (includes != null) query = includes(query);
-        return await query.FirstOrDefaultAsync(predicate, cancellationToken);
+        return await query.FirstOrDefaultAsync(cancellationToken);
     }
 
     public async Task<IEnumerable<T>> GetListWithIncludesAsync(

@@ -1,9 +1,9 @@
 ﻿using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
+using Kindi.API.Infrastructure.Data.ModelConfiguration;
 using Kindi.API.Shared.Common.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
-using System.Reflection;
 
 namespace Kindi.API.Infrastructure.Data;
 
@@ -40,26 +40,13 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<AuthAuditLog> AuthAuditLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
-	{
-		base.OnModelCreating(modelBuilder);
+    {
+        base.OnModelCreating(modelBuilder);
 
-		// Apply all entity configurations from this assembly
-		modelBuilder.ApplyConfigurationsFromAssembly(Assembly.GetExecutingAssembly());
-
-		// Global query filter for soft delete
-		foreach (var entityType in modelBuilder.Model.GetEntityTypes())
-		{
-			if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
-			{
-				var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "e");
-				var property = System.Linq.Expressions.Expression.Property(parameter, "IsDeleted");
-				var condition = System.Linq.Expressions.Expression.Equal(property, System.Linq.Expressions.Expression.Constant(false));
-				var lambda = System.Linq.Expressions.Expression.Lambda(condition, parameter);
-
-				entityType.SetQueryFilter(lambda);
-			}
-		}
-	}
+        // Toàn bộ model (entity + cấu hình + global query filter) nằm trong Data/ModelConfiguration.
+        // Cấu hình này dùng chung cho cả DbContext ghi và DbContext chỉ đọc.
+        modelBuilder.ConfigureKindiModel();
+    }
 
 	public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
 	{

@@ -136,10 +136,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         // Chỉ nhóm đã duyệt (Active) mới lên tab công khai; nhóm của chính mình vẫn thấy
         // (kèm trạng thái "Chờ duyệt") để người tạo theo dõi.
+        // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại
         var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
-            .Include(x => x.User)
-            .Include(x => x.BusinessField)
-            .Include(x => x.Participants)
             .Where(x => x.Status == GroupBuyingStatus.Active
                         || (me != null && x.UserId == me.Value
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
@@ -147,7 +145,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 x.ProductName.ToLower().Contains(search!) ||
                 (x.Note != null && x.Note.ToLower().Contains(search!)) ||
-                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)));
+                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToLower().Contains(search!)))
+            .Include(x => x.User)
+            .Include(x => x.BusinessField)
+            .Include(x => x.Participants);
 
         var paged = await q.ToPagedListAsync(
             query.Page, query.PageSize,
@@ -377,8 +378,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var hasStatusFilter = !string.IsNullOrEmpty(NormalizeFilter(query.Status))
             && Enum.TryParse(NormalizeFilter(query.Status), true, out statusFilter);
 
+        // Lọc trước rồi mới include
         var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
-            .Include(x => x.BusinessField)
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
@@ -386,7 +387,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 x.ProductName.ToLower().Contains(search!) ||
                 x.FullName.ToLower().Contains(search!) ||
                 x.Phone.ToLower().Contains(search!) ||
-                (x.Email != null && x.Email.ToLower().Contains(search!)));
+                (x.Email != null && x.Email.ToLower().Contains(search!)))
+            .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
             query.Page, query.PageSize,

@@ -10,12 +10,13 @@ namespace Kindi.API.Application.Common.Interfaces;
 public interface IQueryService
 {
     /// <summary>
-    /// Truy vấn có tracking (dành cho khi cần cập nhật entity sau query).
+    /// Truy vấn CÓ tracking trên DbContext ghi — dùng khi lấy entity ra để sửa rồi lưu.
     /// </summary>
     IQueryable<T> GetQueryable<T>() where T : class;
 
     /// <summary>
-    /// Truy vấn không tracking (mặc định cho thao tác đọc, nhanh hơn).
+    /// Truy vấn KHÔNG tracking trên DbContext chỉ đọc — mặc định cho danh sách/chi tiết/tra cứu
+    /// (có thể chạy trên connection string đọc riêng).
     /// </summary>
     IQueryable<T> GetQueryableNoTracking<T>() where T : class;
 

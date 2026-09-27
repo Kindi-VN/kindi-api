@@ -33,8 +33,8 @@ Khi Ä‘Æ°á»£c yÃªu cáº§u thÃªm má»™t feature má»›i (vÃ­ 
 
 | STT | Lá»‡nh                                            | MÃ´ táº£             |
 |-----|-------------------------------------------------|-------------------|
-| 1   | `dotnet ef migrations add Add{EntityName}Table` | Táº¡o migration     |
-| 2   | `dotnet ef database update`                     | Cáº­p nháº­t database |
+| 1   | `dotnet ef migrations add Add{EntityName}Table --context ApplicationDbContext` | Táº¡o migration     |
+| 2   | `dotnet ef database update --context ApplicationDbContext` | Cáº­p nháº­t database |
 
 ---
 

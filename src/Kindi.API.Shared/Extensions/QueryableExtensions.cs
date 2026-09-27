@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Query;
 using System.Linq.Expressions;
 
 namespace Kindi.API.Shared.Extensions;
@@ -10,7 +11,7 @@ public static class QueryableExtensions
     /// </summary>
     public static IQueryable<T> IncludeMultiple<T>(
         this IQueryable<T> query,
-        params Expression<Func<T, object>>[] includes)
+        params Expression<Func<T, object?>>[] includes)
         where T : class
     {
         if (includes == null || includes.Length == 0)
@@ -25,11 +26,12 @@ public static class QueryableExtensions
     }
 
     /// <summary>
-    /// Include + ThenInclude với cú pháp ngắn
+    /// Include + ThenInclude với cú pháp ngắn, dùng cho navigation dạng collection
+    /// (vd <c>query.IncludeThen(p => p.PostTags, pt => pt.Tag)</c>).
     /// </summary>
-    public static IQueryable<T> IncludeThen<T, TProperty, TThen>(
+    public static IIncludableQueryable<T, TThen> IncludeThen<T, TProperty, TThen>(
         this IQueryable<T> query,
-        Expression<Func<T, TProperty>> include,
+        Expression<Func<T, IEnumerable<TProperty>>> include,
         Expression<Func<TProperty, TThen>> thenInclude)
         where T : class
     {
