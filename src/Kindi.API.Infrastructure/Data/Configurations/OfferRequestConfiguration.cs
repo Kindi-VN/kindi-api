@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Infrastructure/Data/Configurations/OfferRequestConfiguration.cs
-using Kindi.API.Domain.Entities;
+﻿using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;

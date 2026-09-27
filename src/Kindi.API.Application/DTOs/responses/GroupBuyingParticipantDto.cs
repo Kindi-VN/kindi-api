@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/responses/GroupBuyingParticipantDto.cs
 using Kindi.API.Domain.Enums;
 
 namespace Kindi.API.Application.DTOs.responses;

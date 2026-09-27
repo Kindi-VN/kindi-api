@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/DTOs/responses/JoinGroupBuyingResponseDto.cs
 namespace Kindi.API.Application.DTOs.responses;
 
 /// <summary>

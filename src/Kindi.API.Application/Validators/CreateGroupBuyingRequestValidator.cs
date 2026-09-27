@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Validators/CreateGroupBuyingRequestValidator.cs
-using Kindi.API.Application.DTOs.requests;
+﻿using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using FluentValidation;
 using Microsoft.Extensions.Localization;

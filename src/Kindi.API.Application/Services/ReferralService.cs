@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Services/ReferralService.cs
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Domain.Entities;
@@ -105,6 +104,27 @@ public class ReferralService : IReferralService
             names[group.Key] = group.First().FullName;
 
         return names;
+    }
+
+    public async Task FillNamesAsync<T>(
+        IEnumerable<T> items,
+        Func<T, string?> getReferralCode,
+        Action<T, string> setReferralName)
+    {
+        var list = items.ToList();
+        if (list.Count == 0)
+            return;
+
+        var names = await LoadNamesAsync(list.Select(getReferralCode));
+        if (names.Count == 0)
+            return;
+
+        foreach (var item in list)
+        {
+            var code = getReferralCode(item);
+            if (code != null && names.TryGetValue(code, out var name))
+                setReferralName(item, name);
+        }
     }
 
     /// <summary>Mã chia sẻ riêng dạng "CTV-XXXXXX" (như mã CTV) và không trùng ở bảng nào.</summary>

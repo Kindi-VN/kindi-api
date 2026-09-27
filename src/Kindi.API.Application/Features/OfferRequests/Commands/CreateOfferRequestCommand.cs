@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Features/OfferRequests/Commands/CreateOfferRequestCommand.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.requests;

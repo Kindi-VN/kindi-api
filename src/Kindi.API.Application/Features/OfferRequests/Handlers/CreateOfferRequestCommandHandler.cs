@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Features/OfferRequests/Commands/CreateOfferRequestCommandHandler.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;

@@ -308,16 +308,16 @@ public class CollaboratorService : ICollaboratorService
         {
             // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
             // ILIKE nên tìm không phân biệt hoa/thường.
-            var searchTerm = search.ToLikeEscaped();
-            predicate = c => (EF.Functions.ILike(c.FullName, "%" + searchTerm + "%", "\\") ||
-                             EF.Functions.ILike(c.Phone, "%" + searchTerm + "%", "\\") ||
-                             (c.Email != null && EF.Functions.ILike(c.Email, "%" + searchTerm + "%", "\\")) ||
-                             (c.CollaboratorCode != null && EF.Functions.ILike(c.CollaboratorCode, "%" + searchTerm + "%", "\\")) ||
+            var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
+            predicate = c => (EF.Functions.ILike(KindiDbFunctions.Unaccent(c.FullName), "%" + searchTerm + "%", "\\") ||
+                             EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Phone), "%" + searchTerm + "%", "\\") ||
+                             (c.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Email), "%" + searchTerm + "%", "\\")) ||
+                             (c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\")) ||
                              // Tìm theo lĩnh vực kinh doanh: khớp cả cột denormalized
                              // (bản ghi cũ) lẫn tên trong bảng BusinessFields (tên hiển thị).
-                             (c.BusinessFieldName != null && EF.Functions.ILike(c.BusinessFieldName, "%" + searchTerm + "%", "\\")) ||
-                             (c.BusinessField != null && EF.Functions.ILike(c.BusinessField.Name, "%" + searchTerm + "%", "\\")) ||
-                             (c.BusinessField != null && EF.Functions.ILike(c.BusinessField.NormalizedName, "%" + searchTerm + "%", "\\")))
+                             (c.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
+                             (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.Name), "%" + searchTerm + "%", "\\")) ||
+                             (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.NormalizedName), "%" + searchTerm + "%", "\\")))
                              && (!status.HasValue || c.Status == status.Value)
                              && (!fromDate.HasValue || c.CreatedAt >= fromDate.Value.Date.ToUniversalTime())
                              && (!toDate.HasValue || c.CreatedAt < toDate.Value.Date.AddDays(1).ToUniversalTime());

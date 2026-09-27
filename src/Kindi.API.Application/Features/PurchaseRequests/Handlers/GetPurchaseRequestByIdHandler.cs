@@ -12,11 +12,16 @@ public class GetPurchaseRequestByIdHandler : IRequestHandler<GetPurchaseRequestB
 {
 	private readonly IRepository<PurchaseRequest> _repository;
 	private readonly IMapper _mapper;
+	private readonly IReferralService _referralService;
 
-	public GetPurchaseRequestByIdHandler(IRepository<PurchaseRequest> repository, IMapper mapper)
+	public GetPurchaseRequestByIdHandler(
+		IRepository<PurchaseRequest> repository,
+		IMapper mapper,
+		IReferralService referralService)
 	{
 		_repository = repository;
 		_mapper = mapper;
+		_referralService = referralService;
 	}
 
 	public async Task<PurchaseRequestResponseDto> Handle(GetPurchaseRequestByIdQuery request, CancellationToken cancellationToken)
@@ -25,6 +30,8 @@ public class GetPurchaseRequestByIdHandler : IRequestHandler<GetPurchaseRequestB
 		if (entity == null || entity.IsDeleted)
 			return null!;
 
-		return _mapper.Map<PurchaseRequestResponseDto>(entity);
+		var dto = _mapper.Map<PurchaseRequestResponseDto>(entity);
+		await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		return dto;
 	}
 }

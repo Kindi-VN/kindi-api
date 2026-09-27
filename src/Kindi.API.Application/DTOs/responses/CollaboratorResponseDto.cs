@@ -32,6 +32,9 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
     public string? BusinessFieldName { get; set; }
     public int Level { get; set; }
     public string? CollaboratorCode { get; set; }
+
+    /// <summary>Mã chia sẻ riêng của CTV (dùng để gắn vào link chia sẻ).</summary>
+    public string? ReferralCode { get; set; }
     public CollaboratorStatus Status { get; set; }
     public bool IsApproved { get; set; }
     public DateTime? ApprovedAt { get; set; }

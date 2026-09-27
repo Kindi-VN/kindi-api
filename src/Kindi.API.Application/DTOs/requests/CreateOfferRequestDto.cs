@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/DTOs/requests/CreateOfferRequestDto.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 

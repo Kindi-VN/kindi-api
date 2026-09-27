@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Common/Interfaces/IReferralService.cs
 namespace Kindi.API.Application.Common.Interfaces;
 
 /// <summary>
@@ -22,4 +21,10 @@ public interface IReferralService
 
     /// <summary>Tên chủ thể theo mã (CTV hoặc tài khoản) — dùng để hiển thị ở màn quản trị.</summary>
     Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes);
+
+    /// <summary>Gắn tên chủ thể vào từng bản ghi theo mã chia sẻ đã ghi nhận (màn quản trị).</summary>
+    Task FillNamesAsync<T>(
+        IEnumerable<T> items,
+        Func<T, string?> getReferralCode,
+        Action<T, string> setReferralName);
 }

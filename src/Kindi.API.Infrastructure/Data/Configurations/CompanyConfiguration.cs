@@ -16,6 +16,13 @@ public class CompanyConfiguration : IEntityTypeConfiguration<Company>
             .IsRequired()
             .HasMaxLength(200);
 
+        builder.Property(c => c.CompanyCode)
+            .HasMaxLength(30);
+
+        builder.HasIndex(c => c.CompanyCode)
+            .IsUnique()
+            .HasFilter("\"CompanyCode\" IS NOT NULL");
+
         builder.Property(c => c.TaxCode)
             .HasMaxLength(50);
 

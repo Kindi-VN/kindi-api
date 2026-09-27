@@ -1,3 +1,4 @@
+using Kindi.API.Application.Common.Helpers;
 using Microsoft.EntityFrameworkCore;
 using System.Reflection;
 
@@ -27,6 +28,10 @@ public static class KindiModelBuilderExtensions
 
         // 3) Global query filter — khai ở một file duy nhất.
         GlobalQueryFilters.Apply(modelBuilder);
+
+        // 4) Hàm dưới DB dùng trong truy vấn tìm kiếm (bỏ dấu tiếng Việt).
+        modelBuilder.HasDbFunction(typeof(KindiDbFunctions).GetMethod(nameof(KindiDbFunctions.Unaccent))!)
+            .HasName("unaccent");
     }
 
     /// <summary>Entity type khai qua các DbSet của <see cref="ApplicationDbContext"/>.</summary>

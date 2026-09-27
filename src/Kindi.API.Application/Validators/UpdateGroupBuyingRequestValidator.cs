@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Validators/UpdateGroupBuyingRequestValidator.cs
 using FluentValidation;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;

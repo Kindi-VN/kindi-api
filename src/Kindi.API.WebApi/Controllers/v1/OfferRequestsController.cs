@@ -1,4 +1,3 @@
-// src/Kindi.API.WebApi/Controllers/v1/OfferRequestsController.cs
 using AutoMapper;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Features.OfferRequests.Commands;

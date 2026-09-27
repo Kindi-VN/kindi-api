@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Validators/CreateOfferRequestValidator.cs
-using Kindi.API.Application.DTOs.requests;
+﻿using Kindi.API.Application.DTOs.requests;
 using FluentValidation;
 using Microsoft.Extensions.Localization;
 using Kindi.API.Application.Resources;

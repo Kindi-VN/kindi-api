@@ -23,6 +23,9 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
     public string? ReferralCode { get; set; }
+
+    /// <summary>Tên chủ thể của mã chia sẻ (CTV hoặc tài khoản) — hiển thị ở màn quản trị.</summary>
+    public string? ReferralName { get; set; }
     public PurchaseRequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 

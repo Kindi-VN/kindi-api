@@ -25,6 +25,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 	private readonly IQueryService _queryService;
 	private readonly ICurrentUserService _currentUserService;
 	private readonly IUserService _userService;
+	private readonly IReferralService _referralService;
 
 	public PurchaseRequestService(
 		IRepository<PurchaseRequest> repository,
@@ -32,7 +33,8 @@ public class PurchaseRequestService : IPurchaseRequestService
 		IStringLocalizer<SharedResource> stringLocalizer,
 		IQueryService queryService,
 		ICurrentUserService currentUserService,
-		IUserService userService)
+		IUserService userService,
+		IReferralService referralService)
 	{
 		_repository = repository;
 		_mapper = mapper;
@@ -40,6 +42,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 		_queryService = queryService;
 		_currentUserService = currentUserService;
 		_userService = userService;
+		_referralService = referralService;
 	}
 
 	public async Task<PurchaseRequestResponseDto> CreateAsync(CreatePurchaseRequestDto request)
@@ -108,7 +111,9 @@ public class PurchaseRequestService : IPurchaseRequestService
 			defaultSortBy: "CreatedAt"
 		);
 
-		return _mapper.MapPagedList<PurchaseRequest, PurchaseRequestResponseDto>(pagedEntities);
+		var result = _mapper.MapPagedList<PurchaseRequest, PurchaseRequestResponseDto>(pagedEntities);
+		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		return result;
 	}
 
 	public async Task<PurchaseRequestStatusResponseDto> UpdateStatusAsync(

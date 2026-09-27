@@ -1,4 +1,3 @@
-// src/Kindi.API.Application/Services/GroupBuyingRequestService.cs
 using AutoMapper;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
@@ -141,7 +140,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
         // ILIKE nên tìm không phân biệt hoa/thường.
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         // Chỉ nhóm đã duyệt (Active) mới lên tab công khai; nhóm của chính mình vẫn thấy
         // (kèm trạng thái "Chờ duyệt") để người tạo theo dõi.
@@ -152,9 +151,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
             .WhereIf(query.MineOnly && me != null, x => x.UserId == me!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(x.ProductName, "%" + searchTerm + "%", "\\") ||
-                (x.Note != null && EF.Functions.ILike(x.Note, "%" + searchTerm + "%", "\\")) ||
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, "%" + searchTerm + "%", "\\")))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+                (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")))
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);
@@ -178,9 +177,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     {
         // So khớp đúng mã (không phân biệt hoa/thường) bằng ILIKE: mẫu là chính từ khoá,
         // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
-        var normalized = code.Trim().ToLikeEscaped();
+        var normalized = code.Trim().RemoveVietnameseSign().ToLikeEscaped();
         var entity = await _repository.GetFirstWithIncludesAsync(
-            x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, normalized, "\\"),
+            x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), normalized, "\\"),
             includes: q => q.Include(x => x.User)
                 .Include(x => x.BusinessField)
                 .Include(x => x.Participants).ThenInclude(p => p.User));
@@ -391,7 +390,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
         // ILIKE nên tìm không phân biệt hoa/thường.
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var statusFilter = GroupBuyingStatus.Pending;
         var normalizedStatus = query.Status.NormalizeSearchFilter();
@@ -403,11 +402,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(x.GroupBuyingRequestCode, "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(x.ProductName, "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(x.FullName, "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(x.Phone, "%" + searchTerm + "%", "\\") ||
-                (x.Email != null && EF.Functions.ILike(x.Email, "%" + searchTerm + "%", "\\")))
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
@@ -415,7 +414,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             query.SortBy, query.SortOrder,
             defaultSortBy: "CreatedAt");
 
-        return _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
+        var paged = _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
+        await _referralService.FillNamesAsync(paged.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        return paged;
     }
 
     public async Task<GroupBuyingDetailDto> GetDetailAsync(Guid id)

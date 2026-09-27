@@ -1,5 +1,4 @@
-﻿// src/Kindi.API.Application/Services/BusinessGroupService.cs
-using AutoMapper;
+﻿using AutoMapper;
 using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
@@ -82,16 +81,16 @@ public class BusinessGroupService : IBusinessGroupService
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
         // ILIKE nên tìm không phân biệt hoa/thường.
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
             .Where(x => x.Type == BusinessGroupType.Industry && x.IsActive)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
-                (x.Description != null && EF.Functions.ILike(x.Description, "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(x.BusinessFieldName, "%" + searchTerm + "%", "\\")))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
@@ -332,7 +331,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupPost>()
             .Where(x => x.BusinessGroupId == groupId)
@@ -340,16 +339,16 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.PrivateOnly, x => x.IsPrivateToAdmin)
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.Title != null && EF.Functions.ILike(x.Title, "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(x.Content, "%" + searchTerm + "%", "\\") ||
-                (x.RefCode != null && EF.Functions.ILike(x.RefCode, "%" + searchTerm + "%", "\\")))
+                (x.Title != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Title), "%" + searchTerm + "%", "\\")) ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Content), "%" + searchTerm + "%", "\\") ||
+                (x.RefCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RefCode), "%" + searchTerm + "%", "\\")))
             .Include(x => x.Author)
             .OrderByDescending(x => x.IsPinned)
             .ThenByDescending(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
-        await FillReferralNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
+        await _referralService.FillNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
         return result;
     }
 
@@ -583,14 +582,14 @@ public class BusinessGroupService : IBusinessGroupService
         var me = GetCurrentUserId();
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Community)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
-                (x.Topic != null && EF.Functions.ILike(x.Topic, "%" + searchTerm + "%", "\\")) ||
-                (x.Description != null && EF.Functions.ILike(x.Description, "%" + searchTerm + "%", "\\")));
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
+                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
 
         if (me != null)
         {
@@ -695,7 +694,7 @@ public class BusinessGroupService : IBusinessGroupService
     {
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
@@ -703,9 +702,9 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(x.Name, "%" + searchTerm + "%", "\\") ||
-                (x.BusinessGroupCode != null && EF.Functions.ILike(x.BusinessGroupCode, "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(x.BusinessFieldName, "%" + searchTerm + "%", "\\")))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,
@@ -812,42 +811,22 @@ public class BusinessGroupService : IBusinessGroupService
 
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.ToLikeEscaped();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(x.FullName, "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(x.Phone, "%" + searchTerm + "%", "\\") ||
-                (x.Email != null && EF.Functions.ILike(x.Email, "%" + searchTerm + "%", "\\")))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
+                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
             .OrderBy(x => x.Status)
             .ThenBy(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
-        await FillReferralNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
         return result;
-    }
-
-    /// <summary>Gắn tên CTV theo mã đã ghi nhận trên từng bản ghi (hiển thị ở màn quản trị).</summary>
-    private async Task FillReferralNamesAsync<T>(
-        IEnumerable<T> items,
-        Func<T, string?> getReferralCode,
-        Action<T, string> setReferralName)
-    {
-        var list = items.ToList();
-        if (list.Count == 0) return;
-
-        var names = await _referralService.LoadNamesAsync(list.Select(getReferralCode));
-        if (names.Count == 0) return;
-
-        foreach (var item in list)
-        {
-            var code = getReferralCode(item);
-            if (code != null && names.TryGetValue(code, out var name))
-                setReferralName(item, name);
-        }
     }
 
     public async Task<BusinessGroupMemberResponseDto> UpdateMemberStatusAsync(Guid id, Guid memberId, UpdateGroupMemberStatusDto request)
