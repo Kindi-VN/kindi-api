@@ -141,10 +141,33 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<GroupBuyingDetailDto> GetPublicDetailAsync(Guid id)
     {
         var entity = await GetWithParticipantsAsync(id);
+        return await MapPublicDetailAsync(entity);
+    }
+
+    public async Task<GroupBuyingDetailDto> GetPublicDetailByCodeAsync(string code)
+    {
+        var normalized = code.Trim().ToUpperInvariant();
+        var entity = await _repository.GetFirstWithIncludesAsync(
+            x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.ToUpper() == normalized,
+            includes: q => q.Include(x => x.User)
+                .Include(x => x.BusinessField)
+                .Include(x => x.Participants).ThenInclude(p => p.User));
+
+        if (entity == null)
+            throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
+
+        return await MapPublicDetailAsync(entity);
+    }
+
+    /// <summary>
+    /// Kiểm tra quyền xem + map chi tiết cho người dùng thường. Nhóm chưa duyệt / đã đóng
+    /// chỉ người mở nhóm (và admin) xem được.
+    /// </summary>
+    private async Task<GroupBuyingDetailDto> MapPublicDetailAsync(GroupBuyingRequest entity)
+    {
         var me = GetCurrentUserId();
         var isAdmin = _currentUserService.IsInRole(AdminRole);
 
-        // Nhóm chưa duyệt / đã đóng chỉ người tạo (và admin) xem được.
         if (!isAdmin
             && entity.Status != GroupBuyingStatus.Active
             && (me == null || entity.UserId != me.Value))

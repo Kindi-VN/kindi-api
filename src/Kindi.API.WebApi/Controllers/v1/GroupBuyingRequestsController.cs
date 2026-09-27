@@ -60,6 +60,17 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Chi tiết mua chung theo mã đơn — dùng cho link chia sẻ (người nhận không cần biết Guid).
+    /// </summary>
+    [HttpGet("code/{code}/public")]
+    [AllowAnonymous]
+    public async Task<IActionResult> GetPublicDetailByCode(string code)
+    {
+        var result = await _service.GetPublicDetailByCodeAsync(code);
+        return Ok(result, _localizer["GroupBuyingRequest_DetailRetrievedSuccess"]);
+    }
+
+    /// <summary>
     /// Đăng ký tham gia nhóm mua chung. Khách chưa đăng nhập gửi kèm họ tên/SĐT/Zalo/email —
     /// hệ thống tạo tài khoản (username user&lt;sđt&gt;, mật khẩu = sđt) và lưu vào Collaborators.
     /// </summary>
