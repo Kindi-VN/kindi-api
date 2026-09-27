@@ -208,7 +208,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
         }
 
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false), forAdmin: false);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false));
     }
 
     /// <summary>
@@ -373,7 +373,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false), forAdmin: false);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false));
     }
 
     // =====================================================================
@@ -424,7 +424,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<GroupBuyingDetailDto> GetDetailAsync(Guid id)
     {
         var entity = await GetWithParticipantsAsync(id);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true), forAdmin: true);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true));
     }
 
     public async Task<GroupBuyingRequestResponseDto> UpdateStatusAsync(Guid id, UpdateGroupBuyingStatusDto request)
@@ -509,7 +509,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true), forAdmin: true);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true));
     }
 
     public async Task DeleteAsync(Guid id)
@@ -659,7 +659,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         };
     }
 
-    private async Task<GroupBuyingDetailDto> MapDetailAsync(GroupBuyingRequest entity, bool maskContact, bool forAdmin)
+    private async Task<GroupBuyingDetailDto> MapDetailAsync(GroupBuyingRequest entity, bool maskContact)
     {
         var me = GetCurrentUserId();
         var joined = entity.Participants
@@ -681,8 +681,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
         bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
 
+        // Chỉ trả về người đang tham gia: người đã gỡ (Status = Cancelled) không hiện lại ở
+        // bảng người tham gia của màn quản trị; số lượng cũng tính theo danh sách này.
         var participants = entity.Participants
-            .Where(p => forAdmin || p.Status == GroupBuyingParticipantStatus.Joined)
+            .Where(p => p.Status == GroupBuyingParticipantStatus.Joined)
             .OrderByDescending(p => p.IsCreator)
             .ThenBy(p => p.CreatedAt)
             .Select(p => new GroupBuyingParticipantDto
