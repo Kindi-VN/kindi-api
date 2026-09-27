@@ -122,6 +122,7 @@ static void ConfigureServices(WebApplicationBuilder builder)
         {
             ["ConnectionStrings:DefaultConnection"] = GetEnvironmentValue("DB_CONNECTION_STRING") ?? GetEnvironmentValue("DATABASE_URL"),
             ["ConnectionStrings:ReadConnection"] = GetEnvironmentValue("READ_CONNECTION_STRING"),
+            ["Query:MaxContainsValues"] = GetEnvironmentValue("QUERY_MAX_CONTAINS_VALUES"),
             ["JwtSettings:Secret"] = GetEnvironmentValue("JWT_SECRET"),
             ["JwtSettings:Issuer"] = GetEnvironmentValue("JWT_ISSUER"),
             ["JwtSettings:Audience"] = GetEnvironmentValue("JWT_AUDIENCE"),

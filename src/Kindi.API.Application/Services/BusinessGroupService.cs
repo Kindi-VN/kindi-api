@@ -1,5 +1,6 @@
 ﻿// src/Kindi.API.Application/Services/BusinessGroupService.cs
 using AutoMapper;
+using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
@@ -18,6 +19,7 @@ using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
+using Microsoft.Extensions.Options;
 
 namespace Kindi.API.Application.Services;
 
@@ -39,6 +41,7 @@ public class BusinessGroupService : IBusinessGroupService
     private readonly IUserService _userService;
     private readonly IQueryService _queryService;
     private readonly IStringLocalizer<SharedResource> _localizer;
+    private readonly QueryOptions _queryOptions;
 
     public BusinessGroupService(
         IRepository<BusinessGroup> repository,
@@ -50,7 +53,8 @@ public class BusinessGroupService : IBusinessGroupService
         ICurrentUserService currentUserService,
         IUserService userService,
         IQueryService queryService,
-        IStringLocalizer<SharedResource> localizer)
+        IStringLocalizer<SharedResource> localizer,
+        IOptions<QueryOptions> queryOptions)
     {
         _repository = repository;
         _memberRepository = memberRepository;
@@ -62,6 +66,7 @@ public class BusinessGroupService : IBusinessGroupService
         _userService = userService;
         _queryService = queryService;
         _localizer = localizer;
+        _queryOptions = queryOptions.Value;
     }
 
     // =====================================================================
@@ -407,7 +412,8 @@ public class BusinessGroupService : IBusinessGroupService
         if (groupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
 
         return await _queryService.GetAllNoTracking<BusinessGroup>()
-            .Where(x => groupIds.Contains(x.Id) && x.Type == BusinessGroupType.Industry)
+            .Where(x => x.Type == BusinessGroupType.Industry)
+            .Contains(x => x.Id, groupIds, _queryOptions)
             .OrderBy(x => x.Name)
             .Select(x => new ForwardedGroupResponseDto
             {
@@ -926,7 +932,8 @@ public class BusinessGroupService : IBusinessGroupService
         if (me != null)
         {
             var memberships = await _queryService.GetAllNoTracking<BusinessGroupMember>()
-                .Where(m => groupIds.Contains(m.BusinessGroupId) && m.UserId == me.Value)
+                .Where(m => m.UserId == me.Value)
+                .Contains(m => m.BusinessGroupId, groupIds, _queryOptions)
                 .ToListAsync();
 
             foreach (var item in items)
@@ -941,13 +948,15 @@ public class BusinessGroupService : IBusinessGroupService
         if (includePendingCounts)
         {
             var pending = await _queryService.GetAllNoTracking<BusinessGroupMember>()
-                .Where(m => groupIds.Contains(m.BusinessGroupId) && m.Status == GroupMemberStatus.Pending)
+                .Where(m => m.Status == GroupMemberStatus.Pending)
+                .Contains(m => m.BusinessGroupId, groupIds, _queryOptions)
                 .GroupBy(m => m.BusinessGroupId)
                 .Select(g => new { GroupId = g.Key, Count = g.Count() })
                 .ToListAsync();
 
             var privateRequests = await _queryService.GetAllNoTracking<BusinessGroupPost>()
-                .Where(p => groupIds.Contains(p.BusinessGroupId) && p.IsPrivateToAdmin && !p.IsHidden)
+                .Where(p => p.IsPrivateToAdmin && !p.IsHidden)
+                .Contains(p => p.BusinessGroupId, groupIds, _queryOptions)
                 .GroupBy(p => p.BusinessGroupId)
                 .Select(g => new { GroupId = g.Key, Count = g.Count() })
                 .ToListAsync();
