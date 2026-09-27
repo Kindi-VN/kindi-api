@@ -93,12 +93,8 @@ public class SocialService : ISocialService
         // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại
         if (predicate != null) dbQuery = dbQuery.Where(predicate);
         dbQuery = dbQuery
-            .Include(p => p.Author)
-            .Include(p => p.Likes)
-            .Include(p => p.Comments)
-            .Include(p => p.Shares)
-            .Include(p => p.PostTags)
-                .ThenInclude(pt => pt.Tag);
+            .IncludeMultiple(p => p.Author, p => p.Likes, p => p.Comments, p => p.Shares)
+            .IncludeThen(p => p.PostTags, pt => pt.Tag);
         dbQuery = dbQuery.OrderByDescending(p => p.IsPinned).ThenByDescending(p => p.CreatedAt);
 
         var posts = await PagedList<SocialPost>.CreateAsync(dbQuery, query.PageNumber, query.PageSize);

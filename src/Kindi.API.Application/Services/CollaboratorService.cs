@@ -10,6 +10,7 @@ using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
 using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Exceptions;
+using Kindi.API.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Linq.Expressions;
@@ -283,9 +284,7 @@ public class CollaboratorService : ICollaboratorService
     {
         var collaborator = await _repository.GetFirstWithIncludesAsync(
             c => c.Id == id,
-            q => q.Include(c => c.User)
-                  .Include(c => c.BusinessField)
-                  .Include(c => c.Company));
+            q => q.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company));
 
         if (collaborator == null)
             throw CollaboratorException.NotFound(_exceptionLocalizer, id);
@@ -327,8 +326,7 @@ public class CollaboratorService : ICollaboratorService
 
         var paged = await _repository.GetPagedWithIncludesAsync(
             page, size,
-            includes: q => q.Include(c => c.User)
-                            .Include(c => c.BusinessField),
+            includes: q => q.IncludeMultiple(c => c.User, c => c.BusinessField),
             predicate: predicate,
             orderBy: c => c.CreatedAt,
             isDescending: true);
@@ -378,7 +376,7 @@ public class CollaboratorService : ICollaboratorService
                 (c.BusinessField != null && c.BusinessField.Name.Contains(s)));
         }
 
-        query = query.Include(c => c.BusinessField).Include(c => c.Company).OrderByDescending(c => c.CreatedAt);
+        query = query.IncludeMultiple(c => c.BusinessField, c => c.Company).OrderByDescending(c => c.CreatedAt);
 
         var paged = await PagedList<Collaborator>.CreateAsync(query, page, size);
 
