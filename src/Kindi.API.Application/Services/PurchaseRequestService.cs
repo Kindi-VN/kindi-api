@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
@@ -10,6 +11,7 @@ using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
+using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Exceptions;
 using Microsoft.Extensions.Localization;
 
@@ -21,24 +23,61 @@ public class PurchaseRequestService : IPurchaseRequestService
 	private readonly IMapper _mapper;
 	private readonly IStringLocalizer<SharedResource> _localizer;
 	private readonly IQueryService _queryService;
+	private readonly ICurrentUserService _currentUserService;
+	private readonly IUserService _userService;
 
 	public PurchaseRequestService(
 		IRepository<PurchaseRequest> repository,
 		IMapper mapper,
 		IStringLocalizer<SharedResource> stringLocalizer,
-		IQueryService queryService)
+		IQueryService queryService,
+		ICurrentUserService currentUserService,
+		IUserService userService)
 	{
 		_repository = repository;
 		_mapper = mapper;
 		_localizer = stringLocalizer;
 		_queryService = queryService;
+		_currentUserService = currentUserService;
+		_userService = userService;
 	}
 
 	public async Task<PurchaseRequestResponseDto> CreateAsync(CreatePurchaseRequestDto request)
 	{
+		var currentUserId = _currentUserService.UserId;
+
+		if (string.IsNullOrEmpty(currentUserId))
+		{
+			// Khách chưa đăng nhập bắt buộc nhập thông tin liên hệ để admin liên hệ lại
+			if (string.IsNullOrWhiteSpace(request.FullName))
+				throw new BusinessException(_localizer["PurchaseRequest_FullNameRequired"]);
+
+			if (string.IsNullOrWhiteSpace(request.Phone))
+				throw new BusinessException(_localizer["PurchaseRequest_PhoneRequired"]);
+
+			if (string.IsNullOrWhiteSpace(request.Email))
+				throw new BusinessException(_localizer["PurchaseRequest_EmailRequired"]);
+		}
+		else
+		{
+			// Người đã đăng nhập không phải nhập lại thông tin → bù từ hồ sơ tài khoản
+			var account = await _userService.GetCurrentUserAsync();
+			if (account != null)
+			{
+				if (string.IsNullOrWhiteSpace(request.FullName)) request.FullName = account.FullName;
+				if (string.IsNullOrWhiteSpace(request.Phone)) request.Phone = account.Phone ?? string.Empty;
+				if (string.IsNullOrWhiteSpace(request.Zalo)) request.Zalo = account.Phone;
+				if (string.IsNullOrWhiteSpace(request.Email)) request.Email = account.Email;
+			}
+		}
+
 		var entity = _mapper.Map<PurchaseRequest>(request);
 		entity.PurchaseRequestCode = CodeGenerator.Generate("PRQ");
 		entity.Status = PurchaseRequestStatus.Pending;
+
+		// Gắn người gửi để admin biết yêu cầu thuộc tài khoản nào (khách để trống)
+		if (!string.IsNullOrEmpty(currentUserId))
+			entity.UserId = Guid.Parse(currentUserId);
 
 		await _repository.AddAsync(entity);
 		await _repository.SaveChangesAsync();

@@ -6,6 +6,10 @@ using Kindi.API.Application.Resources;
 
 namespace Kindi.API.Application.Validators;
 
+/// <summary>
+/// Thông tin liên hệ (họ tên/SĐT) chỉ bắt buộc với khách chưa đăng nhập —
+/// người đã đăng nhập được bù từ hồ sơ tài khoản ở tầng handler.
+/// </summary>
 public class CreateOfferRequestValidator : AbstractValidator<CreateOfferRequestDto>
 {
     public CreateOfferRequestValidator(IStringLocalizer<SharedResource> localizer)
@@ -38,13 +42,13 @@ public class CreateOfferRequestValidator : AbstractValidator<CreateOfferRequestD
 
         // User information
         RuleFor(x => x.FullName)
-            .NotEmpty().WithMessage(localizer["OfferRequest_FullNameRequired"])
-            .MinimumLength(2).WithMessage(localizer["OfferRequest_FullNameMinLength"]);
+            .MinimumLength(2).WithMessage(localizer["OfferRequest_FullNameMinLength"])
+            .When(x => !string.IsNullOrEmpty(x.FullName));
 
         RuleFor(x => x.Phone)
-            .NotEmpty().WithMessage(localizer["OfferRequest_PhoneRequired"])
-            .Must(phone => System.Text.RegularExpressions.Regex.IsMatch(phone, @"^0[0-9]{9,10}$"))
-            .WithMessage(localizer["OfferRequest_PhoneInvalid"]);
+            .Must(phone => System.Text.RegularExpressions.Regex.IsMatch(phone!, @"^0[0-9]{9,10}$"))
+            .WithMessage(localizer["OfferRequest_PhoneInvalid"])
+            .When(x => !string.IsNullOrEmpty(x.Phone));
 
         RuleFor(x => x.Email)
             .EmailAddress().WithMessage(localizer["OfferRequest_EmailInvalid"])

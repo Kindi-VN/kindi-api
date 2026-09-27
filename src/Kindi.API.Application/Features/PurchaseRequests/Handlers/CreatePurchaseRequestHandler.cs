@@ -47,6 +47,16 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         else
         {
             userId = Guid.Parse(userIdString);
+
+            // Người đã đăng nhập không phải nhập lại thông tin liên hệ → bù từ hồ sơ tài khoản
+            var account = await _userService.GetCurrentUserAsync();
+            if (account != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.FullName)) request.FullName = account.FullName;
+                if (string.IsNullOrWhiteSpace(request.Phone)) request.Phone = account.Phone ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(request.Zalo)) request.Zalo = account.Phone;
+                if (string.IsNullOrWhiteSpace(request.Email)) request.Email = account.Email;
+            }
         }
 
         // 3. Tạo entity và gán UserId

@@ -65,17 +65,37 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var userId = _currentUserService.UserId;
         var isGuestAccount = false;
 
-        // 2. Nếu chưa đăng nhập: dùng lại tài khoản đã có theo SĐT/email, chỉ tạo mới khi chưa có.
-        //    KHÔNG cập nhật FullName/Email của tài khoản đã tồn tại — đây là endpoint công khai,
-        //    cho phép ghi đè hồ sơ người khác bằng cách nhập SĐT của họ.
         if (string.IsNullOrEmpty(userId))
         {
+            // Khách chưa đăng nhập bắt buộc nhập thông tin liên hệ để tạo tài khoản và liên hệ
+            if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Phone))
+                throw new BusinessException(_localizer["GroupBuyingRequest_ContactRequired"]);
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+                throw new BusinessException(_localizer["GroupBuyingRequest_EmailRequired"]);
+
+            // 2. Dùng lại tài khoản đã có theo SĐT/email, chỉ tạo mới khi chưa có.
+            //    KHÔNG cập nhật FullName/Email của tài khoản đã tồn tại — đây là endpoint công khai,
+            //    cho phép ghi đè hồ sơ người khác bằng cách nhập SĐT của họ.
             var existingUser = await FindUserByContactAsync(request.Phone, request.Email);
             isGuestAccount = existingUser == null;
 
             userId = existingUser != null
                 ? existingUser.Id.ToString()
                 : (await _userService.GetOrCreateUserAsync(request.FullName, request.Phone, request.Email)).ToString();
+        }
+        else
+        {
+            // Người đã đăng nhập không phải nhập lại thông tin → bù từ hồ sơ tài khoản
+            // để bản ghi luôn có họ tên/SĐT/email cho admin liên hệ.
+            var account = await _userService.GetCurrentUserAsync();
+            if (account != null)
+            {
+                if (string.IsNullOrWhiteSpace(request.FullName)) request.FullName = account.FullName;
+                if (string.IsNullOrWhiteSpace(request.Phone)) request.Phone = account.Phone ?? string.Empty;
+                if (string.IsNullOrWhiteSpace(request.Zalo)) request.Zalo = account.Phone;
+                if (string.IsNullOrWhiteSpace(request.Email)) request.Email = account.Email;
+            }
         }
 
         // 3. Map và gán UserId
