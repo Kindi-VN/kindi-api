@@ -12,6 +12,12 @@ using Swashbuckle.AspNetCore.SwaggerGen;
 
 try
 {
+    // Bootstrap logger: ghi được cả những log phát ra TRƯỚC khi cấu hình xong Serilog
+    // (đọc .env, connection string, quyết định bật/tắt sink Seq...). Bị thay thế khi gọi UseSerilog().
+    Log.Logger = new LoggerConfiguration()
+        .WriteTo.Console()
+        .CreateBootstrapLogger();
+
     Log.Information("🚀 Starting Kindi API...");
 
     // Load .env
@@ -147,8 +153,19 @@ static void ConfigureServices(WebApplicationBuilder builder)
 
     // Serilog
     Log.Information("📝 Configuring Serilog...");
-    var seqUrl = builder.Configuration["Serilog:Seq:ServerUrl"] ?? "http://localhost:5341";
-    var seqApiKey = builder.Configuration["Serilog:Seq:ApiKey"];
+
+    // Seq — log tập trung: local dùng mặc định trong appsettings.json (http://localhost:5341),
+    // deploy chỉ cần đặt biến môi trường SEQ_SERVER_URL (+ SEQ_API_KEY nếu Seq bật xác thực).
+    // ServerUrl trống hoặc Enabled=false ⇒ bỏ sink, app vẫn chạy và vẫn ghi console + file.
+    var seqUrl = GetEnvironmentValue("SEQ_SERVER_URL") ?? builder.Configuration["Serilog:Seq:ServerUrl"];
+    var seqApiKey = GetEnvironmentValue("SEQ_API_KEY") ?? builder.Configuration["Serilog:Seq:ApiKey"];
+    var seqMinimumLevel = builder.Configuration.GetValue("Serilog:Seq:MinimumLevel", LogEventLevel.Information);
+    var seqEnabled = builder.Configuration.GetValue("Serilog:Seq:Enabled", true)
+                     && !string.Equals(GetEnvironmentValue("SEQ_ENABLED"), "false", StringComparison.OrdinalIgnoreCase);
+
+    // Production mà chưa cấu hình Seq: tắt sink, tránh bắn log vào localhost trong container
+    if (builder.Environment.IsProduction() && string.IsNullOrWhiteSpace(GetEnvironmentValue("SEQ_SERVER_URL")))
+        seqEnabled = false;
 
     // Đọc từ appsettings trước, fallback sang env variable
     var telegramToken = builder.Configuration["Telegram:ErrorBot:BotToken"]
@@ -159,20 +176,35 @@ static void ConfigureServices(WebApplicationBuilder builder)
                  ?? builder.Configuration["TELEGRAM_CHAT_ID"]
                  ?? throw new Exception("Telegram ErrorBot ChatId is required");
 
-    Log.Logger = new LoggerConfiguration()
+    var loggerConfiguration = new LoggerConfiguration()
         .ReadFrom.Configuration(builder.Configuration)
         .Enrich.FromLogContext()
         .Enrich.WithProperty("Application", "Kindi.API")
         .Enrich.WithProperty("Environment", builder.Environment.EnvironmentName)
         .WriteTo.Console()
-        .WriteTo.File("logs/api-.txt", rollingInterval: RollingInterval.Day)
-        .WriteTo.Seq(seqUrl, apiKey: seqApiKey)
-        .WriteTo.TelegramBot(telegramToken, chatId,
-            applicationName: "Kindi.API",
-            renderMessageImplementation: TelegramMessageFormatter.Build,
-            restrictedToMinimumLevel: LogEventLevel.Error,
-            parseMode: ParseMode.HTML)
-        .CreateLogger();
+        .WriteTo.File("logs/api-.txt", rollingInterval: RollingInterval.Day);
+
+    if (seqEnabled && !string.IsNullOrWhiteSpace(seqUrl))
+    {
+        loggerConfiguration.WriteTo.Seq(
+            seqUrl,
+            apiKey: string.IsNullOrWhiteSpace(seqApiKey) ? null : seqApiKey,
+            restrictedToMinimumLevel: seqMinimumLevel);
+
+        Log.Information("📡 Seq sink: {SeqUrl} (mức tối thiểu {MinimumLevel})", seqUrl, seqMinimumLevel);
+    }
+    else
+    {
+        Log.Information("📡 Seq sink: tắt (Serilog:Seq:ServerUrl trống hoặc Enabled=false)");
+    }
+
+    loggerConfiguration.WriteTo.TelegramBot(telegramToken, chatId,
+        applicationName: "Kindi.API",
+        renderMessageImplementation: TelegramMessageFormatter.Build,
+        restrictedToMinimumLevel: LogEventLevel.Error,
+        parseMode: ParseMode.HTML);
+
+    Log.Logger = loggerConfiguration.CreateLogger();
 
     builder.Host.UseSerilog();
 
