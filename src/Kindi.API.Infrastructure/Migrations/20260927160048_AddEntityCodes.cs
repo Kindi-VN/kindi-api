@@ -94,13 +94,15 @@ namespace Kindi.API.Infrastructure.Migrations
                 unique: true,
                 filter: "\"BusinessGroupCommentCode\" IS NOT NULL");
 
-            // Sinh mã cho các bản ghi đã có trước migration này.
-            migrationBuilder.Sql("UPDATE \"SocialShare\" SET \"SocialShareCode\" = 'SHR-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"SocialShareCode\" IS NULL;");
-            migrationBuilder.Sql("UPDATE \"SocialLike\" SET \"SocialLikeCode\" = 'SLK-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"SocialLikeCode\" IS NULL;");
-            migrationBuilder.Sql("UPDATE \"PostTags\" SET \"PostTagCode\" = 'PTG-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"PostTagCode\" IS NULL;");
-            migrationBuilder.Sql("UPDATE \"GroupBuyingParticipants\" SET \"GroupBuyingParticipantCode\" = 'GBPA-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"GroupBuyingParticipantCode\" IS NULL;");
-            migrationBuilder.Sql("UPDATE \"BusinessGroupMembers\" SET \"BusinessGroupMemberCode\" = 'BGM-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"BusinessGroupMemberCode\" IS NULL;");
-            migrationBuilder.Sql("UPDATE \"BusinessGroupComments\" SET \"BusinessGroupCommentCode\" = 'GBC-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"BusinessGroupCommentCode\" IS NULL;");
+            // Sinh mã cho bản ghi đã có trước migration này: đánh số thứ tự theo Id.
+            // Không cắt md5 như bản trước: 6 ký tự md5 chỉ có 16^6 giá trị nên bảng nhiều
+            // dòng sẽ sinh mã trùng, vi phạm unique index và app không khởi động được.
+            migrationBuilder.Sql(@"UPDATE ""SocialShare"" AS t SET ""SocialShareCode"" = 'SHR-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""SocialShare"" WHERE ""SocialShareCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
+            migrationBuilder.Sql(@"UPDATE ""SocialLike"" AS t SET ""SocialLikeCode"" = 'SLK-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""SocialLike"" WHERE ""SocialLikeCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
+            migrationBuilder.Sql(@"UPDATE ""PostTags"" AS t SET ""PostTagCode"" = 'PTG-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""PostTags"" WHERE ""PostTagCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
+            migrationBuilder.Sql(@"UPDATE ""GroupBuyingParticipants"" AS t SET ""GroupBuyingParticipantCode"" = 'GBPA-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""GroupBuyingParticipants"" WHERE ""GroupBuyingParticipantCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
+            migrationBuilder.Sql(@"UPDATE ""BusinessGroupMembers"" AS t SET ""BusinessGroupMemberCode"" = 'BGM-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""BusinessGroupMembers"" WHERE ""BusinessGroupMemberCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
+            migrationBuilder.Sql(@"UPDATE ""BusinessGroupComments"" AS t SET ""BusinessGroupCommentCode"" = 'GBC-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""BusinessGroupComments"" WHERE ""BusinessGroupCommentCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
         }
 
         /// <inheritdoc />

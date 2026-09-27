@@ -27,8 +27,9 @@ namespace Kindi.API.Infrastructure.Migrations
                 unique: true,
                 filter: "\"CompanyCode\" IS NOT NULL");
 
-            // Sinh mã cho các công ty đã có trước migration này.
-            migrationBuilder.Sql("UPDATE \"Companies\" SET \"CompanyCode\" = 'CMP-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"CompanyCode\" IS NULL;");
+            // Sinh mã cho công ty đã có trước migration này: đánh số thứ tự theo Id
+            // (không cắt md5 — xem AddEntityCodes: mã trùng sẽ vi phạm unique index).
+            migrationBuilder.Sql(@"UPDATE ""Companies"" AS t SET ""CompanyCode"" = 'CMP-' || lpad(s.rn::text, greatest(6, length(s.rn::text)), '0') FROM (SELECT ""Id"", row_number() OVER (ORDER BY ""Id"") AS rn FROM ""Companies"" WHERE ""CompanyCode"" IS NULL) AS s WHERE t.""Id"" = s.""Id"";");
         }
 
         /// <inheritdoc />
