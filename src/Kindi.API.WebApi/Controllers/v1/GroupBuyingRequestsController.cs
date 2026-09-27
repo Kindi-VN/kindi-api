@@ -48,7 +48,8 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     /// <summary>
-    /// Chi tiết mua chung cho người dùng (thông tin liên hệ được che nếu chưa đăng nhập).
+    /// Chi tiết mua chung cho người dùng (thông tin liên hệ chỉ hiển thị đầy đủ với admin,
+    /// người dùng khác chỉ thấy liên hệ của chính mình).
     /// </summary>
     [HttpGet("{id:guid}/public")]
     [AllowAnonymous]

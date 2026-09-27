@@ -14,7 +14,7 @@ public interface IGroupBuyingRequestService
 	/// <summary>Feed mua chung cho tab "Mua chung" trên trang social: nhóm đã duyệt (Active) + nhóm của chính mình.</summary>
 	Task<PagedList<GroupBuyingFeedItemDto>> GetPublicPagedAsync(GetPublicGroupBuyingRequestsQueryDto query);
 
-	/// <summary>Chi tiết công khai: thông tin sản phẩm, tiến độ số người, danh sách người tham gia (đã che liên hệ).</summary>
+	/// <summary>Chi tiết công khai: thông tin sản phẩm, tiến độ số người, danh sách người tham gia. Liên hệ chỉ đầy đủ với admin.</summary>
 	Task<GroupBuyingDetailDto> GetPublicDetailAsync(Guid id);
 
 	/// <summary>Đăng ký tham gia nhóm mua chung (khách được tạo tài khoản + collaborator từ thông tin liên hệ).</summary>

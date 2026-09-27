@@ -4,7 +4,8 @@ using Kindi.API.Domain.Enums;
 namespace Kindi.API.Application.DTOs.responses;
 
 /// <summary>
-/// Chi tiết yêu cầu mua chung. Khi người gọi chưa đăng nhập, thông tin liên hệ được che bớt.
+/// Chi tiết yêu cầu mua chung. Thông tin liên hệ chỉ hiển thị đầy đủ với admin;
+/// người dùng khác chỉ thấy liên hệ của chính mình.
 /// </summary>
 public class GroupBuyingDetailDto
 {

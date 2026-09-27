@@ -152,8 +152,15 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
         }
 
-        return await MapDetailAsync(entity, maskContact: !_currentUserService.IsAuthenticated, forAdmin: false);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false), forAdmin: false);
     }
+
+    /// <summary>
+    /// Thông tin liên hệ chỉ hiển thị đầy đủ cho admin. Người dùng khác luôn thấy dạng che
+    /// để tránh lộ số điện thoại của thành viên qua tài khoản đăng ký ảo.
+    /// </summary>
+    private bool ShouldMaskContact(bool forAdmin)
+        => !forAdmin || !_currentUserService.IsInRole(AdminRole);
 
     public async Task<JoinGroupBuyingResponseDto> JoinAsync(Guid id, JoinGroupBuyingRequestDto request)
     {
@@ -304,7 +311,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: false, forAdmin: false);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false), forAdmin: false);
     }
 
     // =====================================================================
@@ -349,7 +356,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<GroupBuyingDetailDto> GetDetailAsync(Guid id)
     {
         var entity = await GetWithParticipantsAsync(id);
-        return await MapDetailAsync(entity, maskContact: false, forAdmin: true);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true), forAdmin: true);
     }
 
     public async Task<GroupBuyingRequestResponseDto> UpdateStatusAsync(Guid id, UpdateGroupBuyingStatusDto request)
@@ -430,7 +437,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: false, forAdmin: true);
+        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true), forAdmin: true);
     }
 
     public async Task DeleteAsync(Guid id)
@@ -621,6 +628,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         var collaboratorCodes = await LoadCollaboratorCodesAsync(entity.Participants.Select(p => p.UserId));
 
+        // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
+        // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
+        bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
+
         var participants = entity.Participants
             .Where(p => forAdmin || p.Status == GroupBuyingParticipantStatus.Joined)
             .OrderByDescending(p => p.IsCreator)
@@ -632,9 +643,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 UserCode = p.User?.UserCode,
                 CollaboratorCode = collaboratorCodes.TryGetValue(p.UserId, out var code) ? code : null,
                 FullName = p.FullName,
-                Phone = maskContact ? MaskPhone(p.Phone) : p.Phone,
-                Zalo = maskContact && !string.IsNullOrEmpty(p.Zalo) ? MaskPhone(p.Zalo) : p.Zalo,
-                Email = maskContact && !string.IsNullOrEmpty(p.Email) ? MaskEmail(p.Email) : p.Email,
+                Phone = MaskContactOf(p.UserId) ? MaskPhone(p.Phone) : p.Phone,
+                Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Zalo) ? MaskPhone(p.Zalo) : p.Zalo,
+                Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Email) ? MaskEmail(p.Email) : p.Email,
                 Note = p.Note,
                 IsCreator = p.IsCreator,
                 IsGuestAccount = p.IsGuestAccount,
@@ -674,9 +685,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             ApprovedAt = entity.ApprovedAt,
             ClosedReason = entity.ClosedReason,
             CreatorName = entity.User?.FullName ?? entity.FullName,
-            CreatorPhone = maskContact ? MaskPhone(entity.Phone) : entity.Phone,
-            CreatorZalo = maskContact && !string.IsNullOrEmpty(entity.Zalo) ? MaskPhone(entity.Zalo) : entity.Zalo,
-            CreatorEmail = maskContact && !string.IsNullOrEmpty(entity.Email) ? MaskEmail(entity.Email) : entity.Email,
+            CreatorPhone = MaskContactOf(entity.UserId) ? MaskPhone(entity.Phone) : entity.Phone,
+            CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Zalo) ? MaskPhone(entity.Zalo) : entity.Zalo,
+            CreatorEmail = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Email) ? MaskEmail(entity.Email) : entity.Email,
             IsMine = isMine,
             IsJoinedByMe = isJoinedByMe,
             CanJoin = canJoin,
