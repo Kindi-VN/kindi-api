@@ -672,8 +672,10 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<BusinessGroupDetailDto> GetAdminByIdAsync(Guid id)
     {
         var group = await _queryService.GetAllNoTracking<BusinessGroup>()
+            // Lọc trước rồi mới include
+            .Where(x => x.Id == id)
             .Include(x => x.BusinessField)
-            .FirstOrDefaultAsync(x => x.Id == id)
+            .FirstOrDefaultAsync()
             ?? throw new NotFoundException(_localizer["BusinessGroup_NotFound"]);
 
         var detail = _mapper.Map<BusinessGroupDetailDto>(group);

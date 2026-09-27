@@ -90,6 +90,8 @@ public class SocialService : ISocialService
         // Ghim (IsPinned) sempre primește în feed; apoi CreatedAt desc
         // Repository-ul suportă doar un singel orderBy — construim query manual pentru 2 sort keys în SQL
         IQueryable<SocialPost> dbQuery = await _postRepository.GetQueryableAsync();
+        // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại
+        if (predicate != null) dbQuery = dbQuery.Where(predicate);
         dbQuery = dbQuery
             .Include(p => p.Author)
             .Include(p => p.Likes)
@@ -97,7 +99,6 @@ public class SocialService : ISocialService
             .Include(p => p.Shares)
             .Include(p => p.PostTags)
                 .ThenInclude(pt => pt.Tag);
-        if (predicate != null) dbQuery = dbQuery.Where(predicate);
         dbQuery = dbQuery.OrderByDescending(p => p.IsPinned).ThenByDescending(p => p.CreatedAt);
 
         var posts = await PagedList<SocialPost>.CreateAsync(dbQuery, query.PageNumber, query.PageSize);
