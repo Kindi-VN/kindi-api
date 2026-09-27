@@ -93,6 +93,14 @@ namespace Kindi.API.Infrastructure.Migrations
                 column: "BusinessGroupCommentCode",
                 unique: true,
                 filter: "\"BusinessGroupCommentCode\" IS NOT NULL");
+
+            // Sinh mã cho các bản ghi đã có trước migration này.
+            migrationBuilder.Sql("UPDATE \"SocialShare\" SET \"SocialShareCode\" = 'SHR-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"SocialShareCode\" IS NULL;");
+            migrationBuilder.Sql("UPDATE \"SocialLike\" SET \"SocialLikeCode\" = 'SLK-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"SocialLikeCode\" IS NULL;");
+            migrationBuilder.Sql("UPDATE \"PostTags\" SET \"PostTagCode\" = 'PTG-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"PostTagCode\" IS NULL;");
+            migrationBuilder.Sql("UPDATE \"GroupBuyingParticipants\" SET \"GroupBuyingParticipantCode\" = 'GBPA-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"GroupBuyingParticipantCode\" IS NULL;");
+            migrationBuilder.Sql("UPDATE \"BusinessGroupMembers\" SET \"BusinessGroupMemberCode\" = 'BGM-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"BusinessGroupMemberCode\" IS NULL;");
+            migrationBuilder.Sql("UPDATE \"BusinessGroupComments\" SET \"BusinessGroupCommentCode\" = 'GBC-' || upper(substr(md5(\"Id\"::text), 1, 6)) WHERE \"BusinessGroupCommentCode\" IS NULL;");
         }
 
         /// <inheritdoc />
