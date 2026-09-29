@@ -29,20 +29,6 @@ public class PurchaseRequestConfiguration : IEntityTypeConfiguration<PurchaseReq
         builder.Property(x => x.ExpectedPrice)
             .HasPrecision(18, 2);
 
-        builder.Property(x => x.FullName)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(x => x.Phone)
-            .IsRequired()
-            .HasMaxLength(20);
-
-        builder.Property(x => x.Zalo)
-            .HasMaxLength(20); 
-
-        builder.Property(x => x.Email)
-            .HasMaxLength(100);
-
         builder.Property(x => x.Note)
             .HasMaxLength(500);
 

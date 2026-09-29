@@ -27,7 +27,7 @@ public class PublicPartnerResponseDto : IMapFrom<Partner>
     public void Mapping(Profile profile)
         => profile.CreateMap<Partner, PublicPartnerResponseDto>()
             .ForMember(dest => dest.ContactName,
-                opt => opt.MapFrom(src => src.FullName))
+                opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
             .ForMember(dest => dest.BusinessFieldName,
                 opt => opt.MapFrom(src => src.BusinessField != null ? src.BusinessField.Name : null))
             .ForMember(dest => dest.Products,

@@ -11,10 +11,6 @@ public class GroupBuyingRequest : BaseEntity
     public int TargetPeopleCount { get; set; }
     public int CurrentPeopleCount { get; set; }
     public decimal? TargetPrice { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string? Zalo { get; set; }
-    public string Email { get; set; } = string.Empty;
     public string? Note { get; set; }
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>

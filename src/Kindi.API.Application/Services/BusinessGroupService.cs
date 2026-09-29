@@ -34,7 +34,7 @@ public class BusinessGroupService : IBusinessGroupService
     private readonly IRepository<BusinessGroupMember> _memberRepository;
     private readonly IRepository<BusinessGroupPost> _postRepository;
     private readonly IRepository<BusinessGroupComment> _commentRepository;
-    private readonly IRepository<Collaborator> _collaboratorRepository;
+    private readonly ICollaboratorService _collaboratorService;
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
@@ -48,7 +48,7 @@ public class BusinessGroupService : IBusinessGroupService
         IRepository<BusinessGroupMember> memberRepository,
         IRepository<BusinessGroupPost> postRepository,
         IRepository<BusinessGroupComment> commentRepository,
-        IRepository<Collaborator> collaboratorRepository,
+        ICollaboratorService collaboratorService,
         IMapper mapper,
         ICurrentUserService currentUserService,
         IUserService userService,
@@ -61,7 +61,7 @@ public class BusinessGroupService : IBusinessGroupService
         _memberRepository = memberRepository;
         _postRepository = postRepository;
         _commentRepository = commentRepository;
-        _collaboratorRepository = collaboratorRepository;
+        _collaboratorService = collaboratorService;
         _mapper = mapper;
         _currentUserService = currentUserService;
         _userService = userService;
@@ -138,9 +138,13 @@ public class BusinessGroupService : IBusinessGroupService
         var membersQuery = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .Where(x => isAdmin ? x.Status != GroupMemberStatus.Left : x.Status == GroupMemberStatus.Active)
-            .OrderBy(x => x.CreatedAt);
+            .OrderBy(x => x.CreatedAt)
+            // Họ tên/SĐT/email của thành viên nằm ở bảng Users
+            .Include(x => x.User);
 
-        detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(await membersQuery.Take(20).ToListAsync());
+        var members = await membersQuery.Take(20).ToListAsync();
+        detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
+        for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
 
         if (isAdmin)
         {
@@ -178,33 +182,22 @@ public class BusinessGroupService : IBusinessGroupService
             if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Phone))
                 throw new BusinessException(_localizer["BusinessGroup_ContactRequired"]);
 
-            var phone = request.Phone.Trim();
-            var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
-
-            var existingUser = await _userService.FindByPhoneOrEmailAsync(phone, email);
-            isNewAccount = existingUser == null;
-            accountAlreadyExisted = !isNewAccount;
-            isGuestAccount = isNewAccount;
-
-            if (existingUser != null)
-            {
-                // Đã có tài khoản: dùng lại, KHÔNG ghi đè hồ sơ (endpoint công khai)
-                userId = existingUser.Id;
-            }
-            else
-            {
-                // Tài khoản tạo tự động: username = user<sđt>, mật khẩu khởi tạo = sđt
-                userId = await _userService.GetOrCreateUserWithPhonePasswordAsync(
-                    request.FullName.Trim(), phone, email);
-                var created = await _userService.FindByPhoneOrEmailAsync(phone, email);
-                username = created?.Username;
-            }
+            // Dùng lại tài khoản theo SĐT/email nếu đã có, tạo tài khoản tự động nếu chưa
+            // rồi cập nhật thông tin cá nhân vào bảng Users (không ghi đè hồ sơ tài khoản đã có).
+            var resolved = await _userService.ResolvePublicUserAsync(request.FullName, request.Phone, request.Email, request.Zalo);
+            userId = resolved.UserId;
+            isNewAccount = resolved.IsNewAccount;
+            accountAlreadyExisted = !resolved.IsNewAccount;
+            isGuestAccount = resolved.IsGuestAccount;
 
             // Người tham gia được lưu ở bảng Collaborators (chờ duyệt) như luồng mua chung
-            await EnsureCollaboratorAsync(userId, request.FullName.Trim(), phone, request.Zalo?.Trim(), email);
+            await _collaboratorService.EnsureProfileForUserAsync(userId);
         }
 
         var account = await _userService.FindByIdAsync(userId);
+
+        // Tài khoản vừa tạo tự động: trả tên đăng nhập (user<sđt>) cho khách để đăng nhập lại
+        if (isNewAccount) username = account?.Username;
 
         // Mã CTV của link chia sẻ người này dùng để xin vào nhóm (mã không tồn tại thì bỏ qua)
         var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
@@ -221,10 +214,6 @@ public class BusinessGroupService : IBusinessGroupService
                 throw new BusinessException(_localizer["BusinessGroup_AlreadyJoined"]);
 
             member.Status = memberStatus;
-            member.FullName = FirstNonEmpty(request.FullName, account?.FullName, member.FullName) ?? member.FullName;
-            member.Phone = FirstNonEmpty(request.Phone, account?.Phone, member.Phone) ?? member.Phone;
-            member.Zalo = FirstNonEmpty(request.Zalo, account?.Phone, member.Zalo);
-            member.Email = FirstNonEmpty(request.Email, account?.Email, member.Email);
             member.Note = request.Note?.Trim();
             if (referralCode != null) member.ReferralCode = referralCode;
             member.JoinedAt = memberStatus == GroupMemberStatus.Active ? DateTime.UtcNow : null;
@@ -238,10 +227,6 @@ public class BusinessGroupService : IBusinessGroupService
                 BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
                 BusinessGroupId = id,
                 UserId = userId,
-                FullName = FirstNonEmpty(request.FullName, account?.FullName) ?? string.Empty,
-                Phone = FirstNonEmpty(request.Phone, account?.Phone) ?? string.Empty,
-                Zalo = FirstNonEmpty(request.Zalo, account?.Phone),
-                Email = FirstNonEmpty(request.Email, account?.Email),
                 Note = request.Note?.Trim(),
                 ReferralCode = referralCode,
                 Role = GroupMemberRole.Member,
@@ -252,6 +237,10 @@ public class BusinessGroupService : IBusinessGroupService
 
             await _memberRepository.AddAsync(member);
         }
+
+        // Người đã đăng nhập: thông tin cá nhân gửi kèm form ghi vào bảng Users (chỉ điền chỗ còn trống)
+        if (currentUserId != null)
+            await _userService.UpdatePersonalInfoAsync(userId, request.FullName, request.Phone, request.Email, request.Zalo);
 
         await _memberRepository.SaveChangesAsync();
 
@@ -637,15 +626,11 @@ public class BusinessGroupService : IBusinessGroupService
         await _repository.AddAsync(group);
         await _repository.SaveChangesAsync();
 
-        var account = await _userService.FindByIdAsync(me);
         await _memberRepository.AddAsync(new BusinessGroupMember
         {
             BusinessGroupMemberCode = CodeGenerator.Generate("BGM"),
             BusinessGroupId = group.Id,
             UserId = me,
-            FullName = account?.FullName ?? string.Empty,
-            Phone = account?.Phone ?? string.Empty,
-            Email = account?.Email,
             Role = GroupMemberRole.GroupAdmin,
             Status = GroupMemberStatus.Active,
             JoinedAt = DateTime.UtcNow
@@ -736,10 +721,12 @@ public class BusinessGroupService : IBusinessGroupService
             .Where(x => x.BusinessGroupId == id && x.Status != GroupMemberStatus.Left)
             .OrderBy(x => x.Status)
             .ThenBy(x => x.CreatedAt)
+            .Include(x => x.User)
             .Take(50)
             .ToListAsync();
 
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
+        for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
         detail.PendingMembersCount = members.Count(m => m.Status == GroupMemberStatus.Pending);
         detail.PrivateRequestsCount = await _queryService.GetAllNoTracking<BusinessGroupPost>()
             .CountAsync(x => x.BusinessGroupId == id && x.IsPrivateToAdmin && !x.IsHidden);
@@ -816,15 +803,18 @@ public class BusinessGroupService : IBusinessGroupService
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
+            // Họ tên/SĐT/email của thành viên nằm ở bảng Users
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
-                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
+                (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
+                (x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
+                (x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
+            .Include(x => x.User)
             .OrderBy(x => x.Status)
             .ThenBy(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
+        for (var i = 0; i < result.Items.Count; i++) FillMemberPersonalInfo(paged.Items[i], result.Items[i]);
         await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
         return result;
     }
@@ -864,7 +854,11 @@ public class BusinessGroupService : IBusinessGroupService
             await _repository.SaveChangesAsync();
         }
 
-        return _mapper.Map<BusinessGroupMemberResponseDto>(member);
+        // Họ tên/SĐT/email của thành viên nằm ở bảng Users
+        member.User = (await _userService.FindByIdAsync(member.UserId))!;
+        var dto = _mapper.Map<BusinessGroupMemberResponseDto>(member);
+        FillMemberPersonalInfo(member, dto);
+        return dto;
     }
 
     public async Task RemoveMemberAsync(Guid id, Guid memberId)
@@ -901,13 +895,15 @@ public class BusinessGroupService : IBusinessGroupService
     private Guid? GetCurrentUserId()
         => Guid.TryParse(_currentUserService.UserId, out var id) ? id : null;
 
-    private static string? FirstNonEmpty(params string?[] values)
+    /// <summary>
+    /// Điền thông tin cá nhân (lấy từ bảng Users) vào DTO thành viên nhóm.
+    /// </summary>
+    private static void FillMemberPersonalInfo(BusinessGroupMember member, BusinessGroupMemberResponseDto dto)
     {
-        foreach (var value in values)
-        {
-            if (!string.IsNullOrWhiteSpace(value)) return value.Trim();
-        }
-        return null;
+        dto.FullName = member.User?.FullName ?? string.Empty;
+        dto.Phone = member.User?.Phone ?? string.Empty;
+        dto.Zalo = member.User?.Zalo;
+        dto.Email = UserInfo.DisplayEmail(member.User?.Email, member.User?.Phone);
     }
 
     private async Task<BusinessGroupMember?> GetMembershipAsync(Guid groupId, Guid userId)
@@ -1001,37 +997,5 @@ public class BusinessGroupService : IBusinessGroupService
                 item.PrivateRequestsCount = privateRequests.FirstOrDefault(p => p.GroupId == item.Id)?.Count ?? 0;
             }
         }
-    }
-
-    /// <summary>Người tham gia nhóm được lưu ở bảng Collaborators (chờ duyệt) như luồng mua chung.</summary>
-    private async Task EnsureCollaboratorAsync(Guid userId, string fullName, string phone, string? zalo, string? email)
-    {
-        var existing = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId && !c.IsDeleted);
-        if (existing != null) return;
-
-        string code;
-        bool codeExists;
-        do
-        {
-            code = CodeGenerator.Generate("CTV");
-            codeExists = await _collaboratorRepository.AnyAsync(c => c.CollaboratorCode == code);
-        } while (codeExists);
-
-        await _collaboratorRepository.AddAsync(new Collaborator
-        {
-            UserId = userId,
-            FullName = fullName,
-            Phone = phone,
-            Zalo = zalo,
-            Email = email,
-            CollaboratorCode = code,
-            // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
-            ReferralCode = code,
-            Status = CollaboratorStatus.Pending,
-            IsApproved = false,
-            Level = 1
-        });
-
-        await _collaboratorRepository.SaveChangesAsync();
     }
 }

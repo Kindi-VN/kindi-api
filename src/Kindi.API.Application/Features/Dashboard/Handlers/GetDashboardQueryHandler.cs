@@ -72,7 +72,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
 		{
 			Type = "purchase_request",
 			Action = "created",
-			UserName = userDict.GetValueOrDefault(x.UserId, x.FullName),
+			UserName = userDict.GetValueOrDefault(x.UserId) ?? string.Empty,
 			Timestamp = x.CreatedAt
 		}));
 
@@ -81,7 +81,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
 		{
 			Type = "group_buying_request",
 			Action = "created",
-			UserName = userDict.GetValueOrDefault(x.UserId, x.FullName),
+			UserName = userDict.GetValueOrDefault(x.UserId) ?? string.Empty,
 			Timestamp = x.CreatedAt
 		}));
 
@@ -90,7 +90,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
 		{
 			Type = "offer_request",
 			Action = "created",
-			UserName = userDict.GetValueOrDefault(x.UserId, x.FullName),
+			UserName = userDict.GetValueOrDefault(x.UserId) ?? string.Empty,
 			Timestamp = x.CreatedAt
 		}));
 
@@ -99,7 +99,7 @@ public class GetDashboardQueryHandler : IRequestHandler<GetDashboardQuery, Dashb
 		{
 			Type = "ctv_registration",
 			Action = "registered",
-			UserName = userDict.GetValueOrDefault(x.UserId, x.FullName),
+			UserName = userDict.GetValueOrDefault(x.UserId) ?? string.Empty,
 			Timestamp = x.CreatedAt
 		}));
 

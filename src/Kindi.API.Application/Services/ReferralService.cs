@@ -3,6 +3,7 @@ using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Shared.Common.Interfaces;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kindi.API.Application.Services;
 
@@ -90,18 +91,21 @@ public class ReferralService : IReferralService
         var users = await _queryService.GetListAsync<User>(
             u => u.ReferralCode != null && codes.Contains(u.ReferralCode));
 
-        var collaborators = await _queryService.GetListAsync<Collaborator>(
-            c => (c.ReferralCode != null && codes.Contains(c.ReferralCode))
-                 || (c.CollaboratorCode != null && codes.Contains(c.CollaboratorCode)));
+        // Tên CTV nằm ở bảng Users — kèm User để lấy FullName.
+        var collaborators = await _queryService.GetQueryableNoTracking<Collaborator>()
+            .Include(c => c.User)
+            .Where(c => (c.ReferralCode != null && codes.Contains(c.ReferralCode))
+                        || (c.CollaboratorCode != null && codes.Contains(c.CollaboratorCode)))
+            .ToListAsync();
 
         var names = users
             .Where(u => u.ReferralCode != null)
             .GroupBy(u => u.ReferralCode!)
             .ToDictionary(g => g.Key, g => g.First().FullName);
 
-        // Mã của CTV ưu tiên tên trên hồ sơ CTV (chủ thể chính của link chia sẻ).
+        // Mã của CTV ưu tiên tên trên hồ sơ CTV — họ tên lấy từ bảng Users.
         foreach (var group in collaborators.GroupBy(c => c.ReferralCode ?? c.CollaboratorCode!))
-            names[group.Key] = group.First().FullName;
+            names[group.Key] = group.First().User?.FullName ?? string.Empty;
 
         return names;
     }

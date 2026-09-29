@@ -41,5 +41,9 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
                     ? src.TargetPeopleCount - src.CurrentPeopleCount
                     : 0))
             .ForMember(dest => dest.BusinessFieldName,
-                opt => opt.MapFrom(src => src.BusinessField != null ? src.BusinessField.Name : null));
+                opt => opt.MapFrom(src => src.BusinessField != null ? src.BusinessField.Name : null))
+            .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User != null ? src.User.Phone : string.Empty))
+            .ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? src.User.Email : string.Empty));
 }

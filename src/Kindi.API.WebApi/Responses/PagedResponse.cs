@@ -1,10 +1,14 @@
 ﻿using Kindi.API.Domain.Models;
+using Kindi.API.Shared.Errors;
 
 namespace Kindi.API.WebApi.Responses;
 
 public class PagedResponse<T>
 {
 	public bool Success { get; set; }
+
+	/// <summary>Mã trạng thái cho UI bắt (thành công = <see cref="ErrorStatus.Success"/>).</summary>
+	public string? Status { get; set; }
 	public string Message { get; set; } = string.Empty;
 	public List<T> Data { get; set; } = new();
 	public int PageNumber { get; set; }
@@ -25,6 +29,7 @@ public class PagedResponse<T>
 		return new PagedResponse<T>
 		{
 			Success = true,
+			Status = ErrorStatus.Success,
 			Message = message,
 			Data = pagedData.Items,
 			PageNumber = pagedData.PageNumber,

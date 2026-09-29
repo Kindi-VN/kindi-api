@@ -1,10 +1,12 @@
-﻿using Kindi.API.Application.Common.Interfaces;
+﻿using Kindi.API.Application.Common.Helpers;
+using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Features.PurchaseRequests.Queries;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Shared.Extensions;
 using MediatR;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Linq.Expressions;
 
@@ -29,7 +31,11 @@ public class ExportPurchaseRequestsHandler : IRequestHandler<ExportPurchaseReque
 	public async Task<byte[]> Handle(ExportPurchaseRequestsQuery request, CancellationToken cancellationToken)
 	{
 		var predicate = BuildPredicate(request);
-		var entities = await _repository.FindAsync(predicate, cancellationToken);
+		// Thông tin cá nhân nằm ở bảng Users — kèm User để xuất đúng cột họ tên/SĐT/email.
+		var entities = await _repository.GetListWithIncludesAsync(
+			includes: q => q.Include(x => x.User),
+			predicate: predicate,
+			cancellationToken: cancellationToken);
 		var data = entities.OrderByDescending(x => x.CreatedAt).ToList();
 
 		var columns = new Dictionary<string, Func<PurchaseRequest, object>>
@@ -38,9 +44,9 @@ public class ExportPurchaseRequestsHandler : IRequestHandler<ExportPurchaseReque
 			["ExportPurchaseRequests_ProductName"] = x => x.ProductName,
 			["ExportPurchaseRequests_Quantity"] = x => x.Quantity,
 			["ExportPurchaseRequests_ExpectedPrice"] = x => x.ExpectedPrice.GetValueOrDefault(),
-			["ExportPurchaseRequests_FullName"] = x => x.FullName,
-			["ExportPurchaseRequests_Phone"] = x => x.Phone,
-			["ExportPurchaseRequests_Email"] = x => x.Email ?? "",
+			["ExportPurchaseRequests_FullName"] = x => x.User != null ? x.User.FullName : string.Empty,
+			["ExportPurchaseRequests_Phone"] = x => x.User != null ? (x.User.Phone ?? string.Empty) : string.Empty,
+			["ExportPurchaseRequests_Email"] = x => x.User != null ? (UserInfo.DisplayEmail(x.User.Email, x.User.Phone) ?? string.Empty) : string.Empty,
 			["ExportPurchaseRequests_Status"] = x => x.Status.ToString(),
 			["ExportPurchaseRequests_CreatedAt"] = x => x.CreatedAt
 		};

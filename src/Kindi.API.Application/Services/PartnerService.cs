@@ -73,21 +73,20 @@ public class PartnerService : IPartnerService
 
         if (isPublicRegistration)
         {
-            // Đăng ký công khai: tạo tài khoản đăng nhập được ngay (username user<sđt>, mật khẩu = SĐT)
-            // thay vì mật khẩu ngẫu nhiên như trước — để người đăng ký biết thông tin đăng nhập.
-            var existingUser = await _userService.FindByPhoneOrEmailAsync(request.Phone, request.Email);
-            isNewAccount = existingUser == null;
-
-            var userGuid = await _userService.GetOrCreateUserWithPhonePasswordAsync(
+            // Đăng ký công khai: dùng lại tài khoản theo SĐT/email nếu đã có, tạo tài khoản đăng nhập
+            // được ngay nếu chưa (username user<sđt>, mật khẩu = SĐT); thông tin cá nhân ghi vào bảng Users.
+            var resolvedUser = await _userService.ResolvePublicUserAsync(
                 request.FullName,
                 request.Phone,
-                request.Email
+                request.Email,
+                null
             );
-            userId = userGuid.ToString();
+            userId = resolvedUser.UserId.ToString();
+            isNewAccount = resolvedUser.IsNewAccount;
 
             if (isNewAccount)
             {
-                var createdUser = await _userService.FindByPhoneOrEmailAsync(request.Phone, request.Email);
+                var createdUser = await _userService.FindByIdAsync(resolvedUser.UserId);
                 accountUsername = createdUser?.Username;
             }
         }
@@ -134,6 +133,14 @@ public class PartnerService : IPartnerService
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
 
+        // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
+        // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 2.
+        if (!isPublicRegistration)
+        {
+            await _userService.UpdatePersonalInfoAsync(
+                partner.UserId, request.FullName, request.Phone, request.Email, null);
+        }
+
         // 8. Return response
         var response = _mapper.Map<PartnerRegisterResponse>(partner);
 
@@ -167,10 +174,12 @@ public class PartnerService : IPartnerService
             .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyName), "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
+                // Tên người liên hệ nằm ở bảng Users → tìm qua nav (guard null vì tài khoản có thể đã xoá mềm).
+                (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
                 (x.CompanyAddress != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyAddress), "%" + searchTerm + "%", "\\")) ||
                 (x.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessField.Name), "%" + searchTerm + "%", "\\")) ||
                 x.Products.Any(p => !p.IsDeleted && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.Name), "%" + searchTerm + "%", "\\")))
+            .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Products);
 
@@ -212,9 +221,9 @@ public class PartnerService : IPartnerService
         q = q
             // Search filter
             .WhereIf(!string.IsNullOrEmpty(filter.Search), x =>
-                x.FullName.Contains(filter.Search!) ||
-                x.Email.Contains(filter.Search!) ||
-                x.Phone.Contains(filter.Search!) ||
+                (x.User != null && x.User.FullName.Contains(filter.Search!)) ||
+                (x.User != null && x.User.Email.Contains(filter.Search!)) ||
+                (x.User != null && x.User.Phone != null && x.User.Phone.Contains(filter.Search!)) ||
                 x.CompanyName.Contains(filter.Search!) ||
                 x.CompanyTax.Contains(filter.Search!) ||
                 x.PartnerCode.Contains(filter.Search!) ||
@@ -229,7 +238,8 @@ public class PartnerService : IPartnerService
             .WhereIfNotNull(filter.FromDate, x => x.CreatedAt >= filter.FromDate!.Value.Date.ToUniversalTime())
             .WhereIfNotNull(filter.ToDate, x => x.CreatedAt < filter.ToDate!.Value.Date.AddDays(1).ToUniversalTime())
             // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại
-            // Include nav lĩnh vực để map BusinessFieldName trong PartnerResponseDto
+            // Include nav người dùng (thông tin cá nhân) + lĩnh vực để map FullName/Phone/Email/BusinessFieldName.
+            .Include(x => x.User)
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
@@ -302,7 +312,9 @@ public class PartnerService : IPartnerService
     {
         var entity = await _partnerRepo.GetFirstWithIncludesAsync(
             x => x.Id == id,
-            query => query.Include(x => x.BusinessField));
+            query => query
+                .Include(x => x.User)
+                .Include(x => x.BusinessField));
         if (entity == null)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
 
@@ -322,7 +334,9 @@ public class PartnerService : IPartnerService
     {
         var entity = await _partnerRepo.GetFirstWithIncludesAsync(
             x => x.Id == id,
-            query => query.Include(x => x.BusinessField));
+            query => query
+                .Include(x => x.User)
+                .Include(x => x.BusinessField));
         if (entity == null)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
 
@@ -341,7 +355,9 @@ public class PartnerService : IPartnerService
     {
         var entity = await _partnerRepo.GetFirstWithIncludesAsync(
             x => x.Id == id,
-            query => query.Include(x => x.BusinessField));
+            query => query
+                .Include(x => x.User)
+                .Include(x => x.BusinessField));
         if (entity == null)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
 
@@ -360,7 +376,9 @@ public class PartnerService : IPartnerService
     {
         var entity = await _partnerRepo.GetFirstWithIncludesAsync(
             x => x.Id == id,
-            query => query.Include(x => x.BusinessField));
+            query => query
+                .Include(x => x.User)
+                .Include(x => x.BusinessField));
 
         if (entity == null)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
@@ -380,6 +398,10 @@ public class PartnerService : IPartnerService
 
             entity.BusinessFieldId = field.Id;
         }
+
+        // Thông tin cá nhân nằm ở bảng Users — endpoint admin được phép đổi cả SĐT/email của hồ sơ.
+        await _userService.UpdatePersonalInfoAsync(
+            entity.UserId, request.FullName, request.Phone, request.Email, null, allowContactChange: true);
 
         // KHÔNG gọi _partnerRepo.Update(entity): entity đang được tracking nên EF tự phát
         // hiện thay đổi (và Update còn lưu đồng bộ ngay bên trong, gây lưu thừa).
@@ -463,6 +485,7 @@ public class PartnerService : IPartnerService
         // để response sau khi khôi phục vẫn có BusinessFieldName.
         var entity = await _queryService.GetQueryable<Partner>()
             .IgnoreQueryFilters()
+            .Include(x => x.User)
             .Include(x => x.BusinessField)
             .FirstOrDefaultAsync(x => x.Id == id);
 

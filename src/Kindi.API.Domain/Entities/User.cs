@@ -12,6 +12,9 @@ public class User : BaseEntity
 	public string FullName { get; set; } = string.Empty;
 	public string Email { get; set; } = string.Empty;
 	public string? Phone { get; set; }
+
+	/// <summary>Số Zalo liên hệ (khác SĐT nếu người dùng nhập khác).</summary>
+	public string? Zalo { get; set; }
 	public bool IsActive { get; set; } = true;
 
 	/// <summary>

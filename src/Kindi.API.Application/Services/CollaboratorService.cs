@@ -3,6 +3,7 @@ using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.Requests;
+using Kindi.API.Application.Errors;
 using Kindi.API.Application.DTOs.Responses;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Entities;
@@ -10,6 +11,7 @@ using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
 using Kindi.API.Shared.Common.Interfaces;
+using Kindi.API.Shared.Errors;
 using Kindi.API.Shared.Exceptions;
 using Kindi.API.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
@@ -91,20 +93,18 @@ public class CollaboratorService : ICollaboratorService
             }
         }
 
-        //  SĐT/email đã đăng ký CTV trước đó → báo rõ ràng (2 cột này có unique index,
-        //  để DB ném lỗi sẽ thành 500 khó hiểu cho người đăng ký).
+        //  Một tài khoản (bảng Users) chỉ có tối đa một hồ sơ CTV chưa xoá — kiểm tra theo UserId
+        //  để báo rõ ràng, tránh lỗi ràng buộc DB khó hiểu cho người đăng ký.
         var existingCollaborator = await _repository.GetFirstAsync(c =>
-            !c.IsDeleted &&
-            (c.Phone == request.Phone ||
-             (!string.IsNullOrEmpty(request.Email) && c.Email == request.Email)));
+            !c.IsDeleted && c.UserId == userGuid);
 
         if (existingCollaborator != null)
-        {
-            var isPhoneDuplicate = existingCollaborator.Phone == request.Phone;
-            throw new BadRequestException(isPhoneDuplicate
-                ? _localizer["Collaborator_PhoneAlreadyExists"]
-                : _localizer["Collaborator_EmailAlreadyExists"]);
-        }
+            throw new AppException(CollaboratorError.UserAlreadyExists);
+
+        //  Thông tin cá nhân (họ tên/SĐT/email/Zalo) chỉ lưu ở bảng Users — ghi qua UserService;
+        //  luồng công khai không được ghi đè SĐT/email của tài khoản đã tồn tại.
+        await _userService.UpdatePersonalInfoAsync(
+            userGuid, request.FullName, request.Phone, request.Email, request.Zalo);
 
         //  Tạo Collaborator
         var collaborator = _mapper.Map<Collaborator>(request);
@@ -148,16 +148,16 @@ public class CollaboratorService : ICollaboratorService
                 c.Id == request.ParentCollaboratorId.Value && !c.IsDeleted);
 
             if (parent == null)
-                throw CollaboratorException.ParentNotFound(_exceptionLocalizer, request.ParentCollaboratorId.Value);
+                throw new AppException(CollaboratorError.ParentNotFound.WithParams(request.ParentCollaboratorId.Value));
 
             if (!parent.IsApproved)
-                throw CollaboratorException.ParentNotApproved(_exceptionLocalizer, request.ParentCollaboratorId.Value);
+                throw new AppException(CollaboratorError.ParentNotApproved.WithParams(request.ParentCollaboratorId.Value));
 
             if (parent.Level >= 10)
-                throw CollaboratorException.LevelExceeded(_exceptionLocalizer, 10);
+                throw new AppException(CollaboratorError.LevelExceeded.WithParams(10));
 
             if (await IsCircularReferenceAsync(request.ParentCollaboratorId.Value, userGuid))
-                throw CollaboratorException.CircularReference(_exceptionLocalizer, request.ParentCollaboratorId.Value);
+                throw new AppException(CollaboratorError.CircularReference.WithParams(request.ParentCollaboratorId.Value));
 
             collaborator.Level = parent.Level + 1;
         }
@@ -179,6 +179,9 @@ public class CollaboratorService : ICollaboratorService
         await _repository.AddAsync(collaborator);
         await _repository.SaveChangesAsync();
 
+        // Nạp tài khoản vào navigation để response trả họ tên/SĐT/email/Zalo (dữ liệu ở bảng Users).
+        collaborator.User = await _userService.FindByIdAsync(collaborator.UserId) ?? collaborator.User;
+
         var response = _mapper.Map<CollaboratorResponseDto>(collaborator);
 
         if (isPublicRegistration)
@@ -193,6 +196,32 @@ public class CollaboratorService : ICollaboratorService
         }
 
         return response;
+    }
+
+    /// <summary>
+    /// Tạo hồ sơ cộng tác viên (chờ duyệt) cho người dùng nếu chưa có. Dùng cho các luồng công khai
+    /// (mua chung, nhóm ngành) — nơi DUY NHẤT sinh bản ghi ở bảng <c>Collaborators</c>.
+    /// </summary>
+    public async Task EnsureProfileForUserAsync(Guid userId)
+    {
+        // Đã có hồ sơ chưa xoá → không tạo thêm (mỗi tài khoản chỉ một hồ sơ CTV).
+        var existing = await _repository.GetFirstAsync(c => c.UserId == userId && !c.IsDeleted);
+        if (existing != null)
+            return;
+
+        var collaborator = new Collaborator
+        {
+            UserId = userId,
+            CollaboratorCode = await GenerateUniqueCollaboratorCodeAsync(),
+            Status = CollaboratorStatus.Pending,
+            IsApproved = false,
+            Level = 1
+        };
+        // Mã chia sẻ riêng của CTV = mã CTV trên hồ sơ (dùng để gắn vào link chia sẻ).
+        collaborator.ReferralCode = collaborator.CollaboratorCode;
+
+        await _repository.AddAsync(collaborator);
+        await _repository.SaveChangesAsync();
     }
 
     private async Task<string> GenerateUniqueCollaboratorCodeAsync()
@@ -232,7 +261,7 @@ public class CollaboratorService : ICollaboratorService
     {
         var collaborator = await _repository.GetByIdAsync(id);
         if (collaborator == null)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         // Partial update: field nào null thì AutoMapper giữ nguyên giá trị cũ
         // (BusinessFieldId/BusinessFieldName đã Ignore, xử lý tay bên dưới).
@@ -280,7 +309,17 @@ public class CollaboratorService : ICollaboratorService
         _repository.Update(collaborator);
         await _repository.SaveChangesAsync();
 
-        return _mapper.Map<CollaboratorResponseDto>(collaborator);
+        // Thông tin cá nhân chỉ lưu ở bảng Users; endpoint admin này được phép ghi đè SĐT/email.
+        await _userService.UpdatePersonalInfoAsync(
+            collaborator.UserId, request.FullName, request.Phone, request.Email, request.Zalo,
+            allowContactChange: true);
+
+        // Nạp lại navigation (User/BusinessField/Company) để response trả đủ dữ liệu sau cập nhật.
+        var updated = await _repository.GetFirstWithIncludesAsync(
+            c => c.Id == id,
+            q => q.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company));
+
+        return _mapper.Map<CollaboratorResponseDto>(updated ?? collaborator);
     }
 
     public async Task<CollaboratorResponseDto> GetByIdAsync(Guid id)
@@ -290,7 +329,7 @@ public class CollaboratorService : ICollaboratorService
             q => q.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company));
 
         if (collaborator == null)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         return _mapper.Map<CollaboratorResponseDto>(collaborator);
     }
@@ -309,9 +348,9 @@ public class CollaboratorService : ICollaboratorService
             // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
             // ILIKE nên tìm không phân biệt hoa/thường.
             var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
-            predicate = c => (EF.Functions.ILike(KindiDbFunctions.Unaccent(c.FullName), "%" + searchTerm + "%", "\\") ||
-                             EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Phone), "%" + searchTerm + "%", "\\") ||
-                             (c.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Email), "%" + searchTerm + "%", "\\")) ||
+            predicate = c => (c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\") ||
+                             (c.User != null && c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), "%" + searchTerm + "%", "\\")) ||
+                             (c.User != null && c.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Email), "%" + searchTerm + "%", "\\")) ||
                              (c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\")) ||
                              // Tìm theo lĩnh vực kinh doanh: khớp cả cột denormalized
                              // (bản ghi cũ) lẫn tên trong bảng BusinessFields (tên hiển thị).
@@ -373,15 +412,15 @@ public class CollaboratorService : ICollaboratorService
         {
             var s = search.Trim();
             query = query.Where(c =>
-                c.FullName.Contains(s) ||
-                c.Phone.Contains(s) ||
-                (c.Email != null && c.Email.Contains(s)) ||
+                (c.User != null && c.User.FullName.Contains(s)) ||
+                (c.User != null && c.User.Phone != null && c.User.Phone.Contains(s)) ||
+                (c.User != null && c.User.Email != null && c.User.Email.Contains(s)) ||
                 (c.CollaboratorCode != null && c.CollaboratorCode.Contains(s)) ||
                 (c.BusinessFieldName != null && c.BusinessFieldName.Contains(s)) ||
                 (c.BusinessField != null && c.BusinessField.Name.Contains(s)));
         }
 
-        query = query.IncludeMultiple(c => c.BusinessField, c => c.Company).OrderByDescending(c => c.CreatedAt);
+        query = query.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company).OrderByDescending(c => c.CreatedAt);
 
         var paged = await PagedList<Collaborator>.CreateAsync(query, page, size);
 
@@ -396,7 +435,7 @@ public class CollaboratorService : ICollaboratorService
     {
         var collaborator = await _repository.GetByIdAsync(id);
         if (collaborator == null)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         collaborator.Status = CollaboratorStatus.Approved;
         collaborator.IsApproved = true;
@@ -410,7 +449,7 @@ public class CollaboratorService : ICollaboratorService
     {
         var collaborator = await _repository.GetByIdAsync(id);
         if (collaborator == null)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         collaborator.Status = CollaboratorStatus.Rejected;
         collaborator.IsApproved = false;
@@ -425,7 +464,7 @@ public class CollaboratorService : ICollaboratorService
     {
         var collaborator = await _repository.GetByIdAsync(id);
         if (collaborator == null)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         _repository.Delete(collaborator);
         await _repository.SaveChangesAsync();
@@ -436,7 +475,7 @@ public class CollaboratorService : ICollaboratorService
         // GetByIdIncludingDeletedAsync bỏ qua global soft-delete filter → tìm được record đã xóa mềm.
         var collaborator = await _repository.GetByIdIncludingDeletedAsync(id);
         if (collaborator == null || !collaborator.IsDeleted)
-            throw CollaboratorException.NotFound(_exceptionLocalizer, id);
+            throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         _repository.Restore(collaborator);
         await _repository.SaveChangesAsync();

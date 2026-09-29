@@ -12,10 +12,6 @@ public class PurchaseRequest : BaseEntity
     public int Quantity { get; set; }
     public string Unit { get; set; } = string.Empty;
     public decimal? ExpectedPrice { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string? Zalo { get; set; }
-    public string? Email { get; set; }
     public string? Note { get; set; }
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
