@@ -1,4 +1,5 @@
-﻿using Kindi.API.Application.Common.Mappings;
+﻿using Kindi.API.Application.Common.Helpers;
+using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using AutoMapper;
@@ -34,6 +35,13 @@ public class PartnerResponseDto : IMapFrom<Partner>
     public void Mapping(Profile profile)
     {
         profile.CreateMap<Partner, PartnerResponseDto>()
+            // Thông tin cá nhân chỉ nằm ở bảng Users → lấy qua nav User (bắt buộc Include khi query).
+            .ForMember(dest => dest.FullName,
+                opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+            .ForMember(dest => dest.Phone,
+                opt => opt.MapFrom(src => src.User != null ? (src.User.Phone ?? string.Empty) : string.Empty))
+            .ForMember(dest => dest.Email,
+                opt => opt.MapFrom(src => (src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null) ?? string.Empty))
             // Partner không có cột tên lĩnh vực denormalized → bắt buộc Include nav khi query.
             .ForMember(dest => dest.BusinessFieldName,
                 opt => opt.MapFrom(src => src.BusinessField != null ? src.BusinessField.Name : null))

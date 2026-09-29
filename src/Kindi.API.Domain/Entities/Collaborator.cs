@@ -7,10 +7,6 @@ namespace Kindi.API.Domain.Entities;
 public class Collaborator : BaseEntity
 {
     public Guid UserId { get; set; }
-    public string FullName { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string? Zalo { get; set; }
-    public string? Email { get; set; }
     public string? Position { get; set; }
     public string? Skills { get; set; }
     public string? Interests { get; set; }

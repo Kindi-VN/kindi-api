@@ -2,6 +2,7 @@
 using AutoMapper;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Features.PurchaseRequests.Queries;
 using Kindi.API.Application.DTOs.responses;
@@ -26,7 +27,11 @@ public class GetPurchaseRequestByIdHandler : IRequestHandler<GetPurchaseRequestB
 
 	public async Task<PurchaseRequestResponseDto> Handle(GetPurchaseRequestByIdQuery request, CancellationToken cancellationToken)
 	{
-		var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+		// Thông tin cá nhân nằm ở bảng Users nên nạp kèm để map ra DTO
+		var entity = await _repository.GetFirstWithIncludesAsync(
+			x => x.Id == request.Id,
+			includes: q => q.Include(x => x.User),
+			cancellationToken: cancellationToken);
 		if (entity == null || entity.IsDeleted)
 			return null!;
 

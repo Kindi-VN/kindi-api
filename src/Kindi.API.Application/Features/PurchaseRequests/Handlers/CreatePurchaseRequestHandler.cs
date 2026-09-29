@@ -2,11 +2,13 @@
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.responses;
+using Kindi.API.Application.Errors;
 using Kindi.API.Application.Features.PurchaseRequests.Commands;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Shared.Common.Interfaces;
+using Kindi.API.Shared.Errors;
 using MediatR;
 
 namespace Kindi.API.Application.Features.PurchaseRequests.Handlers;
@@ -39,10 +41,17 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         var userIdString = _currentUserService.UserId;
         Guid userId;
 
-        // 2. Nếu chưa đăng nhập, tạo User ngầm
+        // 2. Khách chưa đăng nhập: dùng lại tài khoản theo SĐT/email, chỉ tạo mới khi chưa có
         if (string.IsNullOrEmpty(userIdString))
         {
-            userId = await _userService.GetOrCreateUserAsync(
+            if (string.IsNullOrWhiteSpace(request.FullName))
+                throw new AppException(PurchaseRequestError.FullNameRequired);
+
+            if (string.IsNullOrWhiteSpace(request.Phone))
+                throw new AppException(PurchaseRequestError.PhoneRequired);
+
+            var existingUser = await _userService.FindByPhoneOrEmailAsync(request.Phone, request.Email);
+            userId = existingUser?.Id ?? await _userService.GetOrCreateUserAsync(
                 request.FullName,
                 request.Phone,
                 request.Email);
@@ -73,6 +82,15 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
 
-        return _mapper.Map<PurchaseRequestResponseDto>(entity);
+        // Thông tin cá nhân chỉ lưu ở bảng Users — form gửi lên thì cập nhật vào tài khoản.
+        await _userService.UpdatePersonalInfoAsync(entity.UserId, request.FullName, request.Phone, request.Email, request.Zalo);
+
+        var response = _mapper.Map<PurchaseRequestResponseDto>(entity);
+        var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
+        response.FullName = personalInfo?.FullName ?? string.Empty;
+        response.Phone = personalInfo?.Phone ?? string.Empty;
+        response.Zalo = personalInfo?.Zalo;
+        response.Email = personalInfo?.Email;
+        return response;
     }
 }

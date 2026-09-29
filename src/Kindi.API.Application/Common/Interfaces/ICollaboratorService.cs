@@ -8,6 +8,12 @@ namespace Kindi.API.Application.Common.Interfaces;
 public interface ICollaboratorService
 {
     Task<CollaboratorResponseDto> CreateAsync(CreateCollaboratorDto request);
+
+    /// <summary>
+    /// Tạo hồ sơ cộng tác viên (chờ duyệt) cho người dùng nếu chưa có — nơi DUY NHẤT sinh bản ghi
+    /// ở bảng <c>Collaborators</c> cho các luồng công khai (mua chung, nhóm ngành).
+    /// </summary>
+    Task EnsureProfileForUserAsync(Guid userId);
     Task<CollaboratorResponseDto> UpdateAsync(Guid id, UpdateCollaboratorDto request);
     Task<CollaboratorResponseDto> GetByIdAsync(Guid id);
     /// <summary>

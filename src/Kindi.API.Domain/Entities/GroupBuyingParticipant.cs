@@ -13,10 +13,6 @@ public class GroupBuyingParticipant : BaseEntity
 
 	public Guid GroupBuyingRequestId { get; set; }
 	public Guid UserId { get; set; }
-	public string FullName { get; set; } = string.Empty;
-	public string Phone { get; set; } = string.Empty;
-	public string? Zalo { get; set; }
-	public string? Email { get; set; }
 	public string? Note { get; set; }
 
 	/// <summary>Mã CTV của link mà người này dùng để tham gia (ghi nhận 1 cấp).</summary>

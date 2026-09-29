@@ -38,6 +38,9 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(x => x.Phone)
 			.HasMaxLength(20);
 
+		builder.Property(x => x.Zalo)
+			.HasMaxLength(20);
+
 		builder.HasIndex(x => x.Phone)
 			.IsUnique()
 			.HasDatabaseName("IX_Users_Phone_Unique");

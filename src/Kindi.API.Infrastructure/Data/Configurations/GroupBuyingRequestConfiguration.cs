@@ -30,21 +30,6 @@ public class GroupBuyingRequestConfiguration : IEntityTypeConfiguration<GroupBuy
         builder.Property(x => x.TargetPrice)
             .HasColumnType("decimal(18,2)");
 
-        builder.Property(x => x.FullName)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(x => x.Phone)
-            .IsRequired()
-            .HasMaxLength(15);
-
-        builder.Property(x => x.Zalo)
-            .HasMaxLength(15);
-
-        builder.Property(x => x.Email)
-            .IsRequired()
-            .HasMaxLength(100);
-
         builder.Property(x => x.Note)
             .HasMaxLength(1000);
 

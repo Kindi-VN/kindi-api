@@ -4,6 +4,7 @@ using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Application.Features.OfferRequests.Queries;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
+using Microsoft.EntityFrameworkCore;
 using MediatR;
 
 namespace Kindi.API.Application.Features.OfferRequests.Handlers;
@@ -26,7 +27,11 @@ public class GetOfferRequestByIdHandler : IRequestHandler<GetOfferRequestByIdQue
 
 	public async Task<OfferRequestResponseDto?> Handle(GetOfferRequestByIdQuery request, CancellationToken cancellationToken)
 	{
-		var entity = await _repository.GetByIdAsync(request.Id, cancellationToken);
+		// Thông tin cá nhân nằm ở bảng Users nên nạp kèm để map ra DTO
+		var entity = await _repository.GetFirstWithIncludesAsync(
+			x => x.Id == request.Id,
+			includes: q => q.Include(x => x.User),
+			cancellationToken: cancellationToken);
 		if (entity == null || entity.IsDeleted)
 			return null;
 

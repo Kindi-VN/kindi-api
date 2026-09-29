@@ -1,4 +1,5 @@
-﻿using Kindi.API.Application.Common.Mappings;
+﻿using Kindi.API.Application.Common.Helpers;
+using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using AutoMapper;
@@ -35,6 +36,13 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
     public void Mapping(Profile profile)
     {
         profile.CreateMap<Partner, PartnerDetailResponseDto>()
+            // Thông tin cá nhân chỉ nằm ở bảng Users → lấy qua nav User (bắt buộc Include khi query).
+            .ForMember(dest => dest.FullName,
+                opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+            .ForMember(dest => dest.Phone,
+                opt => opt.MapFrom(src => src.User != null ? (src.User.Phone ?? string.Empty) : string.Empty))
+            .ForMember(dest => dest.Email,
+                opt => opt.MapFrom(src => (src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null) ?? string.Empty))
             .ForMember(dest => dest.User, opt => opt.MapFrom(src => src.User))
             .ForMember(dest => dest.Commission, opt => opt.MapFrom(src => src.Commission))
             .ForMember(dest => dest.Products, opt => opt.MapFrom(src => src.Products))
@@ -47,9 +55,7 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
                 BusinessType = src.BusinessType,
                 CompanySize = src.CompanySize,
                 BusinessField = src.BusinessField != null ? src.BusinessField.Name : null
-            }));
-
-        profile.CreateMap<Partner, PartnerDetailResponseDto>()
+            }))
             .ForMember(dest => dest.CompanyInfo, opt => opt.MapFrom(src => src.Company != null ? new CompanyInfoDto
             {
                 Id = src.Company.Id,

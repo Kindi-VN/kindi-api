@@ -16,20 +16,6 @@ public class CollaboratorConfiguration : IEntityTypeConfiguration<Collaborator>
         builder.Property(c => c.UserId)
             .IsRequired();
 
-        builder.Property(c => c.FullName)
-            .IsRequired()
-            .HasMaxLength(200);
-
-        builder.Property(c => c.Phone)
-            .IsRequired()
-            .HasMaxLength(20);
-
-        builder.Property(c => c.Zalo)
-            .HasMaxLength(20);
-
-        builder.Property(c => c.Email)
-            .HasMaxLength(100);
-
         builder.Property(c => c.Position)
             .HasMaxLength(100);
 
@@ -92,13 +78,6 @@ public class CollaboratorConfiguration : IEntityTypeConfiguration<Collaborator>
         // Indexes
         builder.HasIndex(c => c.UserId)
             .IsUnique();
-
-        builder.HasIndex(c => c.Phone)
-            .IsUnique();
-
-        builder.HasIndex(c => c.Email)
-            .IsUnique()
-            .HasFilter("[Email] IS NOT NULL");
 
         builder.HasIndex(c => c.CollaboratorCode)
             .IsUnique()

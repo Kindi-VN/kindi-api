@@ -1,5 +1,6 @@
 using AutoMapper;
 using Kindi.API.Application.Common.Exceptions;
+using Kindi.API.Application.Errors;
 using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
@@ -13,6 +14,7 @@ using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
 using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Exceptions;
+using Kindi.API.Shared.Errors;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 
@@ -29,6 +31,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     private readonly IMapper _mapper;
     private readonly ICurrentUserService _currentUserService;
     private readonly IUserService _userService;
+    private readonly ICollaboratorService _collaboratorService;
     private readonly IQueryService _queryService;
     private readonly IReferralService _referralService;
     private readonly IStringLocalizer<SharedResource> _localizer;
@@ -41,6 +44,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         IMapper mapper,
         ICurrentUserService currentUserService,
         IUserService userService,
+        ICollaboratorService collaboratorService,
         IQueryService queryService,
         IReferralService referralService,
         IStringLocalizer<SharedResource> localizer)
@@ -52,6 +56,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _mapper = mapper;
         _currentUserService = currentUserService;
         _userService = userService;
+        _collaboratorService = collaboratorService;
         _queryService = queryService;
         _referralService = referralService;
         _localizer = localizer;
@@ -71,20 +76,16 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         {
             // Khách chưa đăng nhập bắt buộc nhập thông tin liên hệ để tạo tài khoản và liên hệ
             if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Phone))
-                throw new BusinessException(_localizer["GroupBuyingRequest_ContactRequired"]);
+                throw new AppException(GroupBuyingError.ContactRequired);
 
             if (string.IsNullOrWhiteSpace(request.Email))
-                throw new BusinessException(_localizer["GroupBuyingRequest_EmailRequired"]);
+                throw new AppException(GroupBuyingError.EmailRequired);
 
-            // 2. Dùng lại tài khoản đã có theo SĐT/email, chỉ tạo mới khi chưa có.
-            //    KHÔNG cập nhật FullName/Email của tài khoản đã tồn tại — đây là endpoint công khai,
-            //    cho phép ghi đè hồ sơ người khác bằng cách nhập SĐT của họ.
-            var existingUser = await FindUserByContactAsync(request.Phone, request.Email);
-            isGuestAccount = existingUser == null;
-
-            userId = existingUser != null
-                ? existingUser.Id.ToString()
-                : (await _userService.GetOrCreateUserAsync(request.FullName, request.Phone, request.Email)).ToString();
+            // 2. Dùng lại tài khoản đã có theo SĐT/email, chỉ tạo mới khi chưa có; thông tin cá nhân
+            //    ghi vào bảng Users (không ghi đè SĐT/email của tài khoản đã tồn tại).
+            var resolved = await _userService.ResolvePublicUserAsync(request.FullName, request.Phone, request.Email, request.Zalo);
+            isGuestAccount = resolved.IsGuestAccount;
+            userId = resolved.UserId.ToString();
         }
         else
         {
@@ -112,6 +113,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
 
+        // Thông tin cá nhân chỉ lưu ở bảng Users — form gửi lên thì cập nhật vào tài khoản.
+        await _userService.UpdatePersonalInfoAsync(entity.UserId, request.FullName, request.Phone, request.Email, request.Zalo);
+
         // 4. Người mở nhóm chiếm slot đầu tiên → ghi bản ghi participant IsCreator
         //    để danh sách người tham gia và số người của nhóm luôn nhất quán.
         await _participantRepository.AddAsync(new GroupBuyingParticipant
@@ -119,10 +123,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
             GroupBuyingRequestId = entity.Id,
             UserId = entity.UserId,
-            FullName = request.FullName,
-            Phone = request.Phone,
-            Zalo = request.Zalo,
-            Email = request.Email,
             Note = request.Note,
             ReferralCode = entity.ReferralCode,
             IsCreator = true,
@@ -132,6 +132,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
+        dto.FullName = personalInfo?.FullName ?? string.Empty;
+        dto.Phone = personalInfo?.Phone ?? string.Empty;
+        dto.Zalo = personalInfo?.Zalo;
+        dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
         return dto;
     }
@@ -223,10 +228,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var entity = await GetWithParticipantsAsync(id);
 
         if (entity.Status == GroupBuyingStatus.Pending)
-            throw new BusinessException(_localizer["GroupBuyingRequest_NotApprovedYet"]);
+            throw new AppException(GroupBuyingError.NotApprovedYet);
 
         if (entity.Status != GroupBuyingStatus.Active)
-            throw new BusinessException(_localizer["GroupBuyingRequest_NotOpen"]);
+            throw new AppException(GroupBuyingError.NotOpen);
 
         var currentUserId = GetCurrentUserId();
         Guid userId;
@@ -242,49 +247,27 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         {
             // Khách chưa đăng nhập → bắt buộc có họ tên + số điện thoại để tạo tài khoản và liên hệ
             if (string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Phone))
-                throw new BusinessException(_localizer["GroupBuyingRequest_ContactRequired"]);
+                throw new AppException(GroupBuyingError.ContactRequired);
 
-            var phone = request.Phone.Trim();
-            var email = string.IsNullOrWhiteSpace(request.Email) ? null : request.Email.Trim();
-
-            var existingUser = await FindUserByContactAsync(phone, email);
-            isNewAccount = existingUser == null;
-            accountAlreadyExisted = !isNewAccount;
-            isGuestAccount = isNewAccount;
-
-            if (existingUser != null)
-            {
-                // Đã có tài khoản: dùng lại, KHÔNG ghi đè FullName/Email (endpoint công khai,
-                // tránh việc nhập SĐT người khác là sửa được hồ sơ của họ).
-                userId = existingUser.Id;
-            }
-            else
-            {
-                // Tài khoản tạo tự động: username = user<sđt>, mật khẩu khởi tạo = sđt
-                userId = await _userService.GetOrCreateUserWithPhonePasswordAsync(
-                    request.FullName.Trim(), phone, email);
-            }
+            var resolved = await _userService.ResolvePublicUserAsync(request.FullName, request.Phone, request.Email, request.Zalo);
+            userId = resolved.UserId;
+            isNewAccount = resolved.IsNewAccount;
+            accountAlreadyExisted = !resolved.IsNewAccount;
+            isGuestAccount = resolved.IsGuestAccount;
 
             // Mọi người tham gia mua chung đều được lưu ở bảng Collaborators (trạng thái chờ duyệt)
-            await EnsureCollaboratorAsync(userId, request.FullName.Trim(), phone, request.Zalo?.Trim(), email);
+            await _collaboratorService.EnsureProfileForUserAsync(userId);
         }
 
         if (entity.UserId == userId)
-            throw new BusinessException(_localizer["GroupBuyingRequest_CreatorCannotJoin"]);
+            throw new AppException(GroupBuyingError.CreatorCannotJoin);
 
         var participant = entity.Participants.FirstOrDefault(p => p.UserId == userId);
         if (participant != null && participant.Status == GroupBuyingParticipantStatus.Joined)
-            throw new BusinessException(_localizer["GroupBuyingRequest_AlreadyJoined"]);
+            throw new AppException(GroupBuyingError.AlreadyJoined);
 
-        // Người đã đăng nhập không phải nhập lại thông tin → lấy từ hồ sơ tài khoản của họ
-        // để bản ghi tham gia luôn có họ tên/SĐT/email (admin cần để liên hệ).
-        var account = await _userRepository.GetByIdAsync(userId);
-        var participantFullName = !string.IsNullOrWhiteSpace(request.FullName) ? request.FullName.Trim() : (account?.FullName ?? string.Empty);
-        var participantPhone = !string.IsNullOrWhiteSpace(request.Phone) ? request.Phone.Trim() : (account?.Phone ?? string.Empty);
-        var participantZalo = !string.IsNullOrWhiteSpace(request.Zalo) ? request.Zalo.Trim() : account?.Phone;
-        var participantEmail = !string.IsNullOrWhiteSpace(request.Email)
-            ? request.Email.Trim()
-            : (string.IsNullOrWhiteSpace(account?.Email) ? null : account!.Email);
+        // Thông tin liên hệ chỉ lưu ở bảng Users — khách điền thì cập nhật vào tài khoản của họ.
+        await _userService.UpdatePersonalInfoAsync(userId, request.FullName, request.Phone, request.Email, request.Zalo);
 
         // Mã CTV của link chia sẻ người này dùng để tham gia (mã không tồn tại thì bỏ qua)
         var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
@@ -296,10 +279,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 GroupBuyingParticipantCode = CodeGenerator.Generate("GBPA"),
                 GroupBuyingRequestId = entity.Id,
                 UserId = userId,
-                FullName = participantFullName,
-                Phone = participantPhone,
-                Zalo = participantZalo,
-                Email = participantEmail,
                 Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
                 ReferralCode = referralCode,
                 IsCreator = false,
@@ -314,10 +293,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             // Đã từng hủy tham gia → tái kích hoạt bản ghi cũ (tránh phá unique index)
             participant.Status = GroupBuyingParticipantStatus.Joined;
             participant.UpdatedAt = DateTime.UtcNow;
-            if (string.IsNullOrWhiteSpace(participant.FullName)) participant.FullName = participantFullName;
-            if (string.IsNullOrWhiteSpace(participant.Phone)) participant.Phone = participantPhone;
-            if (string.IsNullOrWhiteSpace(participant.Zalo)) participant.Zalo = participantZalo;
-            if (string.IsNullOrWhiteSpace(participant.Email)) participant.Email = participantEmail;
             if (!string.IsNullOrWhiteSpace(request.Note)) participant.Note = request.Note.Trim();
             if (referralCode != null) participant.ReferralCode = referralCode;
             _participantRepository.Update(participant);
@@ -356,16 +331,16 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     {
         var currentUserId = GetCurrentUserId();
         if (currentUserId == null)
-            throw new UnauthorizedException(_localizer["GroupBuyingRequest_LoginRequired"]);
+            throw new AppException(GroupBuyingError.LoginRequired);
 
         var entity = await GetWithParticipantsAsync(id);
         var participant = entity.Participants.FirstOrDefault(p => p.UserId == currentUserId.Value);
 
         if (participant == null || participant.Status != GroupBuyingParticipantStatus.Joined)
-            throw new BusinessException(_localizer["GroupBuyingRequest_NotParticipant"]);
+            throw new AppException(GroupBuyingError.NotParticipant);
 
         if (participant.IsCreator)
-            throw new BusinessException(_localizer["GroupBuyingRequest_CreatorCannotLeave"]);
+            throw new AppException(GroupBuyingError.CreatorCannotLeave);
 
         participant.Status = GroupBuyingParticipantStatus.Cancelled;
         participant.UpdatedAt = DateTime.UtcNow;
@@ -406,9 +381,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.FullName), "%" + searchTerm + "%", "\\") ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Phone), "%" + searchTerm + "%", "\\") ||
-                (x.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Email), "%" + searchTerm + "%", "\\")))
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\") ||
+                (x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
+                (x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
+            .Include(x => x.User)
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
@@ -430,7 +406,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<GroupBuyingRequestResponseDto> UpdateStatusAsync(Guid id, UpdateGroupBuyingStatusDto request)
     {
         if (!Enum.IsDefined(typeof(GroupBuyingStatus), request.Status))
-            throw new BusinessException(_localizer["GroupBuyingRequest_InvalidStatusMessage"]);
+            throw new AppException(GroupBuyingError.InvalidStatus);
 
         var entity = await GetWithParticipantsAsync(id);
         var nextStatus = (GroupBuyingStatus)request.Status;
@@ -456,6 +432,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         }
 
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
+        dto.FullName = personalInfo?.FullName ?? string.Empty;
+        dto.Phone = personalInfo?.Phone ?? string.Empty;
+        dto.Zalo = personalInfo?.Zalo;
+        dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
         return dto;
     }
@@ -479,7 +460,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (request.TargetPeopleCount.HasValue)
         {
             if (request.TargetPeopleCount.Value < entity.CurrentPeopleCount)
-                throw new BusinessException(_localizer["GroupBuyingRequest_TargetLessThanCurrent"]);
+                throw new AppException(GroupBuyingError.TargetLessThanCurrent);
 
             entity.TargetPeopleCount = request.TargetPeopleCount.Value;
         }
@@ -488,6 +469,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _repository.SaveChangesAsync();
 
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
+        dto.FullName = personalInfo?.FullName ?? string.Empty;
+        dto.Phone = personalInfo?.Phone ?? string.Empty;
+        dto.Zalo = personalInfo?.Zalo;
+        dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
         return dto;
     }
@@ -501,7 +487,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             throw new NotFoundException(_localizer["GroupBuyingRequest_ParticipantNotFound"]);
 
         if (participant.IsCreator)
-            throw new BusinessException(_localizer["GroupBuyingRequest_CannotRemoveCreator"]);
+            throw new AppException(GroupBuyingError.CannotRemoveCreator);
 
         participant.Status = GroupBuyingParticipantStatus.Cancelled;
         participant.UpdatedAt = DateTime.UtcNow;
@@ -545,44 +531,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         return entity;
     }
 
-    private async Task<User?> FindUserByContactAsync(string? phone, string? email)
-    {
-        var normalizedPhone = phone?.Trim();
-        var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
-
-        return await _userRepository.GetFirstAsync(u =>
-            (!string.IsNullOrEmpty(normalizedPhone) && u.Phone == normalizedPhone) ||
-            (!string.IsNullOrEmpty(normalizedEmail) && u.Email == normalizedEmail));
-    }
-
-    /// <summary>
-    /// Người tham gia mua chung được lưu ở bảng Collaborators (chờ duyệt). Nếu user đã có
-    /// bản ghi collaborator thì giữ nguyên, không tạo trùng.
-    /// </summary>
-    private async Task EnsureCollaboratorAsync(Guid userId, string fullName, string phone, string? zalo, string? email)
-    {
-        var existing = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId);
-        if (existing != null) return;
-
-        // Mã CTV trên hồ sơ đồng thời là mã chia sẻ riêng (dùng cho link chia sẻ).
-        var collaboratorCode = CodeGenerator.Generate("CTV");
-
-        await _collaboratorRepository.AddAsync(new Collaborator
-        {
-            UserId = userId,
-            FullName = fullName,
-            Phone = phone,
-            Zalo = zalo,
-            Email = email,
-            CollaboratorCode = collaboratorCode,
-            ReferralCode = collaboratorCode,
-            Status = CollaboratorStatus.Pending,
-            Level = 1
-        });
-
-        await _collaboratorRepository.SaveChangesAsync();
-    }
-
     /// <summary>Đồng bộ cột CurrentPeopleCount = 1 (người mở nhóm) + số người đang tham gia.</summary>
     private async Task<int> SyncPeopleCountAsync(GroupBuyingRequest entity)
     {
@@ -615,9 +563,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         if (!allowed.Contains(next))
         {
-            throw new BusinessException(string.Format(
-                _localizer["GroupBuyingRequest_InvalidStatusTransition"],
-                current, next));
+            throw new AppException(GroupBuyingError.InvalidStatusTransition.WithParams(current, next));
         }
     }
 
@@ -645,7 +591,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Status = entity.Status,
             Note = entity.Note,
             BusinessFieldName = entity.BusinessField?.Name,
-            CreatorName = entity.User?.FullName ?? entity.FullName,
+            CreatorName = entity.User?.FullName ?? string.Empty,
             CreatedAt = entity.CreatedAt,
             IsMine = me.HasValue && entity.UserId == me.Value,
             IsJoinedByMe = me.HasValue && joined.Any(p => p.UserId == me.Value),
@@ -653,7 +599,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             Participants = joined
                 .Where(p => !p.IsCreator)
                 .OrderBy(p => p.CreatedAt)
-                .Select(p => MaskName(p.FullName))
+                .Select(p => MaskName(p.User?.FullName))
                 .Take(6)
                 .ToList()
         };
@@ -681,6 +627,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
         bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
 
+        // Email tạm hệ thống sinh cho tài khoản tự động ({sđt}@temp.com) coi như chưa có email.
+        static string? DisplayEmailOf(User? user) => UserInfo.DisplayEmail(user?.Email, user?.Phone);
+
         // Chỉ trả về người đang tham gia: người đã gỡ (Status = Cancelled) không hiện lại ở
         // bảng người tham gia của màn quản trị; số lượng cũng tính theo danh sách này.
         var participants = entity.Participants
@@ -694,10 +643,12 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 UserId = p.UserId,
                 UserCode = p.User?.UserCode,
                 CollaboratorCode = collaboratorCodes.TryGetValue(p.UserId, out var code) ? code : null,
-                FullName = p.FullName,
-                Phone = MaskContactOf(p.UserId) ? MaskPhone(p.Phone) : p.Phone,
-                Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Zalo) ? MaskPhone(p.Zalo) : p.Zalo,
-                Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.Email) ? MaskEmail(p.Email) : p.Email,
+                FullName = p.User?.FullName ?? string.Empty,
+                Phone = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.User?.Phone) ? MaskPhone(p.User!.Phone) : p.User?.Phone ?? string.Empty,
+                Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.User?.Zalo) ? MaskPhone(p.User!.Zalo) : p.User?.Zalo,
+                Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(DisplayEmailOf(p.User))
+                    ? MaskEmail(DisplayEmailOf(p.User))
+                    : DisplayEmailOf(p.User),
                 Note = p.Note,
                 ReferralCode = p.ReferralCode,
                 ReferralName = p.ReferralCode != null && referralNames.TryGetValue(p.ReferralCode, out var referralName)
@@ -744,10 +695,12 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             ReferralName = entity.ReferralCode != null && referralNames.TryGetValue(entity.ReferralCode, out var requestReferralName)
                 ? requestReferralName
                 : null,
-            CreatorName = entity.User?.FullName ?? entity.FullName,
-            CreatorPhone = MaskContactOf(entity.UserId) ? MaskPhone(entity.Phone) : entity.Phone,
-            CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Zalo) ? MaskPhone(entity.Zalo) : entity.Zalo,
-            CreatorEmail = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.Email) ? MaskEmail(entity.Email) : entity.Email,
+            CreatorName = entity.User?.FullName ?? string.Empty,
+            CreatorPhone = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.User?.Phone) ? MaskPhone(entity.User!.Phone) : entity.User?.Phone ?? string.Empty,
+            CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.User?.Zalo) ? MaskPhone(entity.User!.Zalo) : entity.User?.Zalo,
+            CreatorEmail = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(DisplayEmailOf(entity.User))
+                ? MaskEmail(DisplayEmailOf(entity.User))
+                : DisplayEmailOf(entity.User),
             IsMine = isMine,
             IsJoinedByMe = isJoinedByMe,
             CanJoin = canJoin,

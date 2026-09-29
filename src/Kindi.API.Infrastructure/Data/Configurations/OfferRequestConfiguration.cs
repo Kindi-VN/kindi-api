@@ -34,20 +34,6 @@ public class OfferRequestConfiguration : IEntityTypeConfiguration<OfferRequest>
             .IsRequired()
             .HasMaxLength(50);
 
-        builder.Property(x => x.FullName)
-            .IsRequired()
-            .HasMaxLength(100);
-
-        builder.Property(x => x.Phone)
-            .IsRequired()
-            .HasMaxLength(15);
-
-        builder.Property(x => x.Zalo)
-            .HasMaxLength(15);
-
-        builder.Property(x => x.Email)
-            .HasMaxLength(100);
-
         builder.Property(x => x.Note)
             .HasMaxLength(500);
 

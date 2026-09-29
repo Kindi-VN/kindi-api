@@ -1,4 +1,5 @@
 using AutoMapper;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
@@ -35,6 +36,11 @@ public class OfferRequestResponseDto : IMapFrom<OfferRequest>
 
 	public void Mapping(Profile profile)
 	{
-		profile.CreateMap<OfferRequest, OfferRequestResponseDto>();
+		// Thông tin cá nhân nằm ở bảng Users — lấy qua navigation User khi map DTO.
+		profile.CreateMap<OfferRequest, OfferRequestResponseDto>()
+			.ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+			.ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User != null ? src.User.Phone : string.Empty))
+			.ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? (src.User.Zalo ?? string.Empty) : string.Empty))
+			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null));
 	}
 }

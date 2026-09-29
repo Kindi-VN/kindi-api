@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
@@ -51,6 +52,16 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
 
     public void Mapping(Profile profile)
         => profile.CreateMap<Collaborator, CollaboratorResponseDto>()
+            // Thông tin cá nhân nằm ở bảng Users: lấy qua navigation User (null-safe cho query không Include).
+            .ForMember(dest => dest.FullName,
+                opt => opt.MapFrom(src => src.User != null ? src.User.FullName : string.Empty))
+            .ForMember(dest => dest.Phone,
+                opt => opt.MapFrom(src => src.User != null ? (src.User.Phone ?? string.Empty) : string.Empty))
+            .ForMember(dest => dest.Zalo,
+                opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
+            // Email tạm hệ thống sinh ({sđt}@temp.com) coi như chưa có email → trả null.
+            .ForMember(dest => dest.Email,
+                opt => opt.MapFrom(src => src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null))
             // Ưu tiên tên từ bảng BusinessFields (đổi tên vẫn đúng), fallback cột denormalized
             // để các bản ghi cũ / query không Include nav vẫn có dữ liệu.
             .ForMember(dest => dest.BusinessFieldName,

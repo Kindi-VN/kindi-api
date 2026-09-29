@@ -15,12 +15,7 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
         builder.HasKey(x => x.Id);
         builder.Property(x => x.PartnerCode).HasMaxLength(50).IsRequired();
         builder.HasIndex(x => x.PartnerCode).IsUnique();
-        builder.HasIndex(x => x.Phone);
-        builder.HasIndex(x => x.Email);
 
-        builder.Property(x => x.FullName).HasMaxLength(100).IsRequired();
-        builder.Property(x => x.Phone).HasMaxLength(15).IsRequired();
-        builder.Property(x => x.Email).HasMaxLength(100).IsRequired();
         builder.Property(x => x.Position).HasMaxLength(100).IsRequired();
         builder.Property(x => x.CompanyName).HasMaxLength(200).IsRequired();
         builder.Property(x => x.CompanyTax).HasMaxLength(20).IsRequired();

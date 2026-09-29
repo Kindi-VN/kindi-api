@@ -1081,4 +1081,40 @@
   <data name="BusinessGroup_ForwardedGroupsRetrieved" xml:space="preserve">
     <value>Lấy danh sách nhóm đã gửi thành công</value>
   </data>
+  <data name="Common_WrongRequest">
+    <value>Yêu cầu không hợp lệ</value>
+  </data>
+  <data name="Common_NotFound">
+    <value>Không tìm thấy dữ liệu</value>
+  </data>
+  <data name="Common_Unauthorized">
+    <value>Vui lòng đăng nhập để tiếp tục</value>
+  </data>
+  <data name="Common_Forbidden">
+    <value>Bạn không có quyền thực hiện thao tác này</value>
+  </data>
+  <data name="Common_Conflict">
+    <value>Dữ liệu đã tồn tại</value>
+  </data>
+  <data name="GroupBuyingRequest_WrongRequest">
+    <value>Yêu cầu mua chung không hợp lệ</value>
+  </data>
+  <data name="Collaborator_WrongRequest">
+    <value>Thông tin cộng tác viên không hợp lệ</value>
+  </data>
+  <data name="User_WrongRequest">
+    <value>Thông tin người dùng không hợp lệ</value>
+  </data>
+  <data name="User_NotFound">
+    <value>Không tìm thấy người dùng</value>
+  </data>
+  <data name="User_PhoneRequired">
+    <value>Số điện thoại là bắt buộc</value>
+  </data>
+  <data name="User_PhoneAlreadyExists">
+    <value>Số điện thoại '{0}' đã tồn tại trong hệ thống</value>
+  </data>
+  <data name="User_EmailAlreadyExists">
+    <value>Email '{0}' đã tồn tại trong hệ thống</value>
+  </data>
 </root>

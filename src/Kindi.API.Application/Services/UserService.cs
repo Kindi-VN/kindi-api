@@ -1,5 +1,8 @@
 ﻿using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
+using Kindi.API.Application.Common.Models;
+using Kindi.API.Application.Errors;
+using Kindi.API.Shared.Errors;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
@@ -136,6 +139,82 @@ public class UserService : IUserService
         return await _userRepo.GetFirstAsync(u =>
             (normalizedPhone != null && u.Phone == normalizedPhone) ||
             (normalizedEmail != null && u.Email == normalizedEmail));
+    }
+
+    public async Task<PublicUserResult> ResolvePublicUserAsync(string fullName, string phone, string? email, string? zalo)
+    {
+        var existing = await FindByPhoneOrEmailAsync(phone, email);
+        var isNewAccount = existing == null;
+
+        // Tài khoản đã có: dùng lại, KHÔNG ghi đè hồ sơ (đây là endpoint công khai).
+        var userId = existing?.Id ?? await GetOrCreateUserWithPhonePasswordAsync(fullName.Trim(), phone.Trim(), email);
+
+        await UpdatePersonalInfoAsync(userId, fullName, phone, email, zalo);
+
+        return new PublicUserResult(userId, isNewAccount);
+    }
+
+    public async Task<UserPersonalInfo?> GetPersonalInfoAsync(Guid userId)
+    {
+        var user = await _userRepo.GetByIdAsync(userId);
+        if (user == null)
+            return null;
+
+        return new UserPersonalInfo(user.FullName, user.Phone, UserInfo.DisplayEmail(user.Email, user.Phone), user.Zalo);
+    }
+
+    public async Task UpdatePersonalInfoAsync(Guid userId, string? fullName, string? phone, string? email, string? zalo, bool allowContactChange = false)
+    {
+        var user = await _userRepo.GetByIdAsync(userId);
+        if (user == null)
+            return;
+
+        var changed = false;
+
+        var newFullName = fullName?.Trim();
+        if (!string.IsNullOrWhiteSpace(newFullName) && !string.Equals(user.FullName, newFullName, StringComparison.Ordinal))
+        {
+            user.FullName = newFullName;
+            changed = true;
+        }
+
+        var newZalo = zalo?.Trim();
+        if (!string.IsNullOrWhiteSpace(newZalo) && !string.Equals(user.Zalo, newZalo, StringComparison.Ordinal))
+        {
+            user.Zalo = newZalo;
+            changed = true;
+        }
+
+        // SĐT/email: chỉ ghi khi luồng cho phép (admin) hoặc tài khoản đang trống.
+        var newPhone = phone?.Trim();
+        if (!string.IsNullOrWhiteSpace(newPhone)
+            && !string.Equals(user.Phone, newPhone, StringComparison.Ordinal)
+            && (allowContactChange || string.IsNullOrWhiteSpace(user.Phone)))
+        {
+            if (_userRepo.GetQueryable().Any(u => u.Id != userId && u.Phone == newPhone))
+                throw new AppException(UserError.PhoneAlreadyExists.WithParams(newPhone));
+
+            user.Phone = newPhone;
+            changed = true;
+        }
+
+        var newEmail = email?.Trim();
+        if (!string.IsNullOrWhiteSpace(newEmail)
+            && !string.Equals(user.Email, newEmail, StringComparison.OrdinalIgnoreCase)
+            && (allowContactChange || UserInfo.IsPlaceholderEmail(user.Email, user.Phone)))
+        {
+            if (_userRepo.GetQueryable().Any(u => u.Id != userId && u.Email == newEmail))
+                throw new AppException(UserError.EmailAlreadyExists.WithParams(newEmail));
+
+            user.Email = newEmail;
+            changed = true;
+        }
+
+        if (!changed)
+            return;
+
+        _userRepo.Update(user);
+        await _userRepo.SaveChangesAsync();
     }
 
     public async Task<User?> GetCurrentUserAsync()

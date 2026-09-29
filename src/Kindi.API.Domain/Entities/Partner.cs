@@ -6,9 +6,6 @@ public class Partner : BaseEntity
 {
     public Guid UserId { get; set; }
     public string PartnerCode { get; set; } = string.Empty;
-    public string FullName { get; set; } = string.Empty;
-    public string Phone { get; set; } = string.Empty;
-    public string Email { get; set; } = string.Empty;
     public string Position { get; set; } = string.Empty;
     public string CompanyName { get; set; } = string.Empty;
     public string CompanyTax { get; set; } = string.Empty;
