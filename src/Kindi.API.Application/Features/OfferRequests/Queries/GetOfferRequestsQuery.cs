@@ -22,4 +22,9 @@ public class GetOfferRequestsQuery : IRequest<PagedList<OfferRequestResponseDto>
 	/// <summary>Lọc theo khoảng ngày tạo.</summary>
 	public DateTime? FromDate { get; set; }
 	public DateTime? ToDate { get; set; }
+
+	/// <summary>
+	/// Chỉ lấy yêu cầu của chính người gọi (khu vực thành viên). Người dùng không phải admin luôn bị giới hạn như vậy.
+	/// </summary>
+	public bool MineOnly { get; set; }
 }

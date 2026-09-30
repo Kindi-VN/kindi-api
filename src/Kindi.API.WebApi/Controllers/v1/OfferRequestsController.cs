@@ -42,10 +42,10 @@ public class OfferRequestsController : ApiControllerBase
     }
 
     /// <summary>
-    /// Lấy danh sách yêu cầu nhận offer (Chỉ Admin)
+    /// Lấy danh sách yêu cầu nhận offer (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình)
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize]
     public async Task<IActionResult> GetList([FromQuery] OfferRequestQueryDto query)
     {
         var request = _mapper.Map<GetOfferRequestsQuery>(query);

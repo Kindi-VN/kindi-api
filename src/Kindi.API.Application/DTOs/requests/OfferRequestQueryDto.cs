@@ -20,6 +20,11 @@ public class OfferRequestQueryDto : IMapFrom<GetOfferRequestsQuery>
 	public DateTime? FromDate { get; set; }
 	public DateTime? ToDate { get; set; }
 
+	/// <summary>
+	/// Chỉ lấy yêu cầu của chính người gọi (khu vực thành viên). Người dùng không phải admin luôn bị giới hạn như vậy.
+	/// </summary>
+	public bool MineOnly { get; set; }
+
 	public void Mapping(Profile profile)
 	{
 		profile.CreateMap<OfferRequestQueryDto, GetOfferRequestsQuery>();

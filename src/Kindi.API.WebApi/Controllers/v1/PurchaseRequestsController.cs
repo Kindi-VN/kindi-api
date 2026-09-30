@@ -53,7 +53,10 @@ public class PurchaseRequestsController : ApiControllerBase
 		return Ok(response);
 	}
 
-	[Authorize(Roles = "Admin")]
+	/// <summary>
+	/// Lấy danh sách yêu cầu mua (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình)
+	/// </summary>
+	[Authorize]
 	[HttpGet]
 	public async Task<IActionResult> GetListAsync([FromQuery] PurchaseRequestQueryDto query)
 	{

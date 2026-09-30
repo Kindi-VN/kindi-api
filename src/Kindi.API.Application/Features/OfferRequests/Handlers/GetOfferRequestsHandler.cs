@@ -6,30 +6,55 @@ using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Application.Features.OfferRequests.Queries;
 using Kindi.API.Domain.Entities;
+using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Models;
+using Kindi.API.Shared.Exceptions;
+using Kindi.API.Shared.Common.Interfaces;
 using MediatR;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 using System.Linq;
 
 namespace Kindi.API.Application.Features.OfferRequests.Handlers;
 
 public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, PagedList<OfferRequestResponseDto>>
 {
+	private const string AdminRole = "Admin";
+
 	private readonly IQueryService _queryService;
 	private readonly IMapper _mapper;
 	private readonly IReferralService _referralService;
+	private readonly ICurrentUserService _currentUserService;
+	private readonly IStringLocalizer<SharedResource> _localizer;
 
-	public GetOfferRequestsHandler(IQueryService queryService, IMapper mapper, IReferralService referralService)
+	public GetOfferRequestsHandler(
+		IQueryService queryService,
+		IMapper mapper,
+		IReferralService referralService,
+		ICurrentUserService currentUserService,
+		IStringLocalizer<SharedResource> localizer)
 	{
 		_queryService = queryService;
 		_mapper = mapper;
 		_referralService = referralService;
+		_currentUserService = currentUserService;
+		_localizer = localizer;
 	}
 
 	public async Task<PagedList<OfferRequestResponseDto>> Handle(GetOfferRequestsQuery request, CancellationToken cancellationToken)
 	{
 		var search = request.Search?.Trim();
-		var includeDeleted = request.IncludeDeleted == true;
+
+		// Quyền xem: admin thấy tất cả (kể cả bản ghi đã xóa), người dùng thường chỉ thấy yêu cầu của chính mình.
+		var isAdmin = _currentUserService.IsInRole(AdminRole);
+		var onlyMine = request.MineOnly || !isAdmin;
+		var meId = GetCurrentUserId();
+
+		if (onlyMine && meId == null)
+			throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
+
+		var mineId = meId ?? Guid.Empty;
+		var includeDeleted = request.IncludeDeleted == true && isAdmin;
 
 		// Thông tin cá nhân nằm ở bảng Users — kèm User để tìm kiếm và map DTO.
 		IQueryable<OfferRequest> source = includeDeleted
@@ -37,6 +62,7 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			: _queryService.GetAllNoTracking<OfferRequest>().Include(x => x.User);
 
 		var q = source
+			.WhereIf(onlyMine, x => x.UserId == mineId)
 			.WhereIf(request.IsOfferSent.HasValue && !includeDeleted, x => x.IsOfferSent == request.IsOfferSent!.Value)
 			.WhereIf(request.Status.HasValue && !includeDeleted, x => x.Status == request.Status!.Value)
 			.WhereIf(!string.IsNullOrEmpty(search), x =>
@@ -60,4 +86,9 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
 		return result;
 	}
+
+	private Guid? GetCurrentUserId()
+		=> string.IsNullOrEmpty(_currentUserService.UserId)
+			? null
+			: Guid.Parse(_currentUserService.UserId!);
 }
