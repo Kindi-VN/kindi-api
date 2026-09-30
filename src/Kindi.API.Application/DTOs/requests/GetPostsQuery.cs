@@ -9,4 +9,14 @@ public class GetPostsQuery
     public PostType? Type { get; set; }
     public PrivacyType? Privacy { get; set; }
     public string? Tag { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy bài viết của chính người gọi (khu vực thành viên) — mọi trạng thái duyệt.
+    /// </summary>
+    public bool MineOnly { get; set; }
+
+    /// <summary>
+    /// Lọc theo trạng thái duyệt: true = đã duyệt, false = chờ duyệt.
+    /// </summary>
+    public bool? IsApproved { get; set; }
 }

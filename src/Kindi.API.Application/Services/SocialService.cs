@@ -61,8 +61,20 @@ public class SocialService : ISocialService
         if (!string.IsNullOrEmpty(query.Tag))
             predicate = predicate.And(p => p.PostTags.Any(pt => pt.Tag.Name == query.Tag));
 
+        if (query.IsApproved.HasValue)
+            predicate = predicate.And(p => p.IsApproved == query.IsApproved.Value);
+
         // XÂY DỰNG PREDICATE KHÔNG CÓ AWAIT
-        if (!isAdmin)
+        // "Bài viết của tôi" phải có tài khoản: không thì truy vấn rơi về danh sách công khai.
+        if (query.MineOnly)
+        {
+            if (string.IsNullOrEmpty(userId))
+                throw new UnauthorizedException(_localizer["Social_NotAuthorized"]);
+
+            var myGuid = Guid.Parse(userId);
+            predicate = predicate.And(p => p.AuthorId == myGuid);
+        }
+        else if (!isAdmin)
         {
             // Chỉ lấy bài Public đã duyệt + bài của chính user
             // Phần Friends sẽ xử lý sau khi lấy dữ liệu
