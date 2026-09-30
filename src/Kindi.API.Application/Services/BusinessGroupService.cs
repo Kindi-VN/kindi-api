@@ -603,6 +603,39 @@ public class BusinessGroupService : IBusinessGroupService
     }
 
     /// <summary>
+    /// Nhóm của tôi: nhóm do chính mình tạo và/hoặc nhóm mình đã tham gia (cả nhóm ngành lẫn hội nhóm),
+    /// gồm mọi trạng thái duyệt để xem lại lịch sử.
+    /// </summary>
+    public async Task<PagedList<BusinessGroupResponseDto>> GetMinePagedAsync(BusinessGroupQueryDto query)
+    {
+        var meId = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
+        var search = query.Search.NormalizeSearchFilter();
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+
+        var q = _queryService.GetAllNoTracking<BusinessGroup>()
+            .WhereIf(!string.IsNullOrEmpty(search), x =>
+                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
+                (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
+                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
+
+        // Vai trò của mình với nhóm: nhóm mình tạo, nhóm mình đã tham gia, hoặc cả hai
+        if (query.MineRole == GroupMineRole.Created)
+            q = q.Where(x => x.CreatedByUserId == meId);
+        else if (query.MineRole == GroupMineRole.Joined)
+            q = q.Where(x => x.Members.Any(m => m.UserId == meId));
+        else
+            q = q.Where(x => x.CreatedByUserId == meId || x.Members.Any(m => m.UserId == meId));
+
+        var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
+        var result = _mapper.MapPagedList<BusinessGroup, BusinessGroupResponseDto>(paged);
+
+        // Nhóm mình tạo cần số người chờ duyệt để duyệt thành viên
+        await ApplyViewerStateAsync(result.Items, meId, includePendingCounts: true);
+        return result;
+    }
+
+    /// <summary>
     /// Người dùng tạo hội nhóm theo chủ đề: hội ở trạng thái chờ admin duyệt,
     /// người tạo trở thành chủ hội (quản trị hội) và tự duyệt thành viên.
     /// </summary>

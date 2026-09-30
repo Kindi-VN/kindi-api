@@ -3,6 +3,7 @@ using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Errors;
+using Kindi.API.Application.Resources;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
@@ -12,18 +13,23 @@ using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
 using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Errors;
+using Kindi.API.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Localization;
 
 namespace Kindi.API.Application.Services;
 
 public class PurchaseRequestService : IPurchaseRequestService
 {
+	private const string AdminRole = "Admin";
+
 	private readonly IRepository<PurchaseRequest> _repository;
 	private readonly IMapper _mapper;
 	private readonly IQueryService _queryService;
 	private readonly ICurrentUserService _currentUserService;
 	private readonly IUserService _userService;
 	private readonly IReferralService _referralService;
+	private readonly IStringLocalizer<SharedResource> _localizer;
 
 	public PurchaseRequestService(
 		IRepository<PurchaseRequest> repository,
@@ -31,7 +37,8 @@ public class PurchaseRequestService : IPurchaseRequestService
 		IQueryService queryService,
 		ICurrentUserService currentUserService,
 		IUserService userService,
-		IReferralService referralService)
+		IReferralService referralService,
+		IStringLocalizer<SharedResource> localizer)
 	{
 		_repository = repository;
 		_mapper = mapper;
@@ -39,6 +46,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 		_currentUserService = currentUserService;
 		_userService = userService;
 		_referralService = referralService;
+		_localizer = localizer;
 	}
 
 	public async Task<PurchaseRequestResponseDto> CreateAsync(CreatePurchaseRequestDto request)
@@ -102,9 +110,19 @@ public class PurchaseRequestService : IPurchaseRequestService
 	{
 		var search = query.Search?.Trim();
 
+		// Quyền xem: admin thấy tất cả (hoặc chỉ của mình khi truyền mineOnly), người dùng thường chỉ thấy yêu cầu của chính mình.
+		var onlyMine = query.MineOnly || !_currentUserService.IsInRole(AdminRole);
+		var meId = GetCurrentUserId();
+
+		if (onlyMine && meId == null)
+			throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
+
+		var mineId = meId ?? Guid.Empty;
+
 		// Thông tin cá nhân nằm ở bảng Users — kèm User để tìm kiếm và map DTO.
 		var q = _queryService.GetAllNoTracking<PurchaseRequest>()
 			.Include(x => x.User)
+			.WhereIf(onlyMine, x => x.UserId == mineId)
 			.WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
 			.WhereIf(!string.IsNullOrEmpty(search), x =>
 				(x.PurchaseRequestCode != null && x.PurchaseRequestCode.Contains(search!)) ||
@@ -127,6 +145,11 @@ public class PurchaseRequestService : IPurchaseRequestService
 		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
 		return result;
 	}
+
+	private Guid? GetCurrentUserId()
+		=> string.IsNullOrEmpty(_currentUserService.UserId)
+			? null
+			: Guid.Parse(_currentUserService.UserId!);
 
 	public async Task<PurchaseRequestStatusResponseDto> UpdateStatusAsync(
 	Guid id,

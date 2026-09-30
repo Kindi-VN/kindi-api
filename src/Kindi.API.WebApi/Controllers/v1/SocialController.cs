@@ -23,7 +23,7 @@ public class SocialController : ApiControllerBase
     }
 
     /// <summary>
-    /// Lấy danh sách bài viết (phân trang + filter)
+    /// Lấy danh sách bài viết (phân trang + filter; mineOnly=true để lấy bài viết của chính mình)
     /// </summary>
     [HttpGet("posts")]
     public async Task<IActionResult> GetPosts(
@@ -31,7 +31,9 @@ public class SocialController : ApiControllerBase
         [FromQuery] int pageSize = 10,
         [FromQuery] string? type = null,
         [FromQuery] string? privacy = null,
-        [FromQuery] string? tag = null)
+        [FromQuery] string? tag = null,
+        [FromQuery] bool mineOnly = false,
+        [FromQuery] bool? isApproved = null)
     {
         var query = new GetPostsQuery
         {
@@ -39,7 +41,9 @@ public class SocialController : ApiControllerBase
             PageSize = pageSize,
             Type = !string.IsNullOrEmpty(type) ? Enum.Parse<PostType>(type, true) : null,
             Privacy = !string.IsNullOrEmpty(privacy) ? Enum.Parse<PrivacyType>(privacy, true) : null,
-            Tag = tag
+            Tag = tag,
+            MineOnly = mineOnly,
+            IsApproved = isApproved
         };
 
         var result = await _socialService.GetPostsAsync(query);

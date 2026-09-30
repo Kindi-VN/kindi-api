@@ -12,4 +12,7 @@ public class BusinessGroupQueryDto
 
     /// <summary>true = chỉ nhóm mà người đang đăng nhập đã là thành viên.</summary>
     public bool MineOnly { get; set; }
+
+    /// <summary>Danh sách "nhóm của tôi": created = nhóm mình tạo, joined = nhóm mình đã tham gia, bỏ trống = cả hai.</summary>
+    public GroupMineRole? MineRole { get; set; }
 }
