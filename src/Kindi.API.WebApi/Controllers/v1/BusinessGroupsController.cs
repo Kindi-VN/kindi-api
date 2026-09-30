@@ -78,6 +78,15 @@ public class BusinessGroupsController : ApiControllerBase
         return OkPaged(result, _localizer["BusinessGroup_CommunityListRetrieved"]);
     }
 
+    /// <summary>Nhóm của tôi: nhóm mình tạo và/hoặc nhóm mình đã tham gia (nhóm ngành + hội nhóm)</summary>
+    [HttpGet("mine")]
+    [Authorize]
+    public async Task<IActionResult> GetMine([FromQuery] BusinessGroupQueryDto query)
+    {
+        var result = await _groupService.GetMinePagedAsync(query);
+        return OkPaged(result, _localizer["BusinessGroup_ListRetrieved"]);
+    }
+
     /// <summary>Người dùng tạo hội nhóm theo chủ đề (chờ admin duyệt mở hội)</summary>
     [HttpPost("community")]
     [Authorize]

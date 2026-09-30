@@ -13,6 +13,9 @@ public interface IBusinessGroupService
 
     // ===== Hội nhóm (người dùng tự tạo) =====
     Task<PagedList<BusinessGroupResponseDto>> GetCommunityPagedAsync(BusinessGroupQueryDto query);
+
+    /// <summary>Nhóm của tôi: nhóm mình tạo và/hoặc nhóm mình đã tham gia (nhóm ngành + hội nhóm)</summary>
+    Task<PagedList<BusinessGroupResponseDto>> GetMinePagedAsync(BusinessGroupQueryDto query);
     Task<BusinessGroupResponseDto> CreateCommunityAsync(CreateCommunityGroupDto request);
     Task<BusinessGroupResponseDto> UpdateCommunityApprovalAsync(Guid id, UpdateCommunityGroupApprovalDto request);
     Task LeaveAsync(Guid id);
