@@ -228,8 +228,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     }
 
     /// <summary>
-    /// Thông tin liên hệ chỉ hiển thị đầy đủ cho admin. Người dùng khác luôn thấy dạng che
-    /// để tránh lộ số điện thoại của thành viên qua tài khoản đăng ký ảo.
+    /// Thông tin liên hệ chỉ hiển thị đầy đủ cho admin; mọi người dùng khác — kể cả người tạo
+    /// bản ghi — đều chỉ thấy dạng che, muốn liên hệ thì phải qua admin.
     /// </summary>
     private bool ShouldMaskContact(bool forAdmin)
         => !forAdmin || !_currentUserService.IsInRole(AdminRole);
@@ -636,8 +636,6 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
-        bool MaskContactOf(Guid rowUserId) => maskContact && !(me.HasValue && rowUserId == me.Value);
-
         // Email tạm hệ thống sinh cho tài khoản tự động ({sđt}@temp.com) coi như chưa có email.
         static string? DisplayEmailOf(User? user) => UserInfo.DisplayEmail(user?.Email, user?.Phone);
 
@@ -655,9 +653,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 UserCode = p.User?.UserCode,
                 CollaboratorCode = collaboratorCodes.TryGetValue(p.UserId, out var code) ? code : null,
                 FullName = p.User?.FullName ?? string.Empty,
-                Phone = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.User?.Phone) ? MaskPhone(p.User!.Phone) : p.User?.Phone ?? string.Empty,
-                Zalo = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(p.User?.Zalo) ? MaskPhone(p.User!.Zalo) : p.User?.Zalo,
-                Email = MaskContactOf(p.UserId) && !string.IsNullOrEmpty(DisplayEmailOf(p.User))
+                Phone = maskContact && !string.IsNullOrEmpty(p.User?.Phone) ? MaskPhone(p.User!.Phone) : p.User?.Phone ?? string.Empty,
+                Zalo = maskContact && !string.IsNullOrEmpty(p.User?.Zalo) ? MaskPhone(p.User!.Zalo) : p.User?.Zalo,
+                Email = maskContact && !string.IsNullOrEmpty(DisplayEmailOf(p.User))
                     ? MaskEmail(DisplayEmailOf(p.User))
                     : DisplayEmailOf(p.User),
                 Note = p.Note,
@@ -707,9 +705,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 ? requestReferralName
                 : null,
             CreatorName = entity.User?.FullName ?? string.Empty,
-            CreatorPhone = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.User?.Phone) ? MaskPhone(entity.User!.Phone) : entity.User?.Phone ?? string.Empty,
-            CreatorZalo = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(entity.User?.Zalo) ? MaskPhone(entity.User!.Zalo) : entity.User?.Zalo,
-            CreatorEmail = MaskContactOf(entity.UserId) && !string.IsNullOrEmpty(DisplayEmailOf(entity.User))
+            CreatorPhone = maskContact && !string.IsNullOrEmpty(entity.User?.Phone) ? MaskPhone(entity.User!.Phone) : entity.User?.Phone ?? string.Empty,
+            CreatorZalo = maskContact && !string.IsNullOrEmpty(entity.User?.Zalo) ? MaskPhone(entity.User!.Zalo) : entity.User?.Zalo,
+            CreatorEmail = maskContact && !string.IsNullOrEmpty(DisplayEmailOf(entity.User))
                 ? MaskEmail(DisplayEmailOf(entity.User))
                 : DisplayEmailOf(entity.User),
             IsMine = isMine,
