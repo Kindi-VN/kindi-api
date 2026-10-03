@@ -1,4 +1,4 @@
-﻿namespace Kindi.API.Domain.Enums;
+namespace Kindi.API.Domain.Enums;
 
 using System.Reflection;
 using Kindi.API.Domain.Attributes;
@@ -57,25 +57,16 @@ public static class PermissionCatalog
     }
 
     /// <summary>
-    /// Nhóm quyền mặc định: quyền gắn trang của thành viên (/user/**) vào nhóm MEMBER, còn lại theo module.
-    /// Khai <see cref="PermissionInfoAttribute.ParentCode"/> khi quyền thuộc nhóm khác với module.
+    /// Nhóm mặc định theo khu vực màn hình: quyền gắn trang /user/** thuộc khu vực thành viên (Người dùng, Đối tác),
+    /// còn lại — trang /admin/** và thao tác nghiệp vụ không gắn trang riêng — thuộc hệ thống quản trị.
+    /// Quyền mà cả hai khu vực cùng dùng thì khai <see cref="PermissionInfoAttribute.ParentCode"/> = SHARED tại enum.
     /// </summary>
     private static string DeriveParentCode(PermissionInfoAttribute info)
     {
         if (info.Route is not null && info.Route.StartsWith("/user/", StringComparison.OrdinalIgnoreCase))
             return PermissionGroupCodes.Member;
 
-        return info.Module switch
-        {
-            PermissionModule.User => PermissionGroupCodes.User,
-            PermissionModule.Partner => PermissionGroupCodes.Partner,
-            PermissionModule.Purchase => PermissionGroupCodes.Purchase,
-            PermissionModule.Group => PermissionGroupCodes.Group,
-            PermissionModule.Community => PermissionGroupCodes.Community,
-            PermissionModule.Referral => PermissionGroupCodes.Referral,
-            PermissionModule.SuperAdmin => PermissionGroupCodes.SuperAdmin,
-            _ => PermissionGroupCodes.System
-        };
+        return PermissionGroupCodes.Admin;
     }
 
     private static IReadOnlyList<PermissionDefinition> BuildAll()

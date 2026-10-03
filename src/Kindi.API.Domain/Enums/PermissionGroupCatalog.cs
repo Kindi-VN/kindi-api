@@ -5,16 +5,14 @@ namespace Kindi.API.Domain.Enums;
 /// </summary>
 public static class PermissionGroupCodes
 {
-    public const string System = "SYSTEM";
-    public const string User = "USER";
+    /// <summary>Quyền của khu vực quản trị: các trang /admin/** và thao tác nghiệp vụ tương ứng.</summary>
+    public const string Admin = "ADMIN";
+
+    /// <summary>Quyền của khu vực thành viên (tài khoản Người dùng và Đối tác): các trang /user/**.</summary>
     public const string Member = "MEMBER";
-    public const string Partner = "PARTNER";
-    public const string Purchase = "PURCHASE";
-    public const string Group = "GROUP";
-    public const string Community = "COMMUNITY";
-    public const string Referral = "REFERRAL";
-    public const string Commission = "COMMISSION";
-    public const string SuperAdmin = "SUPERADMIN";
+
+    /// <summary>Quyền được cả hai khu vực cùng dùng. Khai trực tiếp ở enum khi phát sinh; hiện chưa có quyền nào.</summary>
+    public const string Shared = "SHARED";
 }
 
 /// <summary>Một nhóm quyền trong danh mục.</summary>
@@ -25,22 +23,17 @@ public sealed record PermissionGroupDefinition(
     int SortOrder);
 
 /// <summary>
-/// Danh mục nhóm quyền — nguồn duy nhất để seed bảng <c>PermissionGroups</c>. Mã nhóm do code quyết định,
-/// còn TÊN và THỨ TỰ hiển thị sửa được trong DB: seeder chỉ thêm nhóm còn thiếu, không ghi đè nhóm đã có.
+/// Danh mục nhóm quyền — nguồn duy nhất để seed bảng <c>PermissionGroups</c>. Nhóm gom theo KHU VỰC sử dụng:
+/// quản trị (ADMIN), khu vực thành viên của Người dùng/Đối tác (MEMBER) và quyền dùng chung (SHARED).
+/// Mã nhóm do code quyết định, còn TÊN và THỨ TỰ hiển thị sửa được trong DB: seeder chỉ thêm nhóm còn thiếu,
+/// không ghi đè nhóm đã có, và ẩn các nhóm cũ không còn trong danh mục.
 /// </summary>
 public static class PermissionGroupCatalog
 {
     public static IReadOnlyList<PermissionGroupDefinition> All { get; } = new List<PermissionGroupDefinition>
     {
-        new(PermissionGroupCodes.System, "Hệ thống", "System", 10),
-        new(PermissionGroupCodes.User, "Người dùng & CTV", "Users & collaborators", 20),
-        new(PermissionGroupCodes.Member, "Khu vực thành viên", "Member area", 30),
-        new(PermissionGroupCodes.Partner, "Đối tác & công ty", "Partners & companies", 40),
-        new(PermissionGroupCodes.Purchase, "Mua chung & tìm hàng", "Sourcing & offers", 50),
-        new(PermissionGroupCodes.Group, "Nhóm ngành & hội nhóm", "Business groups", 60),
-        new(PermissionGroupCodes.Community, "Cộng đồng", "Community", 70),
-        new(PermissionGroupCodes.Referral, "Giới thiệu", "Referral", 80),
-        new(PermissionGroupCodes.Commission, "Hoa hồng & giải ngân", "Commission & payouts", 90),
-        new(PermissionGroupCodes.SuperAdmin, "Quản trị tối cao", "Super admin", 100)
+        new(PermissionGroupCodes.Admin, "Hệ thống quản trị", "Management system", 10),
+        new(PermissionGroupCodes.Member, "Khu vực thành viên", "Member area", 20),
+        new(PermissionGroupCodes.Shared, "Dùng chung", "Shared", 40)
     };
 }
