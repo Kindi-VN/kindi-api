@@ -13,6 +13,9 @@ public interface IBankAccountService
     /// <summary>Lưu thông tin ngân hàng của chính người gọi (sửa số tài khoản thì phải xác minh lại).</summary>
     Task<BankAccountResponse> SaveMineAsync(SaveBankAccountRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>Tạo (hoặc trả lại) mã đối chiếu chuyển khoản để xác minh thông tin ngân hàng của chính người gọi.</summary>
+    Task<BankAccountVerificationCodeResponse> IssueVerificationCodeAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Danh sách thông tin ngân hàng để quản trị viên xác minh.</summary>
     Task<PagedList<BankAccountResponse>> GetPagedAsync(BankAccountQueryDto query, CancellationToken cancellationToken = default);
 

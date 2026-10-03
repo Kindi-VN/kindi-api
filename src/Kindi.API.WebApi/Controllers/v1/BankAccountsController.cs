@@ -47,6 +47,15 @@ public class BankAccountsController : ApiControllerBase
         return Ok(result, _localizer["BankAccount_SavedSuccess"]);
     }
 
+    /// <summary>Tạo mã đối chiếu chuyển khoản để xác minh thông tin ngân hàng của chính người gọi.</summary>
+    [HttpPost("me/verification-code")]
+    [HasPermission(PermissionCode.UpdateMyBankAccount)]
+    public async Task<IActionResult> IssueVerificationCode()
+    {
+        var result = await _bankAccountService.IssueVerificationCodeAsync();
+        return Ok(result, _localizer["BankAccount_VerificationCodeIssued"]);
+    }
+
     /// <summary>Danh sách thông tin ngân hàng để xác minh.</summary>
     [HttpGet]
     [HasPermission(PermissionCode.VerifyBankAccounts)]

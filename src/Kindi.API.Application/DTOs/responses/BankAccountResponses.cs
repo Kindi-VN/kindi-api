@@ -37,6 +37,31 @@ public class BankAccountResponse
     /// <summary>Ghi chú khi xác minh.</summary>
     public string? Note { get; set; }
 
+    /// <summary>Mã đối chiếu chuyển khoản để xác minh tài khoản.</summary>
+    public string? VerificationCode { get; set; }
+
+    /// <summary>Thời điểm tạo mã đối chiếu.</summary>
+    public DateTime? VerificationCodeIssuedAt { get; set; }
+
     /// <summary>Thời điểm cập nhật gần nhất.</summary>
     public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>Mã đối chiếu chuyển khoản để thành viên xác minh thông tin ngân hàng.</summary>
+public class BankAccountVerificationCodeResponse
+{
+    /// <summary>Mã đối chiếu.</summary>
+    public string VerificationCode { get; set; } = string.Empty;
+
+    /// <summary>Nội dung ghi khi chuyển khoản (chính là mã đối chiếu).</summary>
+    public string TransferContent { get; set; } = string.Empty;
+
+    /// <summary>Số tiền gợi ý chuyển khoản để xác minh (đồng).</summary>
+    public decimal Amount { get; set; }
+
+    /// <summary>Thời điểm tạo mã.</summary>
+    public DateTime? IssuedAt { get; set; }
+
+    /// <summary>Thời điểm mã hết hiệu lực.</summary>
+    public DateTime? ExpiresAt { get; set; }
 }

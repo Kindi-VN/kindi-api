@@ -17,6 +17,7 @@ public class UserBankAccountConfiguration : IEntityTypeConfiguration<UserBankAcc
         builder.Property(x => x.AccountHolder).HasMaxLength(150).IsRequired();
         builder.Property(x => x.VerifiedBy).HasMaxLength(100);
         builder.Property(x => x.Note).HasMaxLength(500);
+        builder.Property(x => x.VerificationCode).HasMaxLength(30);
 
         // Mỗi tài khoản một thông tin ngân hàng; kiểm tra trùng ở tầng service (bảng có xoá mềm).
         builder.HasIndex(x => x.UserId);
