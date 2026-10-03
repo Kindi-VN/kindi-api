@@ -28,6 +28,7 @@ public sealed class PayoutService : IPayoutService
     private readonly IRepository<ReferralEvent> _referralEventRepository;
     private readonly IMembershipTierService _membershipTierService;
     private readonly ICommissionConfigService _commissionConfigService;
+    private readonly IPermissionService _permissionService;
     private readonly IQueryService _queryService;
     private readonly ICurrentUserService _currentUserService;
     private readonly IStringLocalizer<SharedResource> _localizer;
@@ -41,6 +42,7 @@ public sealed class PayoutService : IPayoutService
         IRepository<ReferralEvent> referralEventRepository,
         IMembershipTierService membershipTierService,
         ICommissionConfigService commissionConfigService,
+        IPermissionService permissionService,
         IQueryService queryService,
         ICurrentUserService currentUserService,
         IStringLocalizer<SharedResource> localizer,
@@ -53,6 +55,7 @@ public sealed class PayoutService : IPayoutService
         _referralEventRepository = referralEventRepository;
         _membershipTierService = membershipTierService;
         _commissionConfigService = commissionConfigService;
+        _permissionService = permissionService;
         _queryService = queryService;
         _currentUserService = currentUserService;
         _localizer = localizer;
@@ -390,9 +393,17 @@ public sealed class PayoutService : IPayoutService
 
         var dirtyEvents = new List<ReferralEvent>();
 
+        // Chỉ tính tiền cho người giới thiệu đã được bật chức năng hoa hồng (P013) và rút hoa hồng (P015):
+        // tài khoản chưa bật thì phát sinh của họ không được ghi nhận hoa hồng nào.
+        var commissionEnabled = await LoadCommissionEnabledAsync(
+            events.Where(x => x.ReferrerUserId.HasValue).Select(x => x.ReferrerUserId!.Value), cancellationToken);
+
         // Sự kiện chưa có mức hoa hồng thì tính theo mức đang áp cho người giới thiệu rồi ghi lại để đối soát.
         foreach (var referralEvent in events.Where(x => x.CommissionAmount == null && x.ReferrerUserId.HasValue))
         {
+            if (!commissionEnabled.Contains(referralEvent.ReferrerUserId!.Value))
+                continue;
+
             var config = await _commissionConfigService.GetEffectiveAsync(
                 CommissionBeneficiary.Referrer, referralEvent.ReferrerUserId!.Value, cancellationToken);
 
@@ -606,6 +617,31 @@ public sealed class PayoutService : IPayoutService
         await _periodRepository.SaveChangesAsync(cancellationToken);
 
         return period;
+    }
+
+    /// <summary>
+    /// Người giới thiệu được tính hoa hồng khi tài khoản đã được bật chức năng hoa hồng (P013)
+    /// và rút hoa hồng (P015) — quyền của vai trò hoặc cấu hình riêng của tài khoản đều tính.
+    /// </summary>
+    private async Task<HashSet<Guid>> LoadCommissionEnabledAsync(IEnumerable<Guid> userIds, CancellationToken cancellationToken)
+    {
+        var ids = userIds.Distinct().ToList();
+        var enabled = new HashSet<Guid>();
+        if (ids.Count == 0)
+            return enabled;
+
+        var users = await _queryService.GetListAsync<User>(u => ids.Contains(u.Id));
+        var commissionCode = PermissionCode.ViewMyCommission.ToCode();
+        var withdrawalCode = PermissionCode.RequestCommissionWithdrawal.ToCode();
+
+        foreach (var user in users)
+        {
+            var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role, cancellationToken);
+            if (permissions.Codes.Contains(commissionCode) && permissions.Codes.Contains(withdrawalCode))
+                enabled.Add(user.Id);
+        }
+
+        return enabled;
     }
 
     /// <summary>Tính hoa hồng của một phát sinh theo mức đang áp (%, số tiền cố định hoặc theo hạn mức).</summary>
