@@ -132,6 +132,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         });
         await _participantRepository.SaveChangesAsync();
 
+        // Ghi nhận phát sinh giới thiệu của đơn mua chung (nền cho thống kê + hoa hồng sau này).
+        await _referralService.RecordEventAsync(entity.ReferralCode, entity.UserId, ReferralEventType.GroupBuyingRequest,
+            entity.Id, entity.GroupBuyingRequestCode, entity.TargetPrice, isGuestAccount);
+
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
         var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
         dto.FullName = personalInfo?.FullName ?? string.Empty;
@@ -313,6 +317,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         }
 
         await _participantRepository.SaveChangesAsync();
+
+        // Ghi nhận phát sinh giới thiệu khi tham gia đơn mua chung.
+        await _referralService.RecordEventAsync(referralCode, userId, ReferralEventType.GroupBuyingJoin,
+            participant.Id, entity.GroupBuyingRequestCode, entity.TargetPrice, isGuestAccount);
+
         var currentCount = await SyncPeopleCountAsync(entity);
 
         string? username = null;
@@ -360,6 +369,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         participant.UpdatedAt = DateTime.UtcNow;
         _participantRepository.Update(participant);
         await _participantRepository.SaveChangesAsync();
+
+        // Huỷ tham gia → trừ phát sinh giới thiệu của người này khỏi thống kê.
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingJoin, participant.Id, ReferralEventStatus.Cancelled);
 
         await SyncPeopleCountAsync(entity);
         return await MapDetailAsync(entity, forAdmin: false);
@@ -444,6 +456,12 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
             _repository.Update(entity);
             await _repository.SaveChangesAsync();
+
+            // Đơn bị huỷ thì trừ phát sinh giới thiệu; mở lại thì tính lại (các trạng thái khác giữ nguyên).
+            await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingRequest, entity.Id,
+                nextStatus == GroupBuyingStatus.Cancelled ? ReferralEventStatus.Cancelled
+                    : nextStatus == GroupBuyingStatus.Active ? ReferralEventStatus.Pending
+                    : null);
         }
 
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
@@ -511,6 +529,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         _participantRepository.Update(participant);
         await _participantRepository.SaveChangesAsync();
 
+        // Huỷ tham gia → trừ phát sinh giới thiệu của người này khỏi thống kê.
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingJoin, participant.Id, ReferralEventStatus.Cancelled);
+
         await SyncPeopleCountAsync(entity);
         return await MapDetailAsync(entity, forAdmin: true);
     }
@@ -523,6 +544,14 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         _repository.Delete(entity);
         await _repository.SaveChangesAsync();
+
+        // Xoá đơn → trừ luôn phát sinh giới thiệu của đơn và của những người đã tham gia.
+        var participantIds = (await _queryService.GetListAsync<GroupBuyingParticipant>(p => p.GroupBuyingRequestId == id))
+            .Select(p => p.Id)
+            .ToList();
+
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingRequest, entity.Id, ReferralEventStatus.Cancelled);
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingJoin, participantIds, ReferralEventStatus.Cancelled);
     }
 
     // =====================================================================

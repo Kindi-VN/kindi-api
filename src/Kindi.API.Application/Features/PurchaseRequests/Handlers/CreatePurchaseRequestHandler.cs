@@ -83,6 +83,10 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
 
+        // Ghi nhận phát sinh giới thiệu của yêu cầu tìm hàng.
+        await _referralService.RecordEventAsync(entity.ReferralCode, entity.UserId, ReferralEventType.PurchaseRequest,
+            entity.Id, entity.PurchaseRequestCode, entity.ExpectedPrice);
+
         // Thông tin cá nhân chỉ lưu ở bảng Users — form gửi lên thì cập nhật vào tài khoản.
         await _userService.UpdatePersonalInfoAsync(entity.UserId, request.FullName, request.Phone, request.Email, request.Zalo);
 

@@ -139,6 +139,10 @@ public class PartnerService : IPartnerService
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
 
+        // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác.
+        await _referralService.RecordEventAsync(partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
+            partner.Id, partner.PartnerCode, null);
+
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
         // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 2.
         if (!isPublicRegistration)

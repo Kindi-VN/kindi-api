@@ -38,6 +38,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<BusinessGroupComment> BusinessGroupComments { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<AuthAuditLog> AuthAuditLogs { get; set; }
+    public DbSet<ReferralEvent> ReferralEvents { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

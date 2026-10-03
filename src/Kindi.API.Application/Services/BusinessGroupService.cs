@@ -247,6 +247,10 @@ public class BusinessGroupService : IBusinessGroupService
 
         await _memberRepository.SaveChangesAsync();
 
+        // Ghi nhận phát sinh giới thiệu khi xin vào nhóm.
+        await _referralService.RecordEventAsync(referralCode, userId, ReferralEventType.GroupMemberJoin,
+            member.Id, group.BusinessGroupCode, null, isGuestAccount);
+
         // Đồng bộ số thành viên đang hoạt động (sau khi đã lưu bản ghi thành viên)
         var activeCount = await _queryService.GetAllNoTracking<BusinessGroupMember>()
             .CountAsync(x => x.BusinessGroupId == id && x.Status == GroupMemberStatus.Active);
@@ -294,6 +298,9 @@ public class BusinessGroupService : IBusinessGroupService
         member.Status = GroupMemberStatus.Left;
         _memberRepository.Update(member);
         await _memberRepository.SaveChangesAsync();
+
+        // Rời nhóm → trừ phát sinh giới thiệu của thành viên này khỏi thống kê.
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupMemberJoin, member.Id, ReferralEventStatus.Cancelled);
 
         if (wasActive)
         {
@@ -918,6 +925,9 @@ public class BusinessGroupService : IBusinessGroupService
         member.Status = GroupMemberStatus.Left;
         _memberRepository.Update(member);
         await _memberRepository.SaveChangesAsync();
+
+        // Xoá thành viên khỏi nhóm → trừ phát sinh giới thiệu của thành viên đó.
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupMemberJoin, member.Id, ReferralEventStatus.Cancelled);
 
         // Đồng bộ số thành viên đang hoạt động (dùng 'group' đã lấy ở đầu hàm)
         if (wasActive)

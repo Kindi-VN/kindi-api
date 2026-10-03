@@ -77,6 +77,10 @@ public class CreateOfferRequestCommandHandler : IRequestHandler<CreateOfferReque
         await _repository.AddAsync(entity, cancellationToken);
         await _repository.SaveChangesAsync(cancellationToken);
 
+        // Ghi nhận phát sinh giới thiệu của yêu cầu nhận offer.
+        await _referralService.RecordEventAsync(entity.ReferralCode, entity.UserId, ReferralEventType.OfferRequest,
+            entity.Id, entity.OfferRequestCode, entity.CurrentPrice);
+
         // Thông tin cá nhân chỉ lưu ở bảng Users — form gửi lên thì cập nhật vào tài khoản.
         await _userService.UpdatePersonalInfoAsync(entity.UserId, request.FullName, request.Phone, request.Email, request.Zalo);
 
