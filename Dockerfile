@@ -11,7 +11,7 @@ COPY ["src/Kindi.API.Shared/Kindi.API.Shared.csproj", "src/Kindi.API.Shared/"]
 COPY ["src/Kindi.API.Infrastructure/Kindi.API.Infrastructure.csproj", "src/Kindi.API.Infrastructure/"]
 COPY ["src/Kindi.API.WebApi/Kindi.API.WebApi.csproj", "src/Kindi.API.WebApi/"]
 COPY ["docs/Kindi.API.Documentation/Kindi.API.Documentation.csproj", "docs/Kindi.API.Documentation/"]
-# COPY ["tests/Kindi.API.UnitTests/Kindi.API.UnitTests.csproj", "tests/Kindi.API.UnitTests/"]
+COPY ["tests/Kindi.API.UnitTests/Kindi.API.UnitTests.csproj", "tests/Kindi.API.UnitTests/"]
 # COPY ["tests/Kindi.API.IntegrationTests/Kindi.API.IntegrationTests.csproj", "tests/Kindi.API.IntegrationTests/"]
 
 # Copy package management files
@@ -24,7 +24,7 @@ RUN dotnet restore Kindi.API.slnx
 # Copy all source code
 COPY src/ src/
 COPY docs/ docs/
-# COPY tests/ tests/
+COPY tests/ tests/
 
 # Publish the WebApi project
 # PublishReadyToRun pre-compiles IL to native code at build time, reducing JIT warmup
