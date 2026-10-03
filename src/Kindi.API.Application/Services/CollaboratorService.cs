@@ -194,6 +194,10 @@ public class CollaboratorService : ICollaboratorService
 
         await _repository.SaveChangesAsync();
 
+        //  Mã chia sẻ trên link (?ref=) → ghi nhận người giới thiệu cho tài khoản đăng ký (chỉ ghi lần đầu,
+        //  mã không nhận diện được thì bỏ qua, không chặn đăng ký). Mã chia sẻ của chính CTV vẫn là mã CTV.
+        await _referralService.ResolveForUserAsync(collaborator.UserId, request.ReferredByCode);
+
         // Nạp tài khoản vào navigation để response trả họ tên/SĐT/email/Zalo (dữ liệu ở bảng Users).
         collaborator.User = await _userService.FindByIdAsync(collaborator.UserId) ?? collaborator.User;
 
