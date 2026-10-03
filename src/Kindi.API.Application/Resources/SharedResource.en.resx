@@ -1237,16 +1237,16 @@
     <value>Note cannot exceed 500 characters</value>
   </data>
   <data name="Commission_TiersRequired">
-    <value>Tiered commission requires at least one tier</value>
+    <value>Limit-based commission requires at least one limit</value>
   </data>
   <data name="Commission_TierRateInvalid">
-    <value>Invalid tier rate</value>
+    <value>Invalid limit rate</value>
   </data>
   <data name="Commission_TierRangeInvalid">
-    <value>Tier end value must be greater than its start value</value>
+    <value>Limit end value must be greater than its start value</value>
   </data>
   <data name="Commission_TierOverlap">
-    <value>Tiers cannot overlap in value range</value>
+    <value>Limits cannot overlap in value range</value>
   </data>
   <data name="Permissions_NoUsersSelected">
     <value>No account selected</value>

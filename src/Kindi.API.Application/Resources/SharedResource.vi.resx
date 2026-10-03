@@ -1173,16 +1173,16 @@
     <value>Ghi chú không được vượt quá 500 ký tự</value>
   </data>
   <data name="Commission_TiersRequired">
-    <value>Cấu hình bậc thang phải có ít nhất một bậc</value>
+    <value>Cấu hình hạn mức phải có ít nhất một hạn mức</value>
   </data>
   <data name="Commission_TierRateInvalid">
-    <value>Mức hoa hồng của bậc không hợp lệ</value>
+    <value>Mức hoa hồng của hạn mức không hợp lệ</value>
   </data>
   <data name="Commission_TierRangeInvalid">
-    <value>Giá trị kết thúc của bậc phải lớn hơn giá trị bắt đầu</value>
+    <value>Giá trị kết thúc của hạn mức phải lớn hơn giá trị bắt đầu</value>
   </data>
   <data name="Commission_TierOverlap">
-    <value>Các bậc không được trùng khoảng giá trị</value>
+    <value>Các hạn mức không được trùng khoảng giá trị</value>
   </data>
   <data name="Permissions_NoUsersSelected">
     <value>Chưa chọn tài khoản nào</value>

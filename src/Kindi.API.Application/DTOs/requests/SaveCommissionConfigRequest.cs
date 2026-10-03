@@ -35,19 +35,19 @@ public class SaveCommissionConfigRequest
     /// <summary>Ghi chú nội bộ.</summary>
     public string? Note { get; set; }
 
-    /// <summary>Bậc thang; chỉ dùng khi <see cref="Type"/> là bậc thang.</summary>
+    /// <summary>Hạn mức; chỉ dùng khi <see cref="Type"/> là theo hạn mức.</summary>
     public List<CommissionTierRequest> Tiers { get; set; } = new();
 }
 
-/// <summary>Một bậc của cấu hình bậc thang.</summary>
+/// <summary>Một hạn mức của cấu hình.</summary>
 public class CommissionTierRequest
 {
-    /// <summary>Giá trị bắt đầu của bậc.</summary>
+    /// <summary>Giá trị bắt đầu của hạn mức.</summary>
     public decimal FromValue { get; set; }
 
     /// <summary>Giá trị kết thúc; trống là không giới hạn.</summary>
     public decimal? ToValue { get; set; }
 
-    /// <summary>Mức hoa hồng của bậc.</summary>
+    /// <summary>Mức hoa hồng của hạn mức.</summary>
     public decimal Rate { get; set; }
 }
