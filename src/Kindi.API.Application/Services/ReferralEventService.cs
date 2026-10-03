@@ -54,9 +54,24 @@ public class ReferralEventService : IReferralEventService
         return await BuildOverviewAsync(query, items, code);
     }
 
-    public async Task<PagedList<ReferralEventResponseDto>> GetEventsAsync(string referralCode, ReferralEventQueryDto query)
+    public Task<PagedList<ReferralEventResponseDto>> GetEventsAsync(string referralCode, ReferralEventQueryDto query)
     {
         var code = (referralCode ?? string.Empty).Trim().ToUpperInvariant();
+        return GetEventsForCodeAsync(code, query);
+    }
+
+    public async Task<PagedList<ReferralEventResponseDto>> GetMyEventsAsync(ReferralEventQueryDto query)
+    {
+        // Chỉ lấy mã của chính tài khoản đang đăng nhập, không nhận mã từ client.
+        var referralCode = await _referralService.GetSharerReferralCodeAsync();
+        if (string.IsNullOrWhiteSpace(referralCode))
+            return new PagedList<ReferralEventResponseDto>(new List<ReferralEventResponseDto>(), 0, query.Page, query.PageSize);
+
+        return await GetEventsForCodeAsync(referralCode.Trim().ToUpperInvariant(), query);
+    }
+
+    private async Task<PagedList<ReferralEventResponseDto>> GetEventsForCodeAsync(string code, ReferralEventQueryDto query)
+    {
         var (from, to) = Range(query.From, query.To);
 
         var paged = await _queryService.GetAllNoTracking<ReferralEvent>()

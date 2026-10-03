@@ -58,10 +58,20 @@ public class ReferralsController : ApiControllerBase
         return OkPaged(await _referralEventService.GetEventsAsync(referralCode, query));
     }
 
-    /// <summary>Thống kê của mã chia sẻ đang đăng nhập (khu vực thành viên).</summary>
+    /// <summary>
+    /// Thống kê của mã chia sẻ đang đăng nhập (khu vực thành viên).
+    /// Mã lấy từ token của người gọi nên không xem được số liệu của tài khoản khác.
+    /// </summary>
     [HttpGet("me/stats")]
     public async Task<IActionResult> GetMyStats([FromQuery] ReferralStatsQueryDto query)
     {
         return Ok(await _referralEventService.GetMyStatsAsync(query));
+    }
+
+    /// <summary>Danh sách phát sinh của chính mã đang đăng nhập (khu vực thành viên).</summary>
+    [HttpGet("me/events")]
+    public async Task<IActionResult> GetMyEvents([FromQuery] ReferralEventQueryDto query)
+    {
+        return OkPaged(await _referralEventService.GetMyEventsAsync(query));
     }
 }

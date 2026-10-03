@@ -16,6 +16,9 @@ public interface IReferralEventService
     /// <summary>Thống kê của mã chia sẻ đang đăng nhập (khu vực thành viên).</summary>
     Task<ReferralStatsOverviewDto> GetMyStatsAsync(ReferralStatsQueryDto query);
 
-    /// <summary>Danh sách phát sinh của một mã chia sẻ (màn quản trị).</summary>
+    /// <summary>Danh sách phát sinh của một mã chia sẻ (màn quản trị, chỉ Admin).</summary>
     Task<PagedList<ReferralEventResponseDto>> GetEventsAsync(string referralCode, ReferralEventQueryDto query);
+
+    /// <summary>Danh sách phát sinh của chính mã đang đăng nhập (khu vực thành viên).</summary>
+    Task<PagedList<ReferralEventResponseDto>> GetMyEventsAsync(ReferralEventQueryDto query);
 }
