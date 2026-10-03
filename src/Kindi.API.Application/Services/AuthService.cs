@@ -260,6 +260,8 @@ public class AuthService : IAuthService
 		}
 
 		user.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+		// Đã tự đặt mật khẩu mới thì không cần buộc đổi lại ở lần đăng nhập sau.
+		user.MustChangeCredentials = false;
 		await _userRepository.SaveChangesAsync();
 
 		_logger.LogInformation($"Password changed for user: {userId}");
@@ -275,32 +277,45 @@ public class AuthService : IAuthService
 			"Yêu cầu gửi link đặt lại mật khẩu");
 	}
 
-	public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+	/// <summary>
+	/// Đặt lại mật khẩu của chính tài khoản đang đăng nhập — danh tính lấy từ token,
+	/// không nhận email từ client nên không thể đổi mật khẩu của tài khoản khác.
+	/// </summary>
+	public async Task<bool> ResetPasswordAsync(Guid userId, ResetPasswordRequest request)
 	{
 		if (request.NewPassword != request.ConfirmPassword)
 		{
 			_logger.LogWarning("Password confirmation mismatch");
-			await _authAuditService.LogAsync(null, request.Email, AuditAction.ResetPassword, false,
+			await _authAuditService.LogAsync(userId, null, AuditAction.ResetPassword, false,
 				"Mật khẩu xác nhận không khớp");
 			return false;
 		}
 
-		// TODO: Validate reset token and update password
-		var users = await _userRepository.FindAsync(u => u.Email == request.Email && !u.IsDeleted);
-		var user = users.FirstOrDefault();
-
+		var user = await _userRepository.GetFirstAsync(u => u.Id == userId && !u.IsDeleted);
 		if (user == null)
 		{
-			_logger.LogWarning($"User not found for password reset: {request.Email}");
-			await _authAuditService.LogAsync(null, request.Email, AuditAction.ResetPassword, false,
+			_logger.LogWarning($"User not found for password reset: {userId}");
+			await _authAuditService.LogAsync(userId, null, AuditAction.ResetPassword, false,
 				"Không tìm thấy người dùng");
 			return false;
 		}
 
+		// Client có gửi email thì phải khớp tài khoản đang đăng nhập (tương thích request cũ).
+		if (!string.IsNullOrWhiteSpace(request.Email)
+			&& !string.Equals(user.Email?.Trim(), request.Email.Trim(), StringComparison.OrdinalIgnoreCase))
+		{
+			_logger.LogWarning($"Password reset email mismatch for user: {user.Username}");
+			await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.ResetPassword, false,
+				"Email không khớp tài khoản đang đăng nhập");
+			return false;
+		}
+
 		user.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+		// Đã tự đặt mật khẩu mới thì không cần buộc đổi lại ở lần đăng nhập sau.
+		user.MustChangeCredentials = false;
 		await _userRepository.SaveChangesAsync();
 
-		_logger.LogInformation($"Password reset for user: {request.Email}");
+		_logger.LogInformation($"Password reset for user: {user.Username}");
 		await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.ResetPassword, true);
 		return true;
 	}
