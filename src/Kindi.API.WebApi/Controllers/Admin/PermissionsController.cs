@@ -69,6 +69,112 @@ public class PermissionsController : ApiControllerBase
         return Ok(matrix, _localizer["Permissions_UpdateSuccess"]);
     }
 
+    /// <summary>Tìm tài khoản để cấu hình quyền riêng (không gồm tài khoản SuperAdmin).</summary>
+    [HttpGet("users")]
+    [HasPermission(PermissionCode.UpdateUserPermissions)]
+    public async Task<IActionResult> GetUserCandidates([FromQuery] string? search, [FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 20)
+    {
+        var users = await _permissionService.SearchUsersAsync(search, pageNumber, pageSize);
+        var data = users
+            .Select(x => new UserPermissionCandidateResponse
+            {
+                Id = x.Id,
+                Username = x.Username,
+                FullName = x.FullName,
+                Role = ((int)x.Role).ToString(),
+                RoleName = x.Role.ToString()
+            })
+            .ToList();
+
+        return Ok(data, _localizer["Permissions_UsersListSuccess"]);
+    }
+
+    /// <summary>Xem quyền hiệu lực và phần cấu hình riêng của một tài khoản.</summary>
+    [HttpGet("users/{userId:guid}")]
+    [HasPermission(PermissionCode.UpdateUserPermissions)]
+    public async Task<IActionResult> GetUserPermissions(Guid userId)
+    {
+        var detail = await _permissionService.GetUserPermissionDetailAsync(userId);
+        if (detail == null)
+            return NotFound(_localizer["Permissions_UserNotFound"]);
+
+        return Ok(BuildUserPermissionDetail(detail), _localizer["Permissions_ListSuccess"]);
+    }
+
+    /// <summary>Cập nhật quyền hiệu lực cho một tài khoản (chỉ lưu phần khác biệt so với role).</summary>
+    [HttpPut("users/{userId:guid}")]
+    [HasPermission(PermissionCode.UpdateUserPermissions)]
+    public async Task<IActionResult> UpdateUserPermissions(Guid userId, [FromBody] UpdateUserPermissionsRequest request)
+    {
+        var unknown = FindUnknownCodes(request.PermissionCodes);
+        if (unknown.Count > 0)
+            return BadRequest(_localizer["Permissions_UnknownCodes", string.Join(", ", unknown)]);
+
+        try
+        {
+            await _permissionService.SetUserPermissionsAsync(new[] { userId }, request.PermissionCodes);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+
+        var detail = await _permissionService.GetUserPermissionDetailAsync(userId);
+        if (detail == null)
+            return NotFound(_localizer["Permissions_UserNotFound"]);
+
+        return Ok(BuildUserPermissionDetail(detail), _localizer["Permissions_UserUpdateSuccess"]);
+    }
+
+    /// <summary>Áp cùng một bộ quyền cho nhiều tài khoản được chọn.</summary>
+    [HttpPut("users")]
+    [HasPermission(PermissionCode.UpdateUserPermissions)]
+    public async Task<IActionResult> UpdateUsersPermissions([FromBody] UpdateUsersPermissionsRequest request)
+    {
+        if (request.UserIds.Count == 0)
+            return BadRequest(_localizer["Permissions_NoUsersSelected"]);
+
+        var unknown = FindUnknownCodes(request.PermissionCodes);
+        if (unknown.Count > 0)
+            return BadRequest(_localizer["Permissions_UnknownCodes", string.Join(", ", unknown)]);
+
+        try
+        {
+            await _permissionService.SetUserPermissionsAsync(request.UserIds, request.PermissionCodes);
+        }
+        catch (InvalidOperationException exception)
+        {
+            return BadRequest(exception.Message);
+        }
+
+        return Ok(new UpdateUsersPermissionsResponse { UpdatedUsers = request.UserIds.Distinct().Count() },
+            _localizer["Permissions_UserUpdateSuccess"]);
+    }
+
+    /// <summary>Mã quyền gửi lên không có trong danh mục.</summary>
+    private List<string> FindUnknownCodes(IEnumerable<string> permissionCodes)
+    {
+        var known = _permissionService.GetCatalog()
+            .Select(x => x.PermissionCode)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        return permissionCodes.Where(code => !known.Contains(code)).ToList();
+    }
+
+    private static UserPermissionDetailResponse BuildUserPermissionDetail(UserPermissionDetail detail)
+        => new()
+        {
+            UserId = detail.UserId,
+            Username = detail.Username,
+            FullName = detail.FullName,
+            Role = ((int)detail.Role).ToString(),
+            RoleName = detail.Role.ToString(),
+            RolePermissionCodes = detail.RoleCodes.OrderBy(x => x, StringComparer.Ordinal).ToList(),
+            GrantedCodes = detail.GrantedCodes.OrderBy(x => x, StringComparer.Ordinal).ToList(),
+            DeniedCodes = detail.DeniedCodes.OrderBy(x => x, StringComparer.Ordinal).ToList(),
+            EffectiveCodes = detail.EffectiveCodes.OrderBy(x => x, StringComparer.Ordinal).ToList()
+        };
+
     private async Task<PermissionMatrixResponse> BuildMatrixAsync()
     {
         var permissions = _permissionService.GetCatalog()

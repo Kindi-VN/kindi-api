@@ -79,7 +79,7 @@ public class AuthService : IAuthService
         }
 
         var roles = GetRoles(user.Role);
-        var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+        var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
         var token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, roles, permissions.Codes, permissions.Version);
 
         user.LastLoginAt = DateTime.UtcNow;
@@ -150,7 +150,7 @@ public class AuthService : IAuthService
 		// Token cũ bị vô hiệu hóa ngay khi đã cấp token mới.
 		_jwtService.BlacklistToken(token);
 
-		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+		var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
 		var newToken = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role),
 			permissions.Codes, permissions.Version);
 
@@ -227,7 +227,7 @@ public class AuthService : IAuthService
 		await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, true,
 			$"Đổi tên đăng nhập ({oldUsername} → {user.Username}) và mật khẩu");
 
-		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+		var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
 
 		return new LoginResponse
 		{
@@ -339,7 +339,7 @@ public class AuthService : IAuthService
 
 		if (user == null) return null;
 
-		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+		var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
 
 		return new UserInfoResponse
 		{

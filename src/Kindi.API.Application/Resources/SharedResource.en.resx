@@ -1182,6 +1182,18 @@
   <data name="Permissions_UpdateSuccess">
     <value>Role permissions updated successfully</value>
   </data>
+  <data name="Permissions_UsersListSuccess">
+    <value>Accounts available for permission configuration</value>
+  </data>
+  <data name="Permissions_UserNotFound">
+    <value>Account not found</value>
+  </data>
+  <data name="Permissions_UserUpdateSuccess">
+    <value>Account permissions updated successfully</value>
+  </data>
+  <data name="Permissions_NoUsersSelected">
+    <value>No account selected</value>
+  </data>
   <data name="Permissions_RoleNotAssignable">
     <value>This role cannot be configured</value>
   </data>

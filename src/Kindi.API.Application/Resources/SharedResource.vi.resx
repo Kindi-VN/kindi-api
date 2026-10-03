@@ -1118,6 +1118,18 @@
   <data name="Permissions_UpdateSuccess">
     <value>Cập nhật quyền cho vai trò thành công</value>
   </data>
+  <data name="Permissions_UsersListSuccess">
+    <value>Danh sách tài khoản để cấu hình quyền</value>
+  </data>
+  <data name="Permissions_UserNotFound">
+    <value>Không tìm thấy tài khoản</value>
+  </data>
+  <data name="Permissions_UserUpdateSuccess">
+    <value>Cập nhật quyền cho tài khoản thành công</value>
+  </data>
+  <data name="Permissions_NoUsersSelected">
+    <value>Chưa chọn tài khoản nào</value>
+  </data>
   <data name="Permissions_RoleNotAssignable">
     <value>Không thể cấu hình quyền cho vai trò này</value>
   </data>

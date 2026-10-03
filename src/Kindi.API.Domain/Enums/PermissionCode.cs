@@ -180,6 +180,10 @@ public enum PermissionCode
 
     [PermissionInfo("Xem toàn bộ audit log", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/audit-logs", "GET /api/v1/admin/audit-logs/full")]
     ViewFullAuditLogs = 103,
+
+    [PermissionInfo("Cấu hình quyền riêng cho người dùng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+        "GET /api/v1/permissions/users, PUT /api/v1/permissions/users/{userId}, PUT /api/v1/permissions/users")]
+    UpdateUserPermissions = 104,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

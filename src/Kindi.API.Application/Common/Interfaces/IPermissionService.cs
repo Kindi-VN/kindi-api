@@ -1,10 +1,10 @@
-﻿namespace Kindi.API.Application.Common.Interfaces;
+namespace Kindi.API.Application.Common.Interfaces;
 
 using Kindi.API.Domain.Enums;
 
 /// <summary>
-/// Quyền của hệ thống: đọc danh mục (enum <see cref="PermissionCode"/>) và quyền đang bật của từng role.
-/// SuperAdmin luôn có toàn quyền — không lưu ở bảng RolePermissions.
+/// Quyền của hệ thống: đọc danh mục (enum <see cref="PermissionCode"/>), quyền đang bật của từng role
+/// và cấu hình quyền riêng của từng tài khoản. SuperAdmin luôn có toàn quyền — không lưu ở bảng quyền.
 /// </summary>
 public interface IPermissionService
 {
@@ -17,7 +17,22 @@ public interface IPermissionService
     /// <summary>Cập nhật quyền cho một role (chỉ role được gán — SuperAdmin bị từ chối).</summary>
     Task SetRolePermissionsAsync(UserRole role, IEnumerable<string> permissionCodes, CancellationToken cancellationToken = default);
 
-    /// <summary>Xóa cache quyền (sau khi sửa ma trận).</summary>
+    /// <summary>Quyền hiệu lực của một tài khoản: quyền của role ghép với cấu hình riêng của tài khoản.</summary>
+    Task<UserPermissions> GetUserPermissionsAsync(Guid userId, UserRole role, CancellationToken cancellationToken = default);
+
+    /// <summary>Thông tin phục vụ màn cấu hình quyền riêng cho một tài khoản.</summary>
+    Task<UserPermissionDetail?> GetUserPermissionDetailAsync(Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cấu hình quyền riêng cho danh sách tài khoản: chỉ lưu phần khác biệt so với quyền của role,
+    /// nhờ vậy khi quyền role thay đổi thì tài khoản không bị lệch cấu hình.
+    /// </summary>
+    Task SetUserPermissionsAsync(IReadOnlyCollection<Guid> userIds, IEnumerable<string> permissionCodes, CancellationToken cancellationToken = default);
+
+    /// <summary>Tìm tài khoản để chọn khi cấu hình quyền riêng (mặc định bỏ qua tài khoản SuperAdmin).</summary>
+    Task<IReadOnlyList<UserPermissionCandidate>> SearchUsersAsync(string? search, int pageNumber, int pageSize, CancellationToken cancellationToken = default);
+
+    /// <summary>Xóa cache quyền (sau khi sửa cấu hình quyền).</summary>
     void InvalidateCache();
 }
 
@@ -26,3 +41,27 @@ public sealed record RolePermissions(IReadOnlySet<string> Codes, long Version)
 {
     public static readonly RolePermissions Empty = new(new HashSet<string>(), 0);
 }
+
+/// <summary>Quyền hiệu lực của một tài khoản và phần cấu hình riêng so với role.</summary>
+public sealed record UserPermissions(
+    IReadOnlySet<string> Codes,
+    IReadOnlySet<string> GrantedCodes,
+    IReadOnlySet<string> DeniedCodes,
+    long Version)
+{
+    public static readonly UserPermissions Empty = new(new HashSet<string>(), new HashSet<string>(), new HashSet<string>(), 0);
+}
+
+/// <summary>Tài khoản chọn được ở màn cấu hình quyền riêng.</summary>
+public sealed record UserPermissionCandidate(Guid Id, string Username, string FullName, UserRole Role);
+
+/// <summary>Chi tiết quyền của một tài khoản: quyền của role, phần bật thêm, phần tắt riêng và quyền hiệu lực.</summary>
+public sealed record UserPermissionDetail(
+    Guid UserId,
+    string Username,
+    string FullName,
+    UserRole Role,
+    IReadOnlySet<string> RoleCodes,
+    IReadOnlySet<string> GrantedCodes,
+    IReadOnlySet<string> DeniedCodes,
+    IReadOnlySet<string> EffectiveCodes);
