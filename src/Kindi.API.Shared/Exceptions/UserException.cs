@@ -19,6 +19,12 @@ public static class UserException
             additionalData: new { Phone = phone }
         );
 
+    public static KindiException AdminResetNotAllowed(IStringLocalizer<ExceptionMessages> localizer)
+        => new KindiException(
+            statusCode: "USER_ADMIN_RESET_NOT_ALLOWED",
+            message: localizer["User_AdminResetNotAllowed"]
+        );
+
     public static KindiException EmailAlreadyExists(IStringLocalizer<ExceptionMessages> localizer, string email)
         => new KindiException(
             statusCode: "USER_EMAIL_EXISTS",

@@ -49,4 +49,7 @@
   <data name="Collaborator_CircularReference">
     <value>Circular reference detected with parent {0}</value>
   </data>
+  <data name="User_AdminResetNotAllowed">
+    <value>Cannot reset password of an administrator account</value>
+  </data>
 </root>

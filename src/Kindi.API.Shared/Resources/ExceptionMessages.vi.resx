@@ -49,4 +49,7 @@
   <data name="Collaborator_CircularReference">
     <value>Phát hiện tham chiếu vòng với parent {0}</value>
   </data>
+  <data name="User_AdminResetNotAllowed">
+    <value>Không cấp lại mật khẩu cho tài khoản quản trị</value>
+  </data>
 </root>
