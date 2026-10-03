@@ -1,9 +1,11 @@
-﻿namespace Kindi.API.Domain.Enums;
+namespace Kindi.API.Domain.Enums;
 
 using Kindi.API.Domain.Attributes;
 
 /// <summary>
-/// Danh mục quyền của hệ thống. Mã quyền (P###) = "P" + giá trị số của member, ví dụ
+/// Danh mục quyền của hệ thống. Nhóm hiển thị suy theo khu vực màn hình (xem PermissionCatalog),
+/// chỉ khai ParentCode khi quyền thuộc nhóm dùng chung.
+/// Mã quyền (P###) = "P" + giá trị số của member, ví dụ
 /// <see cref="ViewUsers"/> = 20 → mã P020. Không đổi giá trị đã phát hành, chỉ thêm member mới.
 /// </summary>
 public enum PermissionCode
@@ -190,11 +192,11 @@ public enum PermissionCode
     UpdateUserPermissions = 104,
 
     [PermissionInfo("Xem cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/settings",
-        "GET /api/v1/commissions", ParentCode = PermissionGroupCodes.Commission)]
+        "GET /api/v1/commissions")]
     ViewCommissionConfigs = 105,
 
     [PermissionInfo("Sửa cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
-        "POST /api/v1/commissions, DELETE /api/v1/commissions/{id}", ParentCode = PermissionGroupCodes.Commission)]
+        "POST /api/v1/commissions, DELETE /api/v1/commissions/{id}")]
     UpdateCommissionConfigs = 106,
     [PermissionInfo("Cập nhật thông tin ngân hàng của tôi", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
         "GET /api/v1/bank-accounts/me, PUT /api/v1/bank-accounts/me")]
@@ -205,19 +207,19 @@ public enum PermissionCode
     RequestCommissionWithdrawal = 15,
 
     [PermissionInfo("Xem chi trả hoa hồng và kỳ giải ngân", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/finance",
-        "GET /api/v1/payouts, GET /api/v1/payout-periods", ParentCode = PermissionGroupCodes.Commission)]
+        "GET /api/v1/payouts, GET /api/v1/payout-periods")]
     ViewPayouts = 107,
 
     [PermissionInfo("Xử lý chi trả hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
-        "POST /api/v1/payouts/{id}/approve, POST /api/v1/payouts/{id}/reject, POST /api/v1/payouts/{id}/paid, POST /api/v1/payout-periods/{id}/close, POST /api/v1/payout-periods/{id}/pay", ParentCode = PermissionGroupCodes.Commission)]
+        "POST /api/v1/payouts/{id}/approve, POST /api/v1/payouts/{id}/reject, POST /api/v1/payouts/{id}/paid, POST /api/v1/payout-periods/{id}/close, POST /api/v1/payout-periods/{id}/pay")]
     ProcessPayouts = 108,
 
     [PermissionInfo("Cấu hình hạng thành viên và phí rút sớm", PermissionModule.SuperAdmin, PermissionKind.Action, "/admin/finance",
-        "POST/PUT/DELETE /api/v1/membership-tiers, PUT /api/v1/payout-settings", ParentCode = PermissionGroupCodes.Commission)]
+        "POST/PUT/DELETE /api/v1/membership-tiers, PUT /api/v1/payout-settings")]
     ManageMembershipTiers = 109,
 
     [PermissionInfo("Xác minh thông tin ngân hàng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
-        "PUT /api/v1/bank-accounts/{userId}/verification, GET /api/v1/bank-accounts", ParentCode = PermissionGroupCodes.Commission)]
+        "PUT /api/v1/bank-accounts/{userId}/verification, GET /api/v1/bank-accounts")]
     VerifyBankAccounts = 110,
 }
 

@@ -1,4 +1,4 @@
-﻿namespace Kindi.API.Infrastructure.Data;
+namespace Kindi.API.Infrastructure.Data;
 
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
@@ -81,6 +81,33 @@ public static class PermissionSeeder
 
         await context.SaveChangesAsync(cancellationToken);
 
+        // Nhóm cũ không còn trong danh mục: ẩn đi để màn phân quyền không còn nhóm lạc, nhưng chỉ ẩn khi
+        // không còn quyền nào trỏ tới (nếu còn quyền tham chiếu thì giữ nguyên nhóm đó).
+        var catalogCodes = PermissionGroupCatalog.All.Select(x => x.Code).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var usedGroupCodes = (await context.Permissions
+                .IgnoreQueryFilters()
+                .Where(x => x.ParentCode != null)
+                .Select(x => x.ParentCode!)
+                .Distinct()
+                .ToListAsync(cancellationToken))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var hiddenGroups = 0;
+        foreach (var group in await context.PermissionGroups.IgnoreQueryFilters()
+                     .Where(x => !x.IsDeleted)
+                     .ToListAsync(cancellationToken))
+        {
+            if (catalogCodes.Contains(group.Code) || usedGroupCodes.Contains(group.Code)) continue;
+
+            group.IsDeleted = true;
+            hiddenGroups++;
+        }
+
+        if (hiddenGroups > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         // Quyền mặc định cho role: chỉ thêm dòng còn thiếu, giữ nguyên cấu hình đã sửa.
         var grantedPairs = await context.RolePermissions
             .IgnoreQueryFilters()
@@ -111,7 +138,7 @@ public static class PermissionSeeder
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Grants} gán role mới",
-            added, addedGroups, addedGrants);
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới",
+            added, addedGroups, hiddenGroups, addedGrants);
     }
 }
