@@ -1,4 +1,4 @@
-﻿namespace Kindi.API.Domain.Enums;
+namespace Kindi.API.Domain.Enums;
 
 using Kindi.API.Domain.Attributes;
 
