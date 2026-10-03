@@ -89,6 +89,14 @@ public enum PermissionCode
         "GET /api/v1/commissions/me")]
     ViewMyCommission = 13,
 
+    [PermissionInfo("Cập nhật thông tin ngân hàng của tôi", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
+        "PUT /api/v1/bank-accounts/me")]
+    UpdateMyBankAccount = 14,
+
+    [PermissionInfo("Yêu cầu rút hoa hồng", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
+        "POST /api/v1/payouts/withdrawals")]
+    RequestCommissionWithdrawal = 15,
+
     [PermissionInfo("Xem danh sách đối tác", PermissionModule.Partner, PermissionKind.View, "/admin/partner", "GET /api/v1/partners, GET /api/v1/partners/{id}, GET /api/v1/partners/deleted")]
     ViewPartners = 40,
 
@@ -196,6 +204,22 @@ public enum PermissionCode
     [PermissionInfo("Sửa cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
         "POST /api/v1/commissions, DELETE /api/v1/commissions/{id}")]
     UpdateCommissionConfigs = 106,
+
+    [PermissionInfo("Xem chi trả hoa hồng và kỳ giải ngân", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/finance",
+        "GET /api/v1/payouts, GET /api/v1/payout-periods")]
+    ViewPayouts = 107,
+
+    [PermissionInfo("Xử lý chi trả hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+        "POST /api/v1/payouts/{id}/approve, POST /api/v1/payouts/{id}/reject, POST /api/v1/payouts/{id}/paid, POST /api/v1/payout-periods/{id}/close, POST /api/v1/payout-periods/{id}/pay")]
+    ProcessPayouts = 108,
+
+    [PermissionInfo("Cấu hình hạng thành viên và phí rút sớm", PermissionModule.SuperAdmin, PermissionKind.Action, "/admin/finance",
+        "POST/PUT/DELETE /api/v1/membership-tiers, PUT /api/v1/payout-settings")]
+    ManageMembershipTiers = 109,
+
+    [PermissionInfo("Xác minh thông tin ngân hàng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+        "POST /api/v1/bank-accounts/{userId}/verify, GET /api/v1/bank-accounts")]
+    VerifyBankAccounts = 110,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

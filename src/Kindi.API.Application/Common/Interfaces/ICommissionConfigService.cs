@@ -24,6 +24,9 @@ public interface ICommissionConfigService
     /// <summary>Mức hoa hồng đang áp cho chính người gọi, theo từng bên nhận.</summary>
     Task<MyCommissionResponse> GetMineAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Mức hoa hồng đang áp cho một tài khoản (bản riêng trước, không có thì bản chung).</summary>
+    Task<CommissionConfigResponse?> GetEffectiveAsync(Domain.Enums.CommissionBeneficiary beneficiary, Guid userId, CancellationToken cancellationToken = default);
+
     /// <summary>Tìm tài khoản để cấu hình hoa hồng riêng (theo tên đăng nhập, họ tên hoặc số điện thoại).</summary>
     Task<List<CommissionUserResponse>> SearchUsersAsync(string? search, CancellationToken cancellationToken = default);
 }

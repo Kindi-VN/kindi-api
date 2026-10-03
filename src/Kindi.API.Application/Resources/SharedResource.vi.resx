@@ -1193,4 +1193,154 @@
   <data name="Permissions_UnknownCodes">
     <value>Mã quyền không tồn tại: {0}</value>
   </data>
+  <data name="Membership_NameRequired" xml:space="preserve">
+    <value>Vui lòng nhập tên hạng thành viên.</value>
+  </data>
+  <data name="Membership_AccumulatedInvalid" xml:space="preserve">
+    <value>Doanh số tích luỹ tối thiểu không hợp lệ.</value>
+  </data>
+  <data name="Membership_FeeRateInvalid" xml:space="preserve">
+    <value>Phí rút sớm của hạng phải trong khoảng 0-100%.</value>
+  </data>
+  <data name="Membership_LimitInvalid" xml:space="preserve">
+    <value>Hạn mức rút trong tháng không hợp lệ.</value>
+  </data>
+  <data name="Membership_PriorityInvalid" xml:space="preserve">
+    <value>Thứ tự ưu tiên duyệt không hợp lệ.</value>
+  </data>
+  <data name="Membership_TierNotFound" xml:space="preserve">
+    <value>Không tìm thấy hạng thành viên.</value>
+  </data>
+  <data name="Payout_UserInvalid" xml:space="preserve">
+    <value>Không xác định được tài khoản đang đăng nhập.</value>
+  </data>
+  <data name="Payout_BankNameRequired" xml:space="preserve">
+    <value>Vui lòng nhập tên ngân hàng.</value>
+  </data>
+  <data name="Payout_AccountNumberRequired" xml:space="preserve">
+    <value>Vui lòng nhập số tài khoản.</value>
+  </data>
+  <data name="Payout_AccountHolderRequired" xml:space="preserve">
+    <value>Vui lòng nhập chủ tài khoản.</value>
+  </data>
+  <data name="Payout_BankAccountNotFound" xml:space="preserve">
+    <value>Tài khoản chưa có thông tin ngân hàng để xác minh.</value>
+  </data>
+  <data name="Payout_FeeRateInvalid" xml:space="preserve">
+    <value>Phí rút sớm phải trong khoảng 0-100%.</value>
+  </data>
+  <data name="Payout_AmountInvalid" xml:space="preserve">
+    <value>Số tiền không hợp lệ.</value>
+  </data>
+  <data name="Payout_FeeAmountInvalid" xml:space="preserve">
+    <value>Phí rút sớm tối thiểu/tối đa không hợp lệ.</value>
+  </data>
+  <data name="Payout_FeeRangeInvalid" xml:space="preserve">
+    <value>Phí rút sớm tối thiểu không được lớn hơn tối đa.</value>
+  </data>
+  <data name="Payout_ClosingDayInvalid" xml:space="preserve">
+    <value>Ngày chốt sổ phải trong khoảng 0-31.</value>
+  </data>
+  <data name="Payout_EarlyDisabled" xml:space="preserve">
+    <value>Chức năng rút hoa hồng sớm đang tạm dừng.</value>
+  </data>
+  <data name="Payout_BelowMinAmount" xml:space="preserve">
+    <value>Số tiền rút tối thiểu là {0}.</value>
+  </data>
+  <data name="Payout_NoBankAccount" xml:space="preserve">
+    <value>Vui lòng cập nhật thông tin ngân hàng nhận giải ngân.</value>
+  </data>
+  <data name="Payout_ExceedAvailable" xml:space="preserve">
+    <value>Số tiền rút vượt quá hoa hồng có thể rút ({0}).</value>
+  </data>
+  <data name="Payout_ExceedMonthlyLimit" xml:space="preserve">
+    <value>Vượt hạn mức rút trong tháng của hạng ({0}).</value>
+  </data>
+  <data name="Payout_FeeExceedAmount" xml:space="preserve">
+    <value>Phí rút sớm lớn hơn số tiền rút.</value>
+  </data>
+  <data name="Payout_StatementNotFound" xml:space="preserve">
+    <value>Không tìm thấy lần chi trả.</value>
+  </data>
+  <data name="Payout_NotOwner" xml:space="preserve">
+    <value>Bạn không phải chủ của yêu cầu rút này.</value>
+  </data>
+  <data name="Payout_CancelInvalid" xml:space="preserve">
+    <value>Chỉ huỷ được yêu cầu rút sớm đang chờ duyệt.</value>
+  </data>
+  <data name="Payout_PeriodInvalid" xml:space="preserve">
+    <value>Tháng/năm của kỳ giải ngân không hợp lệ.</value>
+  </data>
+  <data name="Payout_PeriodNotFound" xml:space="preserve">
+    <value>Không tìm thấy kỳ giải ngân.</value>
+  </data>
+  <data name="Payout_PeriodNotOpen" xml:space="preserve">
+    <value>Kỳ giải ngân đã chốt sổ.</value>
+  </data>
+  <data name="Payout_PeriodNotClosed" xml:space="preserve">
+    <value>Kỳ giải ngân chưa chốt sổ.</value>
+  </data>
+  <data name="Payout_StatusInvalid" xml:space="preserve">
+    <value>Trạng thái chi trả không cho phép thao tác này.</value>
+  </data>
+  <data name="Payout_RejectReasonRequired" xml:space="preserve">
+    <value>Vui lòng nhập lý do từ chối.</value>
+  </data>
+  <data name="Membership_ListSuccess" xml:space="preserve">
+    <value>Lấy danh sách hạng thành viên thành công.</value>
+  </data>
+  <data name="Membership_SaveSuccess" xml:space="preserve">
+    <value>Lưu hạng thành viên thành công.</value>
+  </data>
+  <data name="Membership_DeleteSuccess" xml:space="preserve">
+    <value>Xoá hạng thành viên thành công.</value>
+  </data>
+  <data name="Membership_EvaluateSuccess" xml:space="preserve">
+    <value>Đã xét lại hạng thành viên.</value>
+  </data>
+  <data name="Membership_MySuccess" xml:space="preserve">
+    <value>Lấy hạng thành viên của bạn thành công.</value>
+  </data>
+  <data name="BankAccount_ListSuccess" xml:space="preserve">
+    <value>Lấy thông tin ngân hàng thành công.</value>
+  </data>
+  <data name="BankAccount_SavedSuccess" xml:space="preserve">
+    <value>Lưu thông tin ngân hàng thành công.</value>
+  </data>
+  <data name="BankAccount_VerifiedSuccess" xml:space="preserve">
+    <value>Cập nhật xác minh thông tin ngân hàng thành công.</value>
+  </data>
+  <data name="Payout_ListSuccess" xml:space="preserve">
+    <value>Lấy danh sách chi trả hoa hồng thành công.</value>
+  </data>
+  <data name="Payout_MyWalletSuccess" xml:space="preserve">
+    <value>Lấy ví hoa hồng thành công.</value>
+  </data>
+  <data name="Payout_WithdrawalSuccess" xml:space="preserve">
+    <value>Đã gửi yêu cầu rút hoa hồng sớm.</value>
+  </data>
+  <data name="Payout_CancelSuccess" xml:space="preserve">
+    <value>Đã huỷ yêu cầu rút hoa hồng.</value>
+  </data>
+  <data name="Payout_ProcessSuccess" xml:space="preserve">
+    <value>Cập nhật trạng thái chi trả thành công.</value>
+  </data>
+  <data name="Payout_PeriodListSuccess" xml:space="preserve">
+    <value>Lấy danh sách kỳ giải ngân thành công.</value>
+  </data>
+  <data name="Payout_PeriodSavedSuccess" xml:space="preserve">
+    <value>Mở kỳ giải ngân thành công.</value>
+  </data>
+  <data name="Payout_PeriodClosedSuccess" xml:space="preserve">
+    <value>Chốt sổ kỳ giải ngân thành công.</value>
+  </data>
+  <data name="Payout_PeriodPaidSuccess" xml:space="preserve">
+    <value>Xác nhận chi trả kỳ giải ngân thành công.</value>
+  </data>
+  <data name="Payout_SettingSuccess" xml:space="preserve">
+    <value>Lấy cấu hình phí rút sớm thành công.</value>
+  </data>
+  <data name="Payout_SettingSavedSuccess" xml:space="preserve">
+    <value>Lưu cấu hình phí rút sớm thành công.</value>
+  </data>
 </root>

@@ -30,6 +30,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PartnerCommission> PartnerCommissions { get; set; }
     public DbSet<CommissionConfig> CommissionConfigs { get; set; }
     public DbSet<CommissionTier> CommissionTiers { get; set; }
+    public DbSet<MembershipTier> MembershipTiers { get; set; }
+    public DbSet<UserMembership> UserMemberships { get; set; }
+    public DbSet<UserBankAccount> UserBankAccounts { get; set; }
+    public DbSet<PayoutSetting> PayoutSettings { get; set; }
+    public DbSet<PayoutPeriod> PayoutPeriods { get; set; }
+    public DbSet<PayoutStatement> PayoutStatements { get; set; }
     public DbSet<SocialPost> SocialPosts { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<PostTag> PostTags { get; set; }

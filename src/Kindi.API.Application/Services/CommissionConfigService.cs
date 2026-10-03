@@ -229,7 +229,7 @@ public sealed class CommissionConfigService : ICommissionConfigService
     }
 
     /// <summary>Mức đang áp cho một tài khoản: bản riêng của tài khoản trước, không có thì lấy bản chung.</summary>
-    private async Task<CommissionConfigResponse?> GetEffectiveAsync(CommissionBeneficiary beneficiary, Guid userId, CancellationToken cancellationToken)
+    public async Task<CommissionConfigResponse?> GetEffectiveAsync(CommissionBeneficiary beneficiary, Guid userId, CancellationToken cancellationToken)
     {
         var config = await _queryService.GetAllNoTracking<CommissionConfig>()
             .Where(x => !x.IsDeleted && x.IsActive && x.Beneficiary == beneficiary &&
