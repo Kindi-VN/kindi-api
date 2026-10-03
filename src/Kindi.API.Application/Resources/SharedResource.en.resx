@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- Common -->
 	<data name="CreateSuccess" xml:space="preserve">
@@ -1409,5 +1409,44 @@
   </data>
   <data name="User_ProfileUpdateSuccess" xml:space="preserve">
     <value>Your account information has been updated</value>
+  </data>
+  <data name="SystemSetting_Success" xml:space="preserve">
+    <value>System settings.</value>
+  </data>
+  <data name="SystemSetting_PublicSuccess" xml:space="preserve">
+    <value>Public system settings.</value>
+  </data>
+  <data name="SystemSetting_SavedSuccess" xml:space="preserve">
+    <value>System settings saved.</value>
+  </data>
+  <data name="SystemSetting_NameRequired" xml:space="preserve">
+    <value>System name is required.</value>
+  </data>
+  <data name="SystemSetting_LanguageInvalid" xml:space="preserve">
+    <value>Default language must be Vietnamese or English.</value>
+  </data>
+  <data name="SystemSetting_TokenInvalid" xml:space="preserve">
+    <value>Invalid token lifetime (access 5–1440 minutes, refresh 1–365 days).</value>
+  </data>
+  <data name="SystemSetting_PasswordLengthInvalid" xml:space="preserve">
+    <value>Minimum password length must be between 6 and 64 characters.</value>
+  </data>
+  <data name="SystemSetting_LockoutInvalid" xml:space="preserve">
+    <value>Failed login attempts must be 1–20 and lockout 1–1440 minutes.</value>
+  </data>
+  <data name="SystemSetting_ReferralCodeInvalid" xml:space="preserve">
+    <value>Referral code needs a prefix and a random part of 4–12 characters.</value>
+  </data>
+  <data name="SystemSetting_AttributionInvalid" xml:space="preserve">
+    <value>Commission attribution days must be between 0 and 365.</value>
+  </data>
+  <data name="SystemSetting_UploadInvalid" xml:space="preserve">
+    <value>Upload size must be 1–200 MB and images per post 0–50.</value>
+  </data>
+  <data name="SystemSetting_AuditRetentionInvalid" xml:space="preserve">
+    <value>Audit log retention must be between 0 and 3650 days.</value>
+  </data>
+  <data name="SystemSetting_FormatInvalid" xml:space="preserve">
+    <value>Date format and time zone are required.</value>
   </data>
 </root>

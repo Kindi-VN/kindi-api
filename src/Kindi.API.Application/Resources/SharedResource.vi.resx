@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- Common -->
 	<data name="CreateSuccess" xml:space="preserve">
@@ -1345,5 +1345,44 @@
   </data>
   <data name="User_ProfileUpdateSuccess" xml:space="preserve">
     <value>Cập nhật thông tin tài khoản thành công</value>
+  </data>
+  <data name="SystemSetting_Success" xml:space="preserve">
+    <value>Cài đặt chung của hệ thống.</value>
+  </data>
+  <data name="SystemSetting_PublicSuccess" xml:space="preserve">
+    <value>Cài đặt công khai của hệ thống.</value>
+  </data>
+  <data name="SystemSetting_SavedSuccess" xml:space="preserve">
+    <value>Đã lưu cài đặt chung.</value>
+  </data>
+  <data name="SystemSetting_NameRequired" xml:space="preserve">
+    <value>Tên hệ thống không được để trống.</value>
+  </data>
+  <data name="SystemSetting_LanguageInvalid" xml:space="preserve">
+    <value>Ngôn ngữ mặc định chỉ nhận tiếng Việt hoặc tiếng Anh.</value>
+  </data>
+  <data name="SystemSetting_TokenInvalid" xml:space="preserve">
+    <value>Thời hạn token không hợp lệ (access 5–1440 phút, refresh 1–365 ngày).</value>
+  </data>
+  <data name="SystemSetting_PasswordLengthInvalid" xml:space="preserve">
+    <value>Độ dài mật khẩu tối thiểu phải từ 6 đến 64 ký tự.</value>
+  </data>
+  <data name="SystemSetting_LockoutInvalid" xml:space="preserve">
+    <value>Số lần đăng nhập sai phải từ 1 đến 20 và thời gian khoá từ 1 đến 1440 phút.</value>
+  </data>
+  <data name="SystemSetting_ReferralCodeInvalid" xml:space="preserve">
+    <value>Mã giới thiệu cần có tiền tố và độ dài phần ngẫu nhiên từ 4 đến 12.</value>
+  </data>
+  <data name="SystemSetting_AttributionInvalid" xml:space="preserve">
+    <value>Số ngày ghi nhận hoa hồng phải từ 0 đến 365.</value>
+  </data>
+  <data name="SystemSetting_UploadInvalid" xml:space="preserve">
+    <value>Dung lượng tệp phải từ 1 đến 200 MB và số ảnh mỗi bài từ 0 đến 50.</value>
+  </data>
+  <data name="SystemSetting_AuditRetentionInvalid" xml:space="preserve">
+    <value>Số ngày lưu nhật ký hoạt động phải từ 0 đến 3650.</value>
+  </data>
+  <data name="SystemSetting_FormatInvalid" xml:space="preserve">
+    <value>Định dạng ngày và múi giờ không được để trống.</value>
   </data>
 </root>

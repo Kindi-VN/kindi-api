@@ -52,6 +52,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PayoutSetting> PayoutSettings { get; set; }
     public DbSet<PayoutPeriod> PayoutPeriods { get; set; }
     public DbSet<PayoutStatement> PayoutStatements { get; set; }
+    public DbSet<SystemSetting> SystemSettings { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
