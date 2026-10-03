@@ -60,15 +60,7 @@ public class PartnerService : IPartnerService
 
     public async Task<PartnerRegisterResponse> RegisterAsync(PartnerRegisterRequest request)
     {
-        // 1. Kiểm tra referral code (nếu có)
-        if (!string.IsNullOrEmpty(request.ReferralCode))
-        {
-            var isValid = await IsReferralCodeValidAsync(request.ReferralCode);
-            if (!isValid)
-                throw new BusinessException(_localizer["PartnerReferralCodeInvalid"]);
-        }
-
-        // 2. Lấy hoặc tạo User
+        // 1. Lấy hoặc tạo User
         var userId = _currentUserService.UserId;
         var isPublicRegistration = string.IsNullOrEmpty(userId);
         var isNewAccount = false;
@@ -95,17 +87,18 @@ public class PartnerService : IPartnerService
         }
 
         // Mã chia sẻ của link (?ref=) → ghi nhận vào tài khoản đăng ký (chỉ lần đầu, không ghi đè).
+        // Mã không nhận diện được (link cũ/sai) thì bỏ qua, không chặn đăng ký.
         // Trả về mã đã chuẩn hoá (nếu nhận diện được) — dùng luôn cho phát sinh giới thiệu của đối tác.
         string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
 
-        // 3. Map request -> Partner entity
+        // 2. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
         // userId luôn có giá trị: người dùng đang đăng nhập, hoặc tài khoản vừa tạo ở nhánh đăng ký công khai
         partner.UserId = Guid.Parse(userId!);
 
         partner.PartnerCode = GeneratePartnerCode();
 
-        // 4. Map products và gán PartnerId
+        // 3. Map products và gán PartnerId
         var products = _mapper.Map<List<PartnerProduct>>(request.Products);
         foreach (var product in products)
         {
@@ -114,7 +107,7 @@ public class PartnerService : IPartnerService
         }
         partner.Products = products;
 
-        // 5. Form mới không thu thập chính sách hoa hồng — tạo hoa hồng mặc định
+        // 4. Form mới không thu thập chính sách hoa hồng — tạo hoa hồng mặc định
         partner.Commission = new PartnerCommission
         {
             Type = CommissionType.Percentage,
@@ -123,7 +116,7 @@ public class PartnerService : IPartnerService
             PartnerCommissionCode = CodeGenerator.Generate("PCM")
         };
 
-        // 6. Ensure Company created/linked from registration form (do not lose legacy fields)
+        // 5. Ensure Company created/linked from registration form (do not lose legacy fields)
         var company = await _companyService.AddOrUpdateFromLegacyAsync(
             request.CompanyName, null, request.CompanyAddress, null,
             request.BusinessFieldId, partner.BusinessType, request.CompanySize);
@@ -136,7 +129,7 @@ public class PartnerService : IPartnerService
             partner.CompanySize = request.CompanySize;
         }
 
-        // 7. Lưu vào DB
+        // 6. Lưu vào DB
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
 
@@ -145,14 +138,14 @@ public class PartnerService : IPartnerService
             partner.Id, partner.PartnerCode, null);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
-        // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 2.
+        // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 1.
         if (!isPublicRegistration)
         {
             await _userService.UpdatePersonalInfoAsync(
                 partner.UserId, request.FullName, request.Phone, request.Email, null);
         }
 
-        // 8. Return response
+        // 7. Return response
         var response = _mapper.Map<PartnerRegisterResponse>(partner);
 
         if (isPublicRegistration)
@@ -210,8 +203,13 @@ public class PartnerService : IPartnerService
     {
         if (string.IsNullOrWhiteSpace(code)) return false;
 
-        // Mã giới thiệu có thể là SĐT hoặc UserCode (không phân biệt hoa/thường với code)
         var trimmed = code.Trim();
+
+        // Mã do nền tảng phát ra cho chủ thể (mã chia sẻ của tài khoản / mã hồ sơ CTV) — đây là mã
+        // nằm trên link chia sẻ (?ref=), phải nhận đúng như ReferralService ghi nhận giới thiệu.
+        if (await _referralService.ResolveAsync(trimmed) != null) return true;
+
+        // Mã giới thiệu có thể là SĐT hoặc UserCode (không phân biệt hoa/thường với code)
         // UserCode so khớp đúng (không phân biệt hoa/thường) bằng ILIKE: mẫu là từ khoá đã
         // escape, không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
         var trimmedLike = trimmed.RemoveVietnameseSign().ToLikeEscaped();
