@@ -39,7 +39,8 @@ public class ReferralService : IReferralService
         if (!Guid.TryParse(_currentUserService.UserId, out var userId))
             return null;
 
-        var collaborator = await _queryService.GetFirstOrDefaultAsync<Collaborator>(c => c.UserId == userId);
+        // Đọc qua repository (context ghi, tracking) vì bên dưới Update chính entity này.
+        var collaborator = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId);
         if (collaborator != null)
         {
             // Hồ sơ CTV cũ chưa có mã chia sẻ riêng → lấy theo mã CTV đã in trên hồ sơ.
@@ -53,7 +54,8 @@ public class ReferralService : IReferralService
             return collaborator.ReferralCode;
         }
 
-        var user = await _queryService.GetByIdAsync<User>(userId);
+        // Đọc qua repository (context ghi, tracking) vì bên dưới Update chính entity này.
+        var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
             return null;
 
@@ -83,7 +85,10 @@ public class ReferralService : IReferralService
 
     public async Task<string?> ResolveForUserAsync(Guid userId, string? referralCode)
     {
-        var user = await _queryService.GetByIdAsync<User>(userId);
+        // Đọc qua repository (context ghi, tracking): bản ghi này được Update ngay bên dưới, còn đọc
+        // no-tracking rồi Update sẽ lỗi khi request đã track cùng entity — luồng công khai vừa
+        // tạo/lấy User (ResolvePublicUserAsync) rồi mới ghi nhận mã giới thiệu của link.
+        var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
             return await ResolveAsync(referralCode);
 
