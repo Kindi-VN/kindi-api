@@ -17,15 +17,18 @@ public class AuthController : ApiControllerBase
 	private readonly IAuthService _authService;
 	private readonly IStringLocalizer<SharedResource> _localizer;
 	private readonly LoginRequestValidator _validator;
+	private readonly IUserService _userService;
 
 	public AuthController(
 		IAuthService authService,
 		IStringLocalizer<SharedResource> localizer,
-		LoginRequestValidator validator)
+		LoginRequestValidator validator,
+		IUserService userService)
 	{
 		_authService = authService;
 		_localizer = localizer;
 		_validator = validator;
+		_userService = userService;
 	}
 
 	/// <summary>
@@ -165,7 +168,32 @@ public class AuthController : ApiControllerBase
 	/// <summary>
 	/// Lấy thông tin user hiện tại
 	/// </summary>
-	[HttpGet("me")]
+		/// <summary>
+	/// Cập nhật thông tin cá nhân của chính người gọi (họ tên, SĐT, email, Zalo).
+	/// </summary>
+	[HttpPut("me")]
+	[Authorize]
+	public async Task<IActionResult> UpdateMe([FromBody] UpdateMyProfileRequest request)
+	{
+		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrEmpty(userId) || !Guid.TryParse(userId, out var parsedUserId))
+		{
+			return Unauthorized(_localizer["InvalidUser"]);
+		}
+
+		await _userService.UpdatePersonalInfoAsync(
+			parsedUserId, request.FullName, request.Phone, request.Email, request.Zalo, allowContactChange: true);
+
+		var user = await _authService.GetUserByIdAsync(parsedUserId);
+		if (user == null)
+		{
+			return NotFound(_localizer["UserNotFound"]);
+		}
+
+		return Ok(user, _localizer["User_ProfileUpdateSuccess"]);
+	}
+
+[HttpGet("me")]
 	[Authorize]
 	public async Task<IActionResult> GetMe()
 	{
