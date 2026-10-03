@@ -1181,4 +1181,7 @@
   <data name="User_EmailAlreadyExists">
     <value>Email '{0}' already exists</value>
   </data>
+  <data name="User_ResetPasswordSuccess">
+    <value>Password reset. The new password is the user's phone number; the user must change it at next sign-in.</value>
+  </data>
 </root>

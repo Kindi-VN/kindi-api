@@ -1,3 +1,4 @@
+using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Common.Models;
@@ -7,6 +8,10 @@ using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
+using Kindi.API.Domain.Models;
+using Kindi.API.Application.DTOs.requests;
+using Kindi.API.Application.DTOs.responses;
+using Microsoft.EntityFrameworkCore;
 using Kindi.API.Shared.Common.Helpers;
 using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Constants;
@@ -219,4 +224,73 @@ public class UserService : IUserService
     {
         return BCrypt.Net.BCrypt.HashPassword(password);
     }
+
+    /// <summary>
+    /// Danh sách người dùng phân trang cho màn quản trị — tìm không phân biệt hoa/thường
+    /// theo tên đăng nhập, họ tên, số điện thoại, email hoặc mã người dùng.
+    /// </summary>
+    public async Task<PagedList<UserInfoResponse>> GetPagedAsync(UserQueryDto query)
+    {
+        var users = _userRepo.GetQueryable().Where(u => !u.IsDeleted);
+
+        if (!string.IsNullOrWhiteSpace(query.Search))
+        {
+            // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn, ILIKE nên tìm không phân biệt hoa/thường.
+            var searchTerm = query.Search.RemoveVietnameseSign().ToLikeEscaped();
+            users = users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), "%" + searchTerm + "%", "\\") ||
+                                     (u.Username != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), "%" + searchTerm + "%", "\\")) ||
+                                     (u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), "%" + searchTerm + "%", "\\")) ||
+                                     (u.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), "%" + searchTerm + "%", "\\")) ||
+                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), "%" + searchTerm + "%", "\\")));
+        }
+
+        var ordered = users.OrderByDescending(u => u.CreatedAt);
+        return await PagedList<UserInfoResponse>.CreateAsync(ordered.Select(u => ToInfoResponse(u)), query.PageNumber, query.PageSize);
+    }
+
+    /// <summary>
+    /// Cấp lại mật khẩu về số điện thoại của tài khoản và bắt buộc đổi ở lần đăng nhập kế tiếp.
+    /// Tài khoản quản trị không cấp lại theo cách này.
+    /// </summary>
+    public async Task<UserInfoResponse?> ResetPasswordToPhoneAsync(Guid userId)
+    {
+        var user = await _userRepo.GetQueryable().FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+
+        if (user == null)
+            return null;
+
+        if (user.Role == UserRole.Admin)
+            throw UserException.AdminResetNotAllowed(_exceptionLocalizer);
+
+        var phone = PhoneHelper.Normalize(user.Phone);
+
+        if (string.IsNullOrEmpty(phone))
+            throw UserException.PhoneRequired(_exceptionLocalizer);
+
+        user.PasswordHash = PasswordHasher.Hash(phone);
+        user.MustChangeCredentials = true;
+        await _userRepo.SaveChangesAsync();
+
+        await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.ResetPassword, true,
+            "Quản trị cấp lại mật khẩu bằng số điện thoại");
+
+        return ToInfoResponse(user);
+    }
+
+    /// <summary>Thông tin tài khoản trả ra DTO (email tạm <c>{sđt}@temp.com</c> không trả ra ngoài).</summary>
+    private static UserInfoResponse ToInfoResponse(User user) => new()
+    {
+        Id = user.Id,
+        UserCode = user.UserCode,
+        Username = user.Username,
+        FullName = user.FullName,
+        Email = user.Email != null && user.Email.EndsWith("@temp.com", StringComparison.OrdinalIgnoreCase)
+            ? string.Empty
+            : user.Email,
+        Phone = user.Phone,
+        Role = user.Role.ToString(),
+        IsActive = user.IsActive,
+        MustChangeCredentials = user.MustChangeCredentials,
+        LastLoginAt = user.LastLoginAt
+    };
 }

@@ -1117,4 +1117,7 @@
   <data name="User_EmailAlreadyExists">
     <value>Email '{0}' đã tồn tại trong hệ thống</value>
   </data>
+  <data name="User_ResetPasswordSuccess">
+    <value>Đã cấp lại mật khẩu. Mật khẩu mới là số điện thoại của người dùng, đổi lại ở lần đăng nhập kế tiếp.</value>
+  </data>
 </root>

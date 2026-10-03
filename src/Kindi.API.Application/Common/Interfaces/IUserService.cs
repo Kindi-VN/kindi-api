@@ -1,5 +1,8 @@
 using Kindi.API.Application.Common.Models;
+using Kindi.API.Application.DTOs.requests;
+using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Entities;
+using Kindi.API.Domain.Models;
 
 namespace Kindi.API.Application.Common.Interfaces;
 
@@ -35,4 +38,13 @@ public interface IUserService
     /// không ghi đè SĐT/email của tài khoản đã có (tránh nhập SĐT người khác để sửa hồ sơ của họ).
     /// </summary>
     Task UpdatePersonalInfoAsync(Guid userId, string? fullName, string? phone, string? email, string? zalo, bool allowContactChange = false);
+
+    /// <summary>Danh sách người dùng phân trang (màn quản trị).</summary>
+    Task<PagedList<UserInfoResponse>> GetPagedAsync(UserQueryDto query);
+
+    /// <summary>
+    /// Cấp lại mật khẩu cho người dùng: mật khẩu mới là chính số điện thoại của tài khoản
+    /// và bắt buộc đổi ở lần đăng nhập kế tiếp. Trả về null nếu không tìm thấy tài khoản.
+    /// </summary>
+    Task<UserInfoResponse?> ResetPasswordToPhoneAsync(Guid userId);
 }
