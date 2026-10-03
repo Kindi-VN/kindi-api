@@ -41,6 +41,10 @@ public enum PermissionCode
     [PermissionInfo("Xem thống kê giới thiệu", PermissionModule.Referral, PermissionKind.View, "/admin/referral-stats", "GET /api/v1/referrals/stats, GET /api/v1/referrals/stats/overview, GET /api/v1/referrals/stats/{referralCode}/events")]
     ViewReferralStats = 11,
 
+    [PermissionInfo("Xem thống kê giới thiệu của tôi", PermissionModule.Referral, PermissionKind.View, "/user/my-referral",
+        "GET /api/v1/referrals/me/stats, GET /api/v1/collaborators/me/referral-code")]
+    ViewMyReferralStats = 12,
+
     [PermissionInfo("Xem danh sách người dùng", PermissionModule.User, PermissionKind.View, "/admin/users", "GET /api/v1/users")]
     ViewUsers = 20,
 
@@ -64,6 +68,22 @@ public enum PermissionCode
 
     [PermissionInfo("Xem hồ sơ CTV đã xoá / khôi phục", PermissionModule.User, PermissionKind.Action, null, "GET /api/v1/collaborators/deleted, POST /api/v1/collaborators/{id}/restore")]
     RestoreCollaborator = 27,
+
+    [PermissionInfo("Xem đơn mua chung của tôi", PermissionModule.User, PermissionKind.View, "/user/my-group-buying",
+        "GET /api/v1/groupbuyingrequests/public?mineOnly=true")]
+    ViewMyGroupBuying = 28,
+
+    [PermissionInfo("Xem yêu cầu của tôi", PermissionModule.User, PermissionKind.View, "/user/my-requests",
+        "GET /api/v1/purchaserequests?mineOnly=true, GET /api/v1/offerrequests?mineOnly=true")]
+    ViewMyRequests = 29,
+
+    [PermissionInfo("Xem bài viết của tôi", PermissionModule.User, PermissionKind.View, "/user/my-posts",
+        "GET /api/v1/social/posts?mineOnly=true")]
+    ViewMyPosts = 30,
+
+    [PermissionInfo("Xem nhóm của tôi", PermissionModule.User, PermissionKind.View, "/user/my-groups",
+        "GET /api/v1/businessgroups/mine")]
+    ViewMyGroups = 31,
 
     [PermissionInfo("Xem danh sách đối tác", PermissionModule.Partner, PermissionKind.View, "/admin/partner", "GET /api/v1/partners, GET /api/v1/partners/{id}, GET /api/v1/partners/deleted")]
     ViewPartners = 40,
