@@ -523,7 +523,6 @@
 
   <!-- Success & Error -->
   <data name="PartnerRegisterSuccess" xml:space="preserve"><value>Đăng ký đối tác thành công!</value></data>
-  <data name="PartnerReferralCodeInvalid" xml:space="preserve"><value>Mã giới thiệu không hợp lệ</value></data>
   <data name="PartnerValidationFailed" xml:space="preserve"><value>Dữ liệu không hợp lệ</value></data>
   <data name="SalesChannelInvalid" xml:space="preserve"><value>Kênh bán hàng không hợp lệ</value></data>
   <!-- Validation Keys -->
@@ -675,13 +674,6 @@
   <!-- Success Messages -->
   <data name="OfferRequest_CreateSuccess">
     <value>Yêu cầu nhận offer đã được gửi thành công</value>
-  </data>
-  <!-- Partner - Referral Code -->
-  <data name="Partner_ReferralCodeNotFound">
-    <value>Mã giới thiệu không tồn tại</value>
-  </data>
-  <data name="Partner_ReferralCodeValid">
-    <value>Mã giới thiệu hợp lệ</value>
   </data>
   <data name="CTV_NotFound">
     <value>Không tìm thấy CTV</value>
