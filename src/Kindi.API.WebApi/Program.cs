@@ -314,6 +314,9 @@ static async Task RunDatabaseMigration(WebApplication app)
             Log.Information("✅ Migrations applied successfully for {Environment}", environment);
 
             await DatabaseSeeder.SeedAsync(db);
+
+			// Danh mục quyền lấy từ enum PermissionCode (idempotent).
+			await PermissionSeeder.SeedAsync(db);
             Log.Information("✅ Seed data applied successfully for {Environment}", environment);
         }
         catch (Exception ex)

@@ -1,6 +1,8 @@
 using Kindi.API.Application.Features.Reports.Queries;
 using Kindi.API.Application.Resources;
 using MediatR;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -26,6 +28,7 @@ public class ReportController : ApiControllerBase
     /// <summary>
     /// Báo cáo tổng quan hệ thống (người dùng, đối tác, CTV, bài viết, yêu cầu)
     /// </summary>
+    [HasPermission(PermissionCode.ViewReportOverview)]
     [HttpGet("overview")]
     public async Task<IActionResult> GetOverview(
         [FromQuery] DateTime? fromDate = null,
@@ -42,6 +45,7 @@ public class ReportController : ApiControllerBase
     /// <summary>
     /// Báo cáo xu hướng tăng trưởng theo ngày
     /// </summary>
+    [HasPermission(PermissionCode.ViewReportTrend)]
     [HttpGet("trend")]
     public async Task<IActionResult> GetTrend([FromQuery] int days = 30)
     {
@@ -52,6 +56,7 @@ public class ReportController : ApiControllerBase
     /// <summary>
     /// Báo cáo yêu cầu (mua hàng / mua nhóm / báo giá) phân theo trạng thái
     /// </summary>
+    [HasPermission(PermissionCode.ViewReportRequests)]
     [HttpGet("requests")]
     public async Task<IActionResult> GetRequests(
         [FromQuery] string? type = null)
@@ -63,6 +68,7 @@ public class ReportController : ApiControllerBase
     /// <summary>
     /// Báo cáo hoạt động mạng xã hội (bài viết, tương tác, bài nổi bật)
     /// </summary>
+    [HasPermission(PermissionCode.ViewReportSocial)]
     [HttpGet("social")]
     public async Task<IActionResult> GetSocial(
         [FromQuery] int topPostCount = 10)
@@ -74,6 +80,7 @@ public class ReportController : ApiControllerBase
     /// <summary>
     /// Báo cáo thành viên (đối tác + cộng tác viên)
     /// </summary>
+    [HasPermission(PermissionCode.ViewReportMembers)]
     [HttpGet("members")]
     public async Task<IActionResult> GetMembers()
     {

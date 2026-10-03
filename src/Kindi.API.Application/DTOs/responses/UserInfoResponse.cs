@@ -13,4 +13,10 @@ public class UserInfoResponse
 	public bool IsActive { get; set; }
 	public bool MustChangeCredentials { get; set; }
 	public DateTime? LastLoginAt { get; set; }
+
+	/// <summary>Mã quyền (P###) của tài khoản — UI dùng để ẩn/hiện menu, nút và chặn route.</summary>
+	public IReadOnlyList<string> Permissions { get; set; } = new List<string>();
+
+	/// <summary>Phiên bản quyền hiện tại — UI so để quyết định gọi refresh token.</summary>
+	public long PermissionsVersion { get; set; }
 }

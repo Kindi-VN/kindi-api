@@ -1,6 +1,8 @@
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -98,6 +100,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Admin duyệt / từ chối mở hội nhóm</summary>
+    [HasPermission(PermissionCode.ApproveCommunityGroup)]
     [HttpPut("community/{id:guid}/approval")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdateCommunityApproval(Guid id, [FromBody] UpdateCommunityGroupApprovalDto request)
@@ -141,6 +144,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Admin sửa/ghim/ẩn bài trong nhóm</summary>
+    [HasPermission(PermissionCode.UpdateGroupPost)]
     [HttpPut("{id:guid}/posts/{postId:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdatePost(Guid id, Guid postId, [FromBody] UpdateBusinessGroupPostDto request)
@@ -190,6 +194,7 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách nhóm (admin)</summary>
+    [HasPermission(PermissionCode.ViewGroups)]
     [HttpGet]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetList([FromQuery] AdminBusinessGroupQueryDto query)
@@ -199,6 +204,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Chi tiết nhóm (admin — kèm thành viên chờ duyệt)</summary>
+    [HasPermission(PermissionCode.ViewGroups)]
     [HttpGet("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDetail(Guid id)
@@ -208,6 +214,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Tạo nhóm</summary>
+    [HasPermission(PermissionCode.ManageGroups)]
     [HttpPost]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateBusinessGroupDto request)
@@ -217,6 +224,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Cập nhật nhóm</summary>
+    [HasPermission(PermissionCode.ManageGroups)]
     [HttpPut("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBusinessGroupDto request)
@@ -226,6 +234,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Xoá nhóm</summary>
+    [HasPermission(PermissionCode.ManageGroups)]
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
@@ -262,6 +271,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Yêu cầu kín gửi admin trong nhóm</summary>
+    [HasPermission(PermissionCode.ViewGroupPrivateRequests)]
     [HttpGet("{id:guid}/private-requests")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetPrivateRequests(Guid id, [FromQuery] GroupPostQueryDto query)

@@ -27,7 +27,8 @@ public class JwtService : IJwtService
 		_logger = logger;
 	}
 
-	public string GenerateToken(string userId, string username, IEnumerable<string> roles)
+	public string GenerateToken(string userId, string username, IEnumerable<string> roles,
+		IEnumerable<string>? permissions = null, long permissionsVersion = 0)
 	{
 		var claims = new List<Claim>
 		{
@@ -39,6 +40,16 @@ public class JwtService : IJwtService
 		};
 
 		claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+
+		// Quyền nằm ngay trong token (1 claim gộp) — API kiểm quyền không phải truy vấn DB mỗi request.
+		var permissionCodes = permissions?.Where(code => !string.IsNullOrWhiteSpace(code)).Distinct().ToList() ?? new List<string>();
+		if (permissionCodes.Count > 0)
+		{
+			claims.Add(new Claim(Kindi.API.Shared.Constants.AuthClaimConstants.Permissions, string.Join(",", permissionCodes)));
+		}
+
+		claims.Add(new Claim(Kindi.API.Shared.Constants.AuthClaimConstants.PermissionsVersion,
+			permissionsVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)));
 
 		var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
 		var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);

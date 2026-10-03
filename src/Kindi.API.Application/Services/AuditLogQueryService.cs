@@ -5,6 +5,7 @@ using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Entities;
+using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Models;
 using Kindi.API.Shared.Common.Helpers;
 using Microsoft.EntityFrameworkCore;
@@ -26,6 +27,7 @@ public class AuditLogQueryService : IAuditLogQueryService
 
     public async Task<PagedList<AuditLogDto>> GetEntityLogsAsync(
         AuditLogQueryDto query,
+        bool includeSuperAdminActors = false,
         CancellationToken cancellationToken = default)
     {
         var q = _queryService.GetQueryableNoTracking<AuditLog>()
@@ -34,6 +36,11 @@ public class AuditLogQueryService : IAuditLogQueryService
             .WhereIf(!string.IsNullOrEmpty(query.ActorId), x => x.ActorId == query.ActorId)
             .WhereIf(query.FromDate.HasValue, x => x.Timestamp >= query.FromDate!.Value.ToUniversalTime())
             .WhereIf(query.ToDate.HasValue, x => x.Timestamp <= query.ToDate!.Value.ToUniversalTime());
+
+        if (!includeSuperAdminActors)
+        {
+            q = ExcludeSuperAdminActor(q, await GetSuperAdminActorIdAsync(cancellationToken));
+        }
 
         var result = await q.ToPagedListAsync(
             query.PageNumber, query.PageSize,
@@ -44,16 +51,23 @@ public class AuditLogQueryService : IAuditLogQueryService
         return _mapper.MapPagedList<AuditLog, AuditLogDto>(result);
     }
 
-    public async Task<AuditLogDto?> GetEntityLogByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<AuditLogDto?> GetEntityLogByIdAsync(Guid id, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default)
     {
-        var entity = await _queryService.GetQueryableNoTracking<AuditLog>()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var q = _queryService.GetQueryableNoTracking<AuditLog>();
+
+        if (!includeSuperAdminActors)
+        {
+            q = ExcludeSuperAdminActor(q, await GetSuperAdminActorIdAsync(cancellationToken));
+        }
+
+        var entity = await q.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         return entity == null ? null : _mapper.Map<AuditLogDto>(entity);
     }
 
     public async Task<PagedList<AuthAuditLogDto>> GetAuthLogsAsync(
         AuthAuditLogQueryDto query,
+        bool includeSuperAdminActors = false,
         CancellationToken cancellationToken = default)
     {
         var q = _queryService.GetQueryableNoTracking<AuthAuditLog>()
@@ -64,6 +78,11 @@ public class AuditLogQueryService : IAuditLogQueryService
             .WhereIf(query.IsSuccess.HasValue, x => x.IsSuccess == query.IsSuccess!.Value)
             .WhereIf(query.FromDate.HasValue, x => x.Timestamp >= query.FromDate!.Value.ToUniversalTime())
             .WhereIf(query.ToDate.HasValue, x => x.Timestamp <= query.ToDate!.Value.ToUniversalTime());
+
+        if (!includeSuperAdminActors)
+        {
+            q = ExcludeSuperAdminUser(q, await GetSuperAdminUserIdAsync(cancellationToken));
+        }
 
         var result = await q.ToPagedListAsync(
             query.PageNumber, query.PageSize,
@@ -78,10 +97,16 @@ public class AuditLogQueryService : IAuditLogQueryService
         return paged;
     }
 
-    public async Task<AuthAuditLogDto?> GetAuthLogByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    public async Task<AuthAuditLogDto?> GetAuthLogByIdAsync(Guid id, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default)
     {
-        var entity = await _queryService.GetQueryableNoTracking<AuthAuditLog>()
-            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+        var q = _queryService.GetQueryableNoTracking<AuthAuditLog>();
+
+        if (!includeSuperAdminActors)
+        {
+            q = ExcludeSuperAdminUser(q, await GetSuperAdminUserIdAsync(cancellationToken));
+        }
+
+        var entity = await q.FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
 
         if (entity == null) return null;
 
@@ -89,6 +114,27 @@ public class AuditLogQueryService : IAuditLogQueryService
         FillDeviceInfoIfMissing(dto);
         return dto;
     }
+
+    /// <summary>Id tài khoản SuperAdmin (tối đa 1 tài khoản) — để ẩn hành động của tài khoản này khỏi admin thường.</summary>
+    private async Task<string?> GetSuperAdminActorIdAsync(CancellationToken cancellationToken)
+        => (await GetSuperAdminUserIdAsync(cancellationToken))?.ToString();
+
+    private async Task<Guid?> GetSuperAdminUserIdAsync(CancellationToken cancellationToken)
+    {
+        var id = await _queryService.GetAllNoTracking<User>()
+            .IgnoreQueryFilters()
+            .Where(u => u.Role == UserRole.SuperAdmin)
+            .Select(u => u.Id)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        return id == Guid.Empty ? null : id;
+    }
+
+    private static IQueryable<AuditLog> ExcludeSuperAdminActor(IQueryable<AuditLog> query, string? actorId)
+        => string.IsNullOrEmpty(actorId) ? query : query.Where(x => x.ActorId == null || x.ActorId != actorId);
+
+    private static IQueryable<AuthAuditLog> ExcludeSuperAdminUser(IQueryable<AuthAuditLog> query, Guid? userId)
+        => userId == null ? query : query.Where(x => x.UserId == null || x.UserId != userId);
 
     /// <summary>
     /// Với log ghi TRƯỚC khi thêm cột device info (OperatingSystem/BrowserName/DeviceType = null),

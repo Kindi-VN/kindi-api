@@ -1176,4 +1176,16 @@
   <data name="User_ResetPasswordSuccess">
     <value>Password reset. The new password is the user's phone number; the user must change it at next sign-in.</value>
   </data>
+  <data name="Permissions_ListSuccess">
+    <value>Permission catalogue retrieved successfully</value>
+  </data>
+  <data name="Permissions_UpdateSuccess">
+    <value>Role permissions updated successfully</value>
+  </data>
+  <data name="Permissions_RoleNotAssignable">
+    <value>This role cannot be configured</value>
+  </data>
+  <data name="Permissions_UnknownCodes">
+    <value>Unknown permission codes: {0}</value>
+  </data>
 </root>

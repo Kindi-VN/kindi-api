@@ -7,6 +7,8 @@ using Kindi.API.Application.Features.PurchaseRequests.Queries;
 using Kindi.API.Application.Resources;
 using Kindi.API.WebApi.Responses;
 using MediatR;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -44,6 +46,7 @@ public class PurchaseRequestsController : ApiControllerBase
     }
 
     [Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ViewPurchaseRequests)]
 	[HttpGet("{id:guid}")]
 	public async Task<IActionResult> GetByIdAsync(Guid id)
 	{
@@ -66,6 +69,7 @@ public class PurchaseRequestsController : ApiControllerBase
 	}
 
 	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.UpdatePurchaseRequestStatus)]
 	[HttpPatch("{id:guid}/status")]
 	public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePurchaseRequestStatusDto dto)
 	{
@@ -74,6 +78,7 @@ public class PurchaseRequestsController : ApiControllerBase
 	}
 
 	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ExportPurchaseRequests)]
 	[HttpGet("export")]
 	public async Task<IActionResult> ExportAsync([FromQuery] ExportPurchaseRequestsQuery query)
 	{

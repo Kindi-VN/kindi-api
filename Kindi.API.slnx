@@ -7,4 +7,7 @@
     <Project Path="src/Kindi.API.WebApi/Kindi.API.WebApi.csproj" />
     <Project Path="docs/Kindi.API.Documentation/Kindi.API.Documentation.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Kindi.API.UnitTests/Kindi.API.UnitTests.csproj" />
+  </Folder>
 </Solution>

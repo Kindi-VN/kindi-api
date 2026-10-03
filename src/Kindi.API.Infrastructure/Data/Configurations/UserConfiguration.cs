@@ -47,7 +47,13 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 
 		builder.Property(x => x.Role)
 			.HasConversion<int>()
-			.HasDefaultValue(UserRole.Customer);
+			.HasDefaultValue(UserRole.User);
+
+		// SuperAdmin là duy nhất: DB chỉ cho tồn tại tối đa 1 tài khoản role 4 (partial unique index).
+		builder.HasIndex(x => x.Role)
+			.IsUnique()
+			.HasFilter("\"Role\" = 4")
+			.HasDatabaseName("IX_Users_SuperAdmin_Unique");
 
 		builder.Property(x => x.IsActive)
 			.HasDefaultValue(true);

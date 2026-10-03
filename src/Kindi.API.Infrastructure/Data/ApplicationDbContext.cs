@@ -39,6 +39,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<AuthAuditLog> AuthAuditLogs { get; set; }
     public DbSet<ReferralEvent> ReferralEvents { get; set; }
+    public DbSet<Permission> Permissions { get; set; }
+    public DbSet<RolePermission> RolePermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

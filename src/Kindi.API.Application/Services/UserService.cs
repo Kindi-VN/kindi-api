@@ -91,7 +91,7 @@ public class UserService : IUserService
             Email = string.IsNullOrWhiteSpace(email) ? $"{phone.Trim()}@temp.com" : email.Trim(),
             Username = GenerateUniqueUsername(phone),
             PasswordHash = HashPassword(phone.Trim()),
-            Role = UserRole.Customer,
+            Role = UserRole.User,
             IsActive = true,
             MustChangeCredentials = true
         };
@@ -231,7 +231,8 @@ public class UserService : IUserService
     /// </summary>
     public async Task<PagedList<UserInfoResponse>> GetPagedAsync(UserQueryDto query)
     {
-        var users = _userRepo.GetQueryable().Where(u => !u.IsDeleted);
+        // Tài khoản SuperAdmin không hiện ở màn quản trị của admin thường.
+        var users = _userRepo.GetQueryable().Where(u => !u.IsDeleted && u.Role != UserRole.SuperAdmin);
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
@@ -259,7 +260,7 @@ public class UserService : IUserService
         if (user == null)
             return null;
 
-        if (user.Role == UserRole.Admin)
+        if (user.Role is UserRole.Admin or UserRole.SuperAdmin)
             throw UserException.AdminResetNotAllowed(_exceptionLocalizer);
 
         var phone = PhoneHelper.Normalize(user.Phone);

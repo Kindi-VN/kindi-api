@@ -1112,4 +1112,16 @@
   <data name="User_ResetPasswordSuccess">
     <value>Đã cấp lại mật khẩu. Mật khẩu mới là số điện thoại của người dùng, đổi lại ở lần đăng nhập kế tiếp.</value>
   </data>
+  <data name="Permissions_ListSuccess">
+    <value>Lấy danh mục quyền thành công</value>
+  </data>
+  <data name="Permissions_UpdateSuccess">
+    <value>Cập nhật quyền cho vai trò thành công</value>
+  </data>
+  <data name="Permissions_RoleNotAssignable">
+    <value>Không thể cấu hình quyền cho vai trò này</value>
+  </data>
+  <data name="Permissions_UnknownCodes">
+    <value>Mã quyền không tồn tại: {0}</value>
+  </data>
 </root>
