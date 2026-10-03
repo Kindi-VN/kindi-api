@@ -349,6 +349,7 @@ public class AuthService : IAuthService
 			FullName = user.FullName,
 			Email = user.Email,
 			Phone = user.Phone,
+			Zalo = user.Zalo,
 			Role = user.Role.ToString(),
 			IsActive = user.IsActive,
 			MustChangeCredentials = user.MustChangeCredentials,

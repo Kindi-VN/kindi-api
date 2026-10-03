@@ -52,4 +52,7 @@ public class MyMembershipResponse
 
     /// <summary>Phí rút sớm đang áp cho tài khoản (% — theo hạng nếu hạng có quy định riêng).</summary>
     public decimal EffectiveEarlyWithdrawalFeeRate { get; set; }
+
+    /// <summary>Toàn bộ hạng đang áp dụng, xếp từ thấp tới cao — dùng để vẽ bảng quyền lợi theo hạng.</summary>
+    public List<MembershipTierResponse> Tiers { get; set; } = new();
 }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- Common -->
 	<data name="CreateSuccess" xml:space="preserve">
@@ -1406,5 +1406,8 @@
   </data>
   <data name="Payout_SettingSavedSuccess" xml:space="preserve">
     <value>Early withdrawal settings saved.</value>
+  </data>
+  <data name="User_ProfileUpdateSuccess" xml:space="preserve">
+    <value>Your account information has been updated</value>
   </data>
 </root>

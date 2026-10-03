@@ -235,7 +235,8 @@ public sealed class MembershipTierService : IMembershipTierService
             NextTier = nextTier,
             NextTierRequirement = nextTier == null ? null : nextTier.MinAccumulatedValue - accumulated,
             EvaluatedAt = membership?.EvaluatedAt,
-            EffectiveEarlyWithdrawalFeeRate = tier?.EarlyWithdrawalFeeRate ?? settings?.EarlyWithdrawalFeeRate ?? 0
+            EffectiveEarlyWithdrawalFeeRate = tier?.EarlyWithdrawalFeeRate ?? settings?.EarlyWithdrawalFeeRate ?? 0,
+            Tiers = tiers
         };
     }
 

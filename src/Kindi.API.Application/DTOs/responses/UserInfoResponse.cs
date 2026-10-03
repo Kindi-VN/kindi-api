@@ -1,4 +1,4 @@
-﻿// Application/DTOs/responses/UserInfoResponse.cs
+// Application/DTOs/responses/UserInfoResponse.cs
 namespace Kindi.API.Application.DTOs.responses;
 
 public class UserInfoResponse
@@ -9,6 +9,7 @@ public class UserInfoResponse
 	public string FullName { get; set; } = string.Empty;
 	public string Email { get; set; } = string.Empty;
 	public string? Phone { get; set; }
+	public string? Zalo { get; set; }
 	public string Role { get; set; } = string.Empty;
 	public bool IsActive { get; set; }
 	public bool MustChangeCredentials { get; set; }

@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- Common -->
 	<data name="CreateSuccess" xml:space="preserve">
@@ -1342,5 +1342,8 @@
   </data>
   <data name="Payout_SettingSavedSuccess" xml:space="preserve">
     <value>Lưu cấu hình phí rút sớm thành công.</value>
+  </data>
+  <data name="User_ProfileUpdateSuccess" xml:space="preserve">
+    <value>Cập nhật thông tin tài khoản thành công</value>
   </data>
 </root>
