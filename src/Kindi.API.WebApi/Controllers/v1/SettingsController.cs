@@ -38,6 +38,24 @@ public class SettingsController : ApiControllerBase
         return Ok(result, _localizer["SystemSetting_Success"]);
     }
 
+    /// <summary>Giá trị mặc định của cài đặt chung (cho nút khôi phục mặc định).</summary>
+    [HttpGet("defaults")]
+    [HasPermission(PermissionCode.ViewSystemSettings)]
+    public async Task<IActionResult> GetDefaults()
+    {
+        var result = await _systemSettingService.GetDefaultsAsync();
+        return Ok(result, _localizer["SystemSetting_DefaultsSuccess"]);
+    }
+
+    /// <summary>Khôi phục toàn bộ cài đặt chung về giá trị mặc định.</summary>
+    [HttpPost("reset")]
+    [HasPermission(PermissionCode.UpdateSystemSettings)]
+    public async Task<IActionResult> Reset()
+    {
+        var result = await _systemSettingService.ResetAsync();
+        return Ok(result, _localizer["SystemSetting_ResetSuccess"]);
+    }
+
     /// <summary>Phần cài đặt công khai cho giao diện người dùng (không cần đăng nhập).</summary>
     [HttpGet("public")]
     [AllowAnonymous]

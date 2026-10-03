@@ -30,6 +30,16 @@ public class SystemSetting : BaseEntity
 
     /// <summary>Liên kết Zalo.</summary>
     public string? ZaloUrl { get; set; }
+    /// <summary>Liên kết TikTok của nền tảng.</summary>
+    public string? TiktokUrl { get; set; }
+    /// <summary>Liên kết Instagram của nền tảng.</summary>
+    public string? InstagramUrl { get; set; }
+    /// <summary>Liên kết X của nền tảng.</summary>
+    public string? XUrl { get; set; }
+    /// <summary>Liên kết Threads của nền tảng.</summary>
+    public string? ThreadsUrl { get; set; }
+    /// <summary>Liên kết LinkedIn của nền tảng.</summary>
+    public string? LinkedinUrl { get; set; }
 
     /// <summary>Dòng bản quyền ở chân trang.</summary>
     public string? CopyrightText { get; set; }

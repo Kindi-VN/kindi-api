@@ -19,6 +19,11 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.Property(x => x.FacebookUrl).HasMaxLength(300);
         builder.Property(x => x.YoutubeUrl).HasMaxLength(300);
         builder.Property(x => x.ZaloUrl).HasMaxLength(300);
+        builder.Property(x => x.TiktokUrl).HasMaxLength(300);
+        builder.Property(x => x.InstagramUrl).HasMaxLength(300);
+        builder.Property(x => x.XUrl).HasMaxLength(300);
+        builder.Property(x => x.ThreadsUrl).HasMaxLength(300);
+        builder.Property(x => x.LinkedinUrl).HasMaxLength(300);
         builder.Property(x => x.CopyrightText).HasMaxLength(300);
         builder.Property(x => x.DefaultLanguage).HasMaxLength(10);
         builder.Property(x => x.TimeZone).HasMaxLength(100);

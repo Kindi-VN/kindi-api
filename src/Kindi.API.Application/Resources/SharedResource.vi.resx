@@ -1385,4 +1385,10 @@
   <data name="SystemSetting_FormatInvalid" xml:space="preserve">
     <value>Định dạng ngày và múi giờ không được để trống.</value>
   </data>
+  <data name="SystemSetting_DefaultsSuccess" xml:space="preserve">
+    <value>Giá trị mặc định của cài đặt chung.</value>
+  </data>
+  <data name="SystemSetting_ResetSuccess" xml:space="preserve">
+    <value>Đã khôi phục cài đặt chung về mặc định.</value>
+  </data>
 </root>

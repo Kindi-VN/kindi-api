@@ -11,6 +11,16 @@ public class SystemSettingResponse
     public string? FacebookUrl { get; set; }
     public string? YoutubeUrl { get; set; }
     public string? ZaloUrl { get; set; }
+    /// <summary>Liên kết TikTok của nền tảng.</summary>
+    public string? TiktokUrl { get; set; }
+    /// <summary>Liên kết Instagram của nền tảng.</summary>
+    public string? InstagramUrl { get; set; }
+    /// <summary>Liên kết X của nền tảng.</summary>
+    public string? XUrl { get; set; }
+    /// <summary>Liên kết Threads của nền tảng.</summary>
+    public string? ThreadsUrl { get; set; }
+    /// <summary>Liên kết LinkedIn của nền tảng.</summary>
+    public string? LinkedinUrl { get; set; }
     public string? CopyrightText { get; set; }
 
     public string DefaultLanguage { get; set; } = "vi";
@@ -56,6 +66,16 @@ public class PublicSystemSettingResponse
     public string? FacebookUrl { get; set; }
     public string? YoutubeUrl { get; set; }
     public string? ZaloUrl { get; set; }
+    /// <summary>Liên kết TikTok của nền tảng.</summary>
+    public string? TiktokUrl { get; set; }
+    /// <summary>Liên kết Instagram của nền tảng.</summary>
+    public string? InstagramUrl { get; set; }
+    /// <summary>Liên kết X của nền tảng.</summary>
+    public string? XUrl { get; set; }
+    /// <summary>Liên kết Threads của nền tảng.</summary>
+    public string? ThreadsUrl { get; set; }
+    /// <summary>Liên kết LinkedIn của nền tảng.</summary>
+    public string? LinkedinUrl { get; set; }
     public string? CopyrightText { get; set; }
     public string DefaultLanguage { get; set; } = "vi";
     public string TimeZone { get; set; } = "Asia/Ho_Chi_Minh";
