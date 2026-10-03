@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
@@ -80,10 +80,11 @@ public class CollaboratorService : ICollaboratorService
         else
         {
             var existingUser = await _userService.FindByPhoneOrEmailAsync(request.Phone, request.Email);
-            isNewAccount = existingUser == null;
+            // Tài khoản xoá mềm được khôi phục kèm đăng nhập mới → coi như tài khoản mới.
+            isNewAccount = existingUser == null || existingUser.IsDeleted;
 
-            // UserService sẽ tự kiểm tra phone/email và throw exception nếu trùng
-            userGuid = await _userService.GetOrCreateUserWithPhonePasswordAsync(
+            // UserService kiểm tra phone/email, khôi phục tài khoản đã xoá mềm nếu có
+            userGuid = await _userService.GetOrCreateUserAsync(
                 request.FullName,
                 request.Phone,
                 request.Email
@@ -96,12 +97,11 @@ public class CollaboratorService : ICollaboratorService
             }
         }
 
-        //  Một tài khoản (bảng Users) chỉ có tối đa một hồ sơ CTV chưa xoá — kiểm tra theo UserId
-        //  để báo rõ ràng, tránh lỗi ràng buộc DB khó hiểu cho người đăng ký.
-        var existingCollaborator = await _repository.GetFirstAsync(c =>
-            !c.IsDeleted && c.UserId == userGuid);
+        //  Một tài khoản (bảng Users) chỉ có tối đa một hồ sơ CTV — tìm cả bản ghi đã xoá mềm:
+        //  hồ sơ đang hoạt động thì báo đã là CTV, hồ sơ đã xoá thì khôi phục lại bên dưới.
+        var existingCollaborator = await _repository.GetFirstAsync(c => c.UserId == userGuid);
 
-        if (existingCollaborator != null)
+        if (existingCollaborator is { IsDeleted: false })
             throw new AppException(CollaboratorError.UserAlreadyExists);
 
         //  Thông tin cá nhân (họ tên/SĐT/email/Zalo) chỉ lưu ở bảng Users — ghi qua UserService;
@@ -109,15 +109,23 @@ public class CollaboratorService : ICollaboratorService
         await _userService.UpdatePersonalInfoAsync(
             userGuid, request.FullName, request.Phone, request.Email, request.Zalo);
 
-        //  Tạo Collaborator
-        var collaborator = _mapper.Map<Collaborator>(request);
+        //  Hồ sơ CTV đã xoá mềm của chính tài khoản này → khôi phục hồ sơ cũ (giữ mã CTV/mã giới thiệu)
+        //  thay vì tạo bản ghi mới, tránh lỗi ràng buộc mỗi tài khoản chỉ một hồ sơ.
+        var collaborator = existingCollaborator ?? _mapper.Map<Collaborator>(request);
+        if (existingCollaborator != null)
+            _mapper.Map(request, collaborator);
+
+        collaborator.IsDeleted = false;
         collaborator.UserId = userGuid;
-        collaborator.CollaboratorCode = await GenerateUniqueCollaboratorCodeAsync();
         collaborator.Status = CollaboratorStatus.Pending;
         collaborator.IsApproved = false;
         collaborator.Level = 1;
+
+        if (string.IsNullOrWhiteSpace(collaborator.CollaboratorCode))
+            collaborator.CollaboratorCode = await GenerateUniqueCollaboratorCodeAsync();
         // Mã chia sẻ riêng của CTV = mã CTV trên hồ sơ (dùng để gắn vào link chia sẻ).
-        collaborator.ReferralCode = collaborator.CollaboratorCode;
+        if (string.IsNullOrWhiteSpace(collaborator.ReferralCode))
+            collaborator.ReferralCode = collaborator.CollaboratorCode;
 
         //  Xử lý BusinessField — ưu tiên Id (chọn từ danh sách quản lý tập trung),
         //  fallback sang find-or-create theo tên cho client chưa gửi Id.
@@ -179,7 +187,11 @@ public class CollaboratorService : ICollaboratorService
             collaborator.Website = request.Website;
         }
 
-        await _repository.AddAsync(collaborator);
+        if (existingCollaborator != null)
+            _repository.Update(collaborator);
+        else
+            await _repository.AddAsync(collaborator);
+
         await _repository.SaveChangesAsync();
 
         // Nạp tài khoản vào navigation để response trả họ tên/SĐT/email/Zalo (dữ liệu ở bảng Users).
@@ -208,10 +220,23 @@ public class CollaboratorService : ICollaboratorService
     /// </summary>
     public async Task EnsureProfileForUserAsync(Guid userId)
     {
-        // Đã có hồ sơ chưa xoá → không tạo thêm (mỗi tài khoản chỉ một hồ sơ CTV).
-        var existing = await _repository.GetFirstAsync(c => c.UserId == userId && !c.IsDeleted);
+        // Mỗi tài khoản chỉ một hồ sơ CTV: đang hoạt động thì thôi, đã xoá mềm thì khôi phục lại.
+        var existing = await _repository.GetFirstAsync(c => c.UserId == userId);
         if (existing != null)
+        {
+            if (!existing.IsDeleted)
+                return;
+
+            existing.IsDeleted = false;
+            existing.Status = CollaboratorStatus.Pending;
+            existing.IsApproved = false;
+            if (string.IsNullOrWhiteSpace(existing.ReferralCode))
+                existing.ReferralCode = existing.CollaboratorCode;
+
+            _repository.Update(existing);
+            await _repository.SaveChangesAsync();
             return;
+        }
 
         var collaborator = new Collaborator
         {

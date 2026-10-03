@@ -1,4 +1,4 @@
-﻿using Kindi.API.Application.Common.Helpers;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Common.Models;
 using Kindi.API.Application.Errors;
@@ -7,6 +7,7 @@ using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
+using Kindi.API.Shared.Common.Helpers;
 using Kindi.API.Shared.Common.Interfaces;
 using Kindi.API.Shared.Constants;
 using Kindi.API.Shared.Exceptions;
@@ -37,24 +38,40 @@ public class UserService : IUserService
         _authAuditService = authAuditService;
     }
 
+    /// <summary>
+    /// Lấy tài khoản theo SĐT/email, chưa có thì tạo mới. Tài khoản đã xoá mềm được khôi phục lại
+    /// chính bản ghi cũ (giữ lịch sử đơn hàng/audit). Mọi tài khoản sinh từ đây đăng nhập bằng
+    /// SĐT làm mật khẩu và buộc đổi tên đăng nhập + mật khẩu ở lần đăng nhập đầu.
+    /// </summary>
     public async Task<Guid> GetOrCreateUserAsync(string fullName, string phone, string? email = null)
     {
         if (string.IsNullOrWhiteSpace(phone))
             throw UserException.PhoneRequired(_exceptionLocalizer);
 
-        var existing = await _userRepo.GetFirstAsync(u =>
-            u.Phone == phone ||
-            (!string.IsNullOrEmpty(email) && u.Email == email)
-        );
+        var existing = await FindByPhoneOrEmailAsync(phone, email);
 
         if (existing != null)
         {
             if (existing.IsDeleted)
-                throw UserException.PhoneAlreadyExists(_exceptionLocalizer, phone);
+            {
+                existing.IsDeleted = false;
+                existing.IsActive = true;
+                existing.FullName = fullName.Trim();
+                if (!string.IsNullOrWhiteSpace(email))
+                    existing.Email = email.Trim();
+                existing.PasswordHash = HashPassword(existing.Phone ?? phone.Trim());
+                existing.MustChangeCredentials = true;
+
+                _userRepo.Update(existing);
+                await _userRepo.SaveChangesAsync();
+                await _authAuditService.LogAsync(existing.Id, existing.Username, AuditAction.Register, true,
+                    $"Khôi phục tài khoản đã xoá (SĐT: {existing.Phone})");
+                return existing.Id;
+            }
 
             existing.FullName = fullName;
-            if (!string.IsNullOrEmpty(email))
-                existing.Email = email;
+            if (!string.IsNullOrWhiteSpace(email))
+                existing.Email = email.Trim();
 
             _userRepo.Update(existing);
             await _userRepo.SaveChangesAsync();
@@ -64,57 +81,13 @@ public class UserService : IUserService
         var user = new User
         {
             UserCode = CodeGenerator.Generate("USR"),
-            FullName = fullName,
-            Phone = phone,
-            Email = string.IsNullOrEmpty(email) ? $"{phone}@temp.com" : email,
+            FullName = fullName.Trim(),
+            Phone = phone.Trim(),
+            Email = string.IsNullOrWhiteSpace(email) ? $"{phone.Trim()}@temp.com" : email.Trim(),
             Username = GenerateUniqueUsername(phone),
-            PasswordHash = HashPassword(GenerateRandomPassword()),
-            Role = UserRole.Customer,
-            IsActive = true
-        };
-
-        await _userRepo.AddAsync(user);
-        await _userRepo.SaveChangesAsync();
-        await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.Register, true,
-            $"Tạo tài khoản mới (SĐT: {phone})");
-        return user.Id;
-    }
-
-    public async Task<Guid> GetOrCreateUserWithPhonePasswordAsync(string fullName, string phone, string? email = null)
-    {
-        if (string.IsNullOrWhiteSpace(phone))
-            throw UserException.PhoneRequired(_exceptionLocalizer);
-
-        var existing = await _userRepo.GetFirstAsync(u =>
-            u.Phone == phone ||
-            (!string.IsNullOrEmpty(email) && u.Email == email)
-        );
-
-        if (existing != null)
-        {
-            if (existing.IsDeleted)
-                throw UserException.PhoneAlreadyExists(_exceptionLocalizer, phone);
-
-            existing.FullName = fullName;
-            if (!string.IsNullOrEmpty(email))
-                existing.Email = email;
-
-            _userRepo.Update(existing);
-            await _userRepo.SaveChangesAsync();
-            return existing.Id;
-        }
-
-        var user = new User
-        {
-            UserCode = CodeGenerator.Generate("USR"),
-            FullName = fullName,
-            Phone = phone,
-            Email = string.IsNullOrEmpty(email) ? $"{phone}@temp.com" : email,
-            Username = GenerateUniqueUsername(phone),
-            PasswordHash = HashPassword(phone), // Password = số điện thoại
+            PasswordHash = HashPassword(phone.Trim()),
             Role = UserRole.Customer,
             IsActive = true,
-            // Tài khoản sinh tự động từ form công khai: bắt buộc đổi tên đăng nhập + mật khẩu ở lần đăng nhập đầu
             MustChangeCredentials = true
         };
 
@@ -130,24 +103,26 @@ public class UserService : IUserService
 
     public async Task<User?> FindByPhoneOrEmailAsync(string? phone, string? email)
     {
-        var normalizedPhone = string.IsNullOrWhiteSpace(phone) ? null : phone.Trim();
+        // SĐT tra theo cả dạng đã chuẩn hoá (bỏ khoảng trắng/dấu, +84 → 0); email đối chiếu tuyệt đối.
+        var phoneCandidates = PhoneHelper.Candidates(phone);
         var normalizedEmail = string.IsNullOrWhiteSpace(email) ? null : email.Trim();
 
-        if (normalizedPhone == null && normalizedEmail == null)
+        if (phoneCandidates.Count == 0 && normalizedEmail == null)
             return null;
 
         return await _userRepo.GetFirstAsync(u =>
-            (normalizedPhone != null && u.Phone == normalizedPhone) ||
+            phoneCandidates.Contains(u.Phone ?? string.Empty) ||
             (normalizedEmail != null && u.Email == normalizedEmail));
     }
 
     public async Task<PublicUserResult> ResolvePublicUserAsync(string fullName, string phone, string? email, string? zalo)
     {
         var existing = await FindByPhoneOrEmailAsync(phone, email);
-        var isNewAccount = existing == null;
+        // Tài khoản xoá mềm cũng được khôi phục kèm đăng nhập mới → coi như tài khoản mới.
+        var isNewAccount = existing == null || existing.IsDeleted;
 
         // Tài khoản đã có: dùng lại, KHÔNG ghi đè hồ sơ (đây là endpoint công khai).
-        var userId = existing?.Id ?? await GetOrCreateUserWithPhonePasswordAsync(fullName.Trim(), phone.Trim(), email);
+        var userId = existing?.Id ?? await GetOrCreateUserAsync(fullName.Trim(), phone.Trim(), email);
 
         await UpdatePersonalInfoAsync(userId, fullName, phone, email, zalo);
 
@@ -228,7 +203,7 @@ public class UserService : IUserService
     private string GenerateUniqueUsername(string phone)
     {
         // Username gắn với SĐT cho dễ đọc (vd: user0912345678); fallback random khi không có SĐT.
-        var normalized = string.Concat((phone ?? string.Empty).Where(char.IsDigit));
+        var normalized = PhoneHelper.Normalize(phone);
         var baseUsername = string.IsNullOrEmpty(normalized)
             ? $"user{Guid.NewGuid():N}"[..50]
             : $"user{normalized}";
@@ -238,13 +213,6 @@ public class UserService : IUserService
         if (!exists) return baseUsername;
 
         return $"{baseUsername}_{Guid.NewGuid():N}"[..50];
-    }
-
-    private string GenerateRandomPassword()
-    {
-        const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-        return new string(Enumerable.Repeat(chars, 8)
-            .Select(s => s[new Random().Next(s.Length)]).ToArray());
     }
 
     private string HashPassword(string password)

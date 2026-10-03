@@ -7,6 +7,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers;
 
@@ -57,7 +58,7 @@ public class OfferRequestsController : ApiControllerBase
     /// Lấy chi tiết yêu cầu nhận offer theo ID (Chỉ Admin)
     /// </summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetById(Guid id)
     {
         var response = await _mediator.Send(new GetOfferRequestByIdQuery { Id = id });
@@ -73,7 +74,7 @@ public class OfferRequestsController : ApiControllerBase
     /// Cập nhật trạng thái yêu cầu nhận offer (Chỉ Admin)
     /// </summary>
     [HttpPatch("{id:guid}/status")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOfferRequestStatusDto dto)
     {
         var response = await _mediator.Send(new UpdateOfferRequestStatusCommand
@@ -88,7 +89,7 @@ public class OfferRequestsController : ApiControllerBase
     /// Xóa mềm yêu cầu nhận offer (Chỉ Admin)
     /// </summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         var response = await _mediator.Send(new DeleteOfferRequestCommand { Id = id });
@@ -99,7 +100,7 @@ public class OfferRequestsController : ApiControllerBase
     /// Khôi phục yêu cầu nhận offer đã xóa (Chỉ Admin)
     /// </summary>
     [HttpPost("{id:guid}/restore")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)
     {
         var response = await _mediator.Send(new RestoreOfferRequestCommand { Id = id });

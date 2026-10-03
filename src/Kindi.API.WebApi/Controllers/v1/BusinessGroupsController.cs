@@ -1,9 +1,10 @@
-﻿using Kindi.API.Application.Common.Interfaces;
+using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers.v1;
 
@@ -98,7 +99,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Admin duyệt / từ chối mở hội nhóm</summary>
     [HttpPut("community/{id:guid}/approval")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdateCommunityApproval(Guid id, [FromBody] UpdateCommunityGroupApprovalDto request)
     {
         var result = await _groupService.UpdateCommunityApprovalAsync(id, request);
@@ -141,7 +142,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Admin sửa/ghim/ẩn bài trong nhóm</summary>
     [HttpPut("{id:guid}/posts/{postId:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdatePost(Guid id, Guid postId, [FromBody] UpdateBusinessGroupPostDto request)
     {
         var result = await _groupService.UpdatePostAsync(id, postId, request);
@@ -190,7 +191,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Danh sách nhóm (admin)</summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetList([FromQuery] AdminBusinessGroupQueryDto query)
     {
         var result = await _groupService.GetAdminPagedAsync(query);
@@ -199,7 +200,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Chi tiết nhóm (admin — kèm thành viên chờ duyệt)</summary>
     [HttpGet("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDetail(Guid id)
     {
         var result = await _groupService.GetAdminByIdAsync(id);
@@ -208,7 +209,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Tạo nhóm</summary>
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateBusinessGroupDto request)
     {
         var result = await _groupService.CreateAsync(request);
@@ -217,7 +218,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Cập nhật nhóm</summary>
     [HttpPut("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBusinessGroupDto request)
     {
         var result = await _groupService.UpdateAsync(id, request);
@@ -226,7 +227,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Xoá nhóm</summary>
     [HttpDelete("{id:guid}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _groupService.DeleteAsync(id);
@@ -262,7 +263,7 @@ public class BusinessGroupsController : ApiControllerBase
 
     /// <summary>Yêu cầu kín gửi admin trong nhóm</summary>
     [HttpGet("{id:guid}/private-requests")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetPrivateRequests(Guid id, [FromQuery] GroupPostQueryDto query)
     {
         query.PrivateOnly = true;

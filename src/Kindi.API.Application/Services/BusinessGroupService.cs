@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Extensions;
@@ -28,7 +28,6 @@ namespace Kindi.API.Application.Services;
 /// </summary>
 public class BusinessGroupService : IBusinessGroupService
 {
-    private const string AdminRole = "Admin";
 
     private readonly IRepository<BusinessGroup> _repository;
     private readonly IRepository<BusinessGroupMember> _memberRepository;
@@ -105,7 +104,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<BusinessGroupDetailDto> GetPublicByIdAsync(Guid id)
     {
         var me = GetCurrentUserId();
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         var group = await _queryService.GetAllNoTracking<BusinessGroup>()
             .Include(x => x.BusinessField)
@@ -322,7 +321,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupPostResponseDto>> GetPostsAsync(Guid groupId, GroupPostQueryDto query)
     {
         var me = GetCurrentUserId();
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         await EnsureCanViewPostsAsync(groupId, me, isAdmin);
 
         if (query.PrivateOnly && !isAdmin)
@@ -354,7 +353,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<BusinessGroupPostResponseDto> CreatePostAsync(Guid groupId, CreateBusinessGroupPostDto request)
     {
         var me = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         await EnsureCanViewPostsAsync(groupId, me, isAdmin);
 
         var post = new BusinessGroupPost
@@ -435,7 +434,7 @@ public class BusinessGroupService : IBusinessGroupService
         if (groupIds.Count == 0) return new List<ForwardedGroupResponseDto>();
 
         // Admin xem mọi nhóm; người dùng chỉ thấy nhóm mình đang tham gia.
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         var me = GetCurrentUserId();
         var myGroupIds = isAdmin || me == null
             ? new List<Guid>()
@@ -479,7 +478,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task DeletePostAsync(Guid groupId, Guid postId)
     {
         var me = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         var post = await _postRepository.GetFirstAsync(p => p.Id == postId && p.BusinessGroupId == groupId && !p.IsDeleted)
             ?? throw new NotFoundException(_localizer["BusinessGroup_PostNotFound"]);
@@ -504,7 +503,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<PagedList<BusinessGroupCommentResponseDto>> GetCommentsAsync(Guid postId, GroupCommentQueryDto query)
     {
         var me = GetCurrentUserId();
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         var post = await GetPostOrThrowAsync(postId);
         await EnsureCanViewPostsAsync(post.BusinessGroupId, me, isAdmin);
 
@@ -520,7 +519,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task<BusinessGroupCommentResponseDto> CreateCommentAsync(Guid postId, CreateBusinessGroupCommentDto request)
     {
         var me = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         var post = await GetPostOrThrowAsync(postId);
         await EnsureCanViewPostsAsync(post.BusinessGroupId, me, isAdmin);
 
@@ -548,7 +547,7 @@ public class BusinessGroupService : IBusinessGroupService
     public async Task DeleteCommentAsync(Guid postId, Guid commentId)
     {
         var me = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         var comment = await _commentRepository.GetFirstAsync(c =>
             c.Id == commentId && c.BusinessGroupPostId == postId && !c.IsDeleted)
@@ -972,7 +971,7 @@ public class BusinessGroupService : IBusinessGroupService
     /// </summary>
     private void EnsureCanManageMembers(BusinessGroup group)
     {
-        if (_currentUserService.IsInRole(AdminRole)) return;
+        if (_currentUserService.IsInRole(UserRole.Admin)) return;
 
         var me = GetCurrentUserId();
         if (me != null && group.CreatedByUserId == me.Value) return;

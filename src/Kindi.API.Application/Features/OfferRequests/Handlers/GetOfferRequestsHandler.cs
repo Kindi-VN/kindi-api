@@ -14,12 +14,12 @@ using MediatR;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Linq;
+using Kindi.API.Domain.Enums;
 
 namespace Kindi.API.Application.Features.OfferRequests.Handlers;
 
 public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, PagedList<OfferRequestResponseDto>>
 {
-	private const string AdminRole = "Admin";
 
 	private readonly IQueryService _queryService;
 	private readonly IMapper _mapper;
@@ -46,7 +46,7 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 		var search = request.Search?.Trim();
 
 		// Quyền xem: admin thấy tất cả (kể cả bản ghi đã xóa), người dùng thường chỉ thấy yêu cầu của chính mình.
-		var isAdmin = _currentUserService.IsInRole(AdminRole);
+		var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 		var onlyMine = request.MineOnly || !isAdmin;
 		var meId = GetCurrentUserId();
 

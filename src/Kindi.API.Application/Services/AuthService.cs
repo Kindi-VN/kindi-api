@@ -1,4 +1,4 @@
-﻿using Kindi.API.Application.Common.Configurations;
+using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Resources;
@@ -45,17 +45,21 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        // Tìm user theo username, email, hoặc phone
+        // Tìm user theo tên đăng nhập, email hoặc số điện thoại; SĐT nhập có thể kèm khoảng trắng,
+        // dấu chấm hoặc tiền tố +84 nên so cả dạng đã chuẩn hoá.
+        var identifier = request.Username?.Trim() ?? string.Empty;
+        var phoneCandidates = PhoneHelper.Candidates(identifier);
+
         var users = await _userRepository.FindAsync(u =>
             !u.IsDeleted && (
-                u.Username == request.Username ||
-                u.Email == request.Username ||
-                u.Phone == request.Username
+                u.Username == identifier ||
+                u.Email == identifier ||
+                phoneCandidates.Contains(u.Phone ?? string.Empty)
             )
         );
         var user = users.FirstOrDefault();
 
-        if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash ?? string.Empty))
+        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
         {
             _logger.LogWarning($"Login failed for user: {request.Username}");
             await _authAuditService.LogAsync(null, request.Username, AuditAction.Login, false,
@@ -181,7 +185,7 @@ public class AuthService : IAuthService
 			throw new NotFoundException(_localizer["UserNotFound"]);
 		}
 
-		if (!PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash ?? string.Empty))
+		if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
 		{
 			_logger.LogWarning("Invalid current password for user: {UserId}", userId);
 			await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, false,
@@ -247,7 +251,7 @@ public class AuthService : IAuthService
 			return false;
 		}
 
-		if (!PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash ?? string.Empty))
+		if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
 		{
 			_logger.LogWarning($"Invalid current password for user: {userId}");
 			await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, false,
@@ -323,14 +327,28 @@ public class AuthService : IAuthService
 		};
 	}
 
+	/// <summary>
+	/// Kiểm tra mật khẩu: thử dạng nhập nguyên văn, sau đó tới dạng SĐT đã chuẩn hoá
+	/// (bỏ khoảng trắng/dấu, +84 → 0) để tài khoản có mật khẩu là SĐT không lệch định dạng.
+	/// </summary>
+	private static bool VerifyPassword(string password, string? passwordHash)
+	{
+		var hash = passwordHash ?? string.Empty;
+		if (PasswordHasher.Verify(password, hash))
+			return true;
+
+		var normalized = PhoneHelper.Normalize(password);
+		return normalized.Length > 0 && normalized != password && PasswordHasher.Verify(normalized, hash);
+	}
+
 	private static List<string> GetRoles(UserRole role)
 	{
+		// Claim vai trò giữ dạng số để khớp RoleConstants và [Authorize(Roles = ...)].
 		return role switch
 		{
-			UserRole.Admin => new List<string> { "Admin" },
-			UserRole.CTV => new List<string> { "CTV" },
-			UserRole.Customer => new List<string> { "Customer" },
-			_ => new List<string> { "Customer" }
+			UserRole.Admin => new List<string> { RoleConstants.Admin },
+			UserRole.CTV => new List<string> { RoleConstants.CTV },
+			_ => new List<string> { RoleConstants.Customer }
 		};
 	}
 }

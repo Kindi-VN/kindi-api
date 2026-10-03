@@ -7,6 +7,7 @@ using Kindi.API.WebApi.Responses;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers;
 
@@ -25,7 +26,7 @@ public class CompaniesController : ApiControllerBase
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetList([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
     {
         var result = await _companyService.GetPagedAsync(pageNumber, pageSize, search);
@@ -33,7 +34,7 @@ public class CompaniesController : ApiControllerBase
     }
 
     [HttpGet("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDetail(Guid id)
     {
         var result = await _companyService.GetByIdAsync(id);
@@ -42,7 +43,7 @@ public class CompaniesController : ApiControllerBase
     }
 
     [HttpPost]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateCompanyDto request)
     {
         var result = await _companyService.CreateAsync(request);
@@ -50,7 +51,7 @@ public class CompaniesController : ApiControllerBase
     }
 
     [HttpPut("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCompanyDto request)
     {
         var result = await _companyService.UpdateAsync(id, request);

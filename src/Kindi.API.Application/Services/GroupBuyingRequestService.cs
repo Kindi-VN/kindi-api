@@ -22,7 +22,6 @@ namespace Kindi.API.Application.Services;
 
 public class GroupBuyingRequestService : IGroupBuyingRequestService
 {
-    private const string AdminRole = "Admin";
 
     private readonly IRepository<GroupBuyingRequest> _repository;
     private readonly IRepository<GroupBuyingParticipant> _participantRepository;
@@ -221,7 +220,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     private async Task<GroupBuyingDetailDto> MapPublicDetailAsync(GroupBuyingRequest entity)
     {
         var me = GetCurrentUserId();
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         if (!isAdmin
             && entity.Status != GroupBuyingStatus.Active
@@ -238,7 +237,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     /// bản ghi — đều chỉ thấy dạng che, muốn liên hệ thì phải qua admin.
     /// </summary>
     private bool ShouldMaskContact(bool forAdmin)
-        => !forAdmin || !_currentUserService.IsInRole(AdminRole);
+        => !forAdmin || !_currentUserService.IsInRole(UserRole.Admin);
 
     public async Task<JoinGroupBuyingResponseDto> JoinAsync(Guid id, JoinGroupBuyingRequestDto request)
     {
@@ -384,7 +383,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     public async Task<PagedList<GroupBuyingRequestResponseDto>> GetPagedAsync(GetGroupBuyingRequestsQueryDto query)
     {
         // Admin - lấy tất cả; User - chỉ lấy của mình
-        var isAdmin = _currentUserService.IsInRole(AdminRole);
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         var userId = isAdmin ? null : _currentUserService.UserId;
 
         if (!isAdmin && string.IsNullOrEmpty(userId))

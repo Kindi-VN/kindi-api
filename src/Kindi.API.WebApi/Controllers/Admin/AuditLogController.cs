@@ -4,12 +4,13 @@ using Kindi.API.Application.Resources;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers.Admin;
 
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/admin/audit-logs")]
-[Authorize(Roles = "Admin")]
+[Authorize(Roles = RoleConstants.Admin)]
 [ApiController]
 public class AuditLogController : ApiControllerBase
 {

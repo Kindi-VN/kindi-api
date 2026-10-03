@@ -1,4 +1,4 @@
-﻿// WebApi/Controllers/PartnerController.cs
+// WebApi/Controllers/PartnerController.cs
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.Requests;
 using Kindi.API.Application.DTOs.Responses;
@@ -9,6 +9,7 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers;
 
@@ -88,14 +89,14 @@ public class PartnersController : ApiControllerBase
     /// Truyền <c>isDeleted=true</c> để lấy danh sách đối tác đã xóa mềm.
     /// </summary>
     [HttpGet]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetList([FromQuery] PartnerFilterRequest filter)
     {
         var result = await _partnerService.GetPagedAsync(filter);
         return OkPaged(result, _localizer["Success"]);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetDetail(Guid id)
     {
@@ -107,14 +108,14 @@ public class PartnersController : ApiControllerBase
     }
 
     [HttpPost("{id}/approve")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Approve(Guid id)
     {
         var result = await _partnerService.ApproveAsync(id);
         return Ok(result, _localizer["Partner_ApproveSuccess"]);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPost("{id}/reject")]
     public async Task<IActionResult> Reject(Guid id)
     {
@@ -122,7 +123,7 @@ public class PartnersController : ApiControllerBase
         return Ok(result, _localizer["Partner_RejectSuccess"]);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPost("{id}/activate")]
     public async Task<IActionResult> Activate(Guid id)
     {
@@ -133,7 +134,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Cập nhật thông tin đối tác (partial update — field null giữ nguyên)
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdatePartnerDto request)
     {
@@ -155,7 +156,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Danh sách đối tác đã xóa mềm
     /// </summary>
-    //[Authorize(Roles = "Admin")]
+    //[Authorize(Roles = RoleConstants.Admin)]
     [HttpGet("deleted")]
     public async Task<IActionResult> GetDeleted(
         [FromQuery] int pageNumber = 1,
@@ -169,7 +170,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Xóa mềm đối tác
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(Guid id)
     {
@@ -182,7 +183,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Khôi phục đối tác đã xóa
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {
@@ -197,7 +198,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Thêm sản phẩm/dịch vụ cho đối tác
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPost("{id}/products")]
     public async Task<IActionResult> AddProduct(Guid id, [FromBody] CreatePartnerProductDto request)
     {
@@ -212,7 +213,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Cập nhật sản phẩm/dịch vụ của đối tác (partial update — field null giữ nguyên)
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpPut("{id}/products/{productId}")]
     public async Task<IActionResult> UpdateProduct(
         Guid id,
@@ -230,7 +231,7 @@ public class PartnersController : ApiControllerBase
     /// <summary>
     /// Xóa mềm sản phẩm/dịch vụ của đối tác
     /// </summary>
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     [HttpDelete("{id}/products/{productId}")]
     public async Task<IActionResult> DeleteProduct(Guid id, Guid productId)
     {
