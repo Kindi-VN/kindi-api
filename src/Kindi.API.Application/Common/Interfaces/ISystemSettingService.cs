@@ -12,6 +12,12 @@ public interface ISystemSettingService
     /// <summary>Đọc phần cấu hình công khai cho giao diện người dùng.</summary>
     Task<PublicSystemSettingResponse> GetPublicAsync(CancellationToken cancellationToken = default);
 
+    /// <summary>Giá trị mặc định của cấu hình chung (dùng cho nút khôi phục từng trường).</summary>
+    Task<SystemSettingResponse> GetDefaultsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Khôi phục toàn bộ cấu hình chung về mặc định.</summary>
+    Task<SystemSettingResponse> ResetAsync(CancellationToken cancellationToken = default);
+
     /// <summary>Cập nhật cấu hình chung.</summary>
     Task<SystemSettingResponse> SaveAsync(SaveSystemSettingRequest request, CancellationToken cancellationToken = default);
 }

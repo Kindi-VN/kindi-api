@@ -63,6 +63,11 @@ public sealed class SystemSettingService : ISystemSettingService
             FacebookUrl = setting.FacebookUrl,
             YoutubeUrl = setting.YoutubeUrl,
             ZaloUrl = setting.ZaloUrl,
+            TiktokUrl = setting.TiktokUrl,
+            InstagramUrl = setting.InstagramUrl,
+            XUrl = setting.XUrl,
+            ThreadsUrl = setting.ThreadsUrl,
+            LinkedinUrl = setting.LinkedinUrl,
             CopyrightText = setting.CopyrightText,
             DefaultLanguage = setting.DefaultLanguage,
             TimeZone = setting.TimeZone,
@@ -122,6 +127,11 @@ public sealed class SystemSettingService : ISystemSettingService
         setting.FacebookUrl = request.FacebookUrl?.Trim();
         setting.YoutubeUrl = request.YoutubeUrl?.Trim();
         setting.ZaloUrl = request.ZaloUrl?.Trim();
+        setting.TiktokUrl = request.TiktokUrl?.Trim();
+        setting.InstagramUrl = request.InstagramUrl?.Trim();
+        setting.XUrl = request.XUrl?.Trim();
+        setting.ThreadsUrl = request.ThreadsUrl?.Trim();
+        setting.LinkedinUrl = request.LinkedinUrl?.Trim();
         setting.CopyrightText = request.CopyrightText?.Trim();
 
         setting.DefaultLanguage = request.DefaultLanguage!.Trim().ToLowerInvariant();
@@ -173,6 +183,32 @@ public sealed class SystemSettingService : ISystemSettingService
         return Map(setting);
     }
 
+    /// <inheritdoc />
+    public Task<SystemSettingResponse> GetDefaultsAsync(CancellationToken cancellationToken = default)
+        => Task.FromResult(Map(new SystemSetting()));
+
+    /// <inheritdoc />
+    public async Task<SystemSettingResponse> ResetAsync(CancellationToken cancellationToken = default)
+    {
+        // Giá trị mặc định là trạng thái "chưa cấu hình lần nào", nên khôi phục mặc định
+        // chính là bỏ bản ghi đang có: lần đọc sau trả về mặc định, lần lưu sau tạo bản ghi mới.
+        var setting = await _settingRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .FirstOrDefaultAsync(x => !x.IsDeleted, cancellationToken);
+
+        if (setting != null)
+        {
+            setting.IsDeleted = true;
+            setting.UpdatedAt = DateTime.UtcNow;
+            setting.UpdatedBy = _currentUserService.UserName;
+            _settingRepository.Update(setting);
+            await _settingRepository.SaveChangesAsync(cancellationToken);
+            _logger.LogInformation("Đã khôi phục cài đặt chung về mặc định");
+        }
+
+        return Map(new SystemSetting());
+    }
+
     private static SystemSettingResponse Map(SystemSetting setting) => new()
     {
         SystemName = setting.SystemName,
@@ -183,6 +219,11 @@ public sealed class SystemSettingService : ISystemSettingService
         FacebookUrl = setting.FacebookUrl,
         YoutubeUrl = setting.YoutubeUrl,
         ZaloUrl = setting.ZaloUrl,
+        TiktokUrl = setting.TiktokUrl,
+        InstagramUrl = setting.InstagramUrl,
+        XUrl = setting.XUrl,
+        ThreadsUrl = setting.ThreadsUrl,
+        LinkedinUrl = setting.LinkedinUrl,
         CopyrightText = setting.CopyrightText,
         DefaultLanguage = setting.DefaultLanguage,
         TimeZone = setting.TimeZone,
