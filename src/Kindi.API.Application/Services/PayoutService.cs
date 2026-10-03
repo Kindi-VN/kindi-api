@@ -231,6 +231,10 @@ public sealed class PayoutService : IPayoutService
         var bankAccount = await _bankAccountRepository.GetFirstAsync(x => x.UserId == userId, cancellationToken)
             ?? throw new BusinessException(_localizer["Payout_NoBankAccount"]);
 
+        // Chỉ cho rút khi tài khoản nhận tiền đã được xác minh, tránh giải ngân vào tài khoản chưa đối chiếu.
+        if (!bankAccount.IsVerified)
+            throw new BusinessException(_localizer["Payout_UnverifiedBankAccount"]);
+
         var wallet = await GetWalletAsync(cancellationToken);
 
         if (request.Amount > wallet.AvailableAmount)

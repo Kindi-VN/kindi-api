@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
 	<!-- Common -->
 	<data name="CreateSuccess" xml:space="preserve">
@@ -1249,6 +1249,9 @@
   </data>
   <data name="Payout_NoBankAccount" xml:space="preserve">
     <value>Vui lòng cập nhật thông tin ngân hàng nhận giải ngân.</value>
+  </data>
+  <data name="Payout_UnverifiedBankAccount" xml:space="preserve">
+    <value>Tài khoản ngân hàng nhận giải ngân chưa được xác minh. Vui lòng xác minh trước khi rút hoa hồng.</value>
   </data>
   <data name="Payout_ExceedAvailable" xml:space="preserve">
     <value>Số tiền rút vượt quá hoa hồng có thể rút ({0}).</value>
