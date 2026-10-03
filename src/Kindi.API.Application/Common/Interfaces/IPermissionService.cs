@@ -1,5 +1,6 @@
 namespace Kindi.API.Application.Common.Interfaces;
 
+using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 
 /// <summary>
@@ -10,6 +11,9 @@ public interface IPermissionService
 {
     /// <summary>Danh mục toàn bộ quyền (đọc từ enum) — nguồn cho màn quản lý quyền và seed DB.</summary>
     IReadOnlyList<PermissionDefinition> GetCatalog();
+
+    /// <summary>Danh sách nhóm quyền (đọc từ bảng PermissionGroups) kèm tên hiển thị và thứ tự.</summary>
+    Task<IReadOnlyList<PermissionGroup>> GetGroupsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>Quyền đang bật của một role kèm phiên bản quyền (SuperAdmin: toàn bộ danh mục).</summary>
     Task<RolePermissions> GetRolePermissionsAsync(UserRole role, CancellationToken cancellationToken = default);

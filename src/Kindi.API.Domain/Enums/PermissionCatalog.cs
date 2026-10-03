@@ -11,7 +11,8 @@ public sealed record PermissionDefinition(
     PermissionModule Module,
     PermissionKind Kind,
     string? Route,
-    string? Endpoints);
+    string? Endpoints,
+    string ParentCode);
 
 /// <summary>
 /// Danh mục quyền lấy trực tiếp từ <see cref="PermissionCode"/> (nguồn duy nhất là enum) — dùng để
@@ -55,6 +56,28 @@ public static class PermissionCatalog
         return definition != null;
     }
 
+    /// <summary>
+    /// Nhóm quyền mặc định: quyền gắn trang của thành viên (/user/**) vào nhóm MEMBER, còn lại theo module.
+    /// Khai <see cref="PermissionInfoAttribute.ParentCode"/> khi quyền thuộc nhóm khác với module.
+    /// </summary>
+    private static string DeriveParentCode(PermissionInfoAttribute info)
+    {
+        if (info.Route is not null && info.Route.StartsWith("/user/", StringComparison.OrdinalIgnoreCase))
+            return PermissionGroupCodes.Member;
+
+        return info.Module switch
+        {
+            PermissionModule.User => PermissionGroupCodes.User,
+            PermissionModule.Partner => PermissionGroupCodes.Partner,
+            PermissionModule.Purchase => PermissionGroupCodes.Purchase,
+            PermissionModule.Group => PermissionGroupCodes.Group,
+            PermissionModule.Community => PermissionGroupCodes.Community,
+            PermissionModule.Referral => PermissionGroupCodes.Referral,
+            PermissionModule.SuperAdmin => PermissionGroupCodes.SuperAdmin,
+            _ => PermissionGroupCodes.System
+        };
+    }
+
     private static IReadOnlyList<PermissionDefinition> BuildAll()
     {
         var result = new List<PermissionDefinition>();
@@ -65,7 +88,8 @@ public static class PermissionCatalog
             if (info == null) continue;
 
             result.Add(new PermissionDefinition(
-                code, code.ToCode(), info.Name, info.Module, info.Kind, info.Route, info.Endpoints));
+                code, code.ToCode(), info.Name, info.Module, info.Kind, info.Route, info.Endpoints,
+                info.ParentCode ?? DeriveParentCode(info)));
         }
 
         return result.OrderBy(x => (int)x.Code).ToList();

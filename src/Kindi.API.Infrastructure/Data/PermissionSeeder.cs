@@ -14,6 +14,34 @@ public static class PermissionSeeder
 {
     public static async Task SeedAsync(ApplicationDbContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
     {
+        // Nhóm quyền: chỉ thêm nhóm còn thiếu để giữ nguyên tên/thứ tự đã sửa trong DB.
+        var existingGroupCodes = await context.PermissionGroups
+            .IgnoreQueryFilters()
+            .Select(x => x.Code)
+            .ToListAsync(cancellationToken);
+        var groupCodes = existingGroupCodes.ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+        var addedGroups = 0;
+        foreach (var group in PermissionGroupCatalog.All)
+        {
+            if (groupCodes.Contains(group.Code)) continue;
+
+            context.PermissionGroups.Add(new PermissionGroup
+            {
+                Code = group.Code,
+                Name = group.Name,
+                NameEn = group.NameEn,
+                SortOrder = group.SortOrder
+            });
+            groupCodes.Add(group.Code);
+            addedGroups++;
+        }
+
+        if (addedGroups > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
         var existing = await context.Permissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
         var byCode = existing.ToDictionary(x => x.Code, x => x, StringComparer.OrdinalIgnoreCase);
 
@@ -25,6 +53,7 @@ public static class PermissionSeeder
                 // Cập nhật lại phần mô tả (tên/nhóm/route/endpoint) theo enum — nguồn duy nhất là code.
                 current.Name = definition.Name;
                 current.Module = definition.Module;
+                current.ParentCode = definition.ParentCode;
                 current.Kind = definition.Kind;
                 current.Route = definition.Route;
                 current.Endpoints = definition.Endpoints;
@@ -38,6 +67,7 @@ public static class PermissionSeeder
                 Code = definition.PermissionCode,
                 Name = definition.Name,
                 Module = definition.Module,
+                ParentCode = definition.ParentCode,
                 Kind = definition.Kind,
                 Route = definition.Route,
                 Endpoints = definition.Endpoints,
@@ -81,6 +111,7 @@ public static class PermissionSeeder
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Grants} gán role mới", added, addedGrants);
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Grants} gán role mới",
+            added, addedGroups, addedGrants);
     }
 }

@@ -46,6 +46,12 @@ public class PermissionService : IPermissionService
 
     public IReadOnlyList<PermissionDefinition> GetCatalog() => PermissionCatalog.All;
 
+    public async Task<IReadOnlyList<PermissionGroup>> GetGroupsAsync(CancellationToken cancellationToken = default)
+        => await _queryService.GetAllNoTracking<PermissionGroup>()
+            .OrderBy(x => x.SortOrder)
+            .ThenBy(x => x.Code)
+            .ToListAsync(cancellationToken);
+
     public async Task<RolePermissions> GetRolePermissionsAsync(UserRole role, CancellationToken cancellationToken = default)
     {
         var snapshot = await GetSnapshotAsync(cancellationToken);

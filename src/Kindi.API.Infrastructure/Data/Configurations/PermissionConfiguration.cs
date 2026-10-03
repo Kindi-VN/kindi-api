@@ -28,5 +28,17 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 
         builder.Property(x => x.Endpoints)
             .HasMaxLength(1000);
+
+        builder.Property(x => x.ParentCode)
+            .HasMaxLength(50);
+
+        builder.HasIndex(x => x.ParentCode);
+
+        // Xoá nhóm không xoá quyền — quyền chỉ mất liên kết nhóm.
+        builder.HasOne(x => x.ParentGroup)
+            .WithMany()
+            .HasForeignKey(x => x.ParentCode)
+            .HasPrincipalKey(x => x.Code)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }
