@@ -608,7 +608,7 @@ public sealed class PayoutService : IPayoutService
         return period;
     }
 
-    /// <summary>Tính hoa hồng của một phát sinh theo mức đang áp (%, số tiền cố định hoặc bậc thang).</summary>
+    /// <summary>Tính hoa hồng của một phát sinh theo mức đang áp (%, số tiền cố định hoặc theo hạn mức).</summary>
     private static decimal ComputeCommission(decimal amount, CommissionConfigResponse? config)
     {
         if (config == null || !config.IsActive)
@@ -631,7 +631,7 @@ public sealed class PayoutService : IPayoutService
         return decimal.Round(commission, 0, MidpointRounding.AwayFromZero);
     }
 
-    /// <summary>Mức % của bậc thang khớp với giá trị phát sinh.</summary>
+    /// <summary>Mức % của hạn mức khớp với giá trị phát sinh.</summary>
     private static decimal? FindTierRate(CommissionConfigResponse config, decimal amount)
         => config.Tiers
             .Where(x => x.FromValue <= amount && (!x.ToValue.HasValue || amount <= x.ToValue.Value))

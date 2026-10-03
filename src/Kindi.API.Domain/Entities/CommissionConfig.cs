@@ -15,7 +15,7 @@ public class CommissionConfig : BaseEntity
     /// <summary>Tài khoản được áp riêng; trống là bản chung.</summary>
     public Guid? UserId { get; set; }
 
-    /// <summary>Cách tính: phần trăm, số tiền cố định hay bậc thang.</summary>
+    /// <summary>Cách tính: phần trăm, số tiền cố định hay theo hạn mức.</summary>
     public CommissionType Type { get; set; }
 
     /// <summary>Mức hoa hồng (% khi <see cref="Type"/> là phần trăm, số tiền khi là cố định).</summary>

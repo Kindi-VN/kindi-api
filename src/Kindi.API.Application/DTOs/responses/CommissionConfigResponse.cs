@@ -43,25 +43,25 @@ public class CommissionConfigResponse
     /// <summary>Ghi chú nội bộ.</summary>
     public string? Note { get; set; }
 
-    /// <summary>Bậc thang của cấu hình.</summary>
+    /// <summary>Hạn mức của cấu hình.</summary>
     public List<CommissionTierResponse> Tiers { get; set; } = new();
 
     /// <summary>Thời điểm cập nhật gần nhất.</summary>
     public DateTime UpdatedAt { get; set; }
 }
 
-/// <summary>Một bậc của cấu hình hoa hồng bậc thang.</summary>
+/// <summary>Một hạn mức của cấu hình hoa hồng.</summary>
 public class CommissionTierResponse
 {
     public Guid Id { get; set; }
 
-    /// <summary>Giá trị bắt đầu của bậc.</summary>
+    /// <summary>Giá trị bắt đầu của hạn mức.</summary>
     public decimal FromValue { get; set; }
 
     /// <summary>Giá trị kết thúc; trống là không giới hạn.</summary>
     public decimal? ToValue { get; set; }
 
-    /// <summary>Mức hoa hồng của bậc.</summary>
+    /// <summary>Mức hoa hồng của hạn mức.</summary>
     public decimal Rate { get; set; }
 }
 
