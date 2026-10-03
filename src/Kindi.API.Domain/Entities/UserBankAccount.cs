@@ -33,6 +33,12 @@ public class UserBankAccount : BaseEntity
     /// <summary>Ghi chú của quản trị viên khi xác minh.</summary>
     public string? Note { get; set; }
 
+    /// <summary>Mã đối chiếu chuyển khoản dùng để xác minh tài khoản.</summary>
+    public string? VerificationCode { get; set; }
+
+    /// <summary>Thời điểm tạo mã đối chiếu.</summary>
+    public DateTime? VerificationCodeIssuedAt { get; set; }
+
     // Navigation
     public virtual User User { get; set; } = null!;
 }

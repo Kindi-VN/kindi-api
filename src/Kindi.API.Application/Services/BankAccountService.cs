@@ -13,6 +13,7 @@ using Kindi.API.Shared.Exceptions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using Microsoft.Extensions.Logging;
+using System.Security.Cryptography;
 
 /// <summary>
 /// Thông tin ngân hàng nhận giải ngân: mỗi thành viên có một thông tin, sửa số tài khoản thì phải
@@ -89,6 +90,9 @@ public sealed class BankAccountService : IBankAccountService
             account.VerifiedAt = null;
             account.VerifiedBy = null;
             account.Note = null;
+            // Đổi thông tin thì mã đối chiếu cũ không còn dùng được.
+            account.VerificationCode = null;
+            account.VerificationCodeIssuedAt = null;
         }
 
         account.BankName = bankName;
@@ -158,6 +162,12 @@ public sealed class BankAccountService : IBankAccountService
 
         account.IsVerified = request.IsVerified;
         account.VerifiedAt = request.IsVerified ? DateTime.UtcNow : null;
+        if (request.IsVerified)
+        {
+            // Đã xác minh thì mã đối chiếu không cần nữa.
+            account.VerificationCode = null;
+            account.VerificationCodeIssuedAt = null;
+        }
         account.VerifiedBy = request.IsVerified ? _currentUserService.UserName : null;
         account.Note = request.Note?.Trim();
         account.UpdatedAt = DateTime.UtcNow;
@@ -170,6 +180,35 @@ public sealed class BankAccountService : IBankAccountService
         return Map(account);
     }
 
+    /// <inheritdoc />
+    public async Task<BankAccountVerificationCodeResponse> IssueVerificationCodeAsync(CancellationToken cancellationToken = default)
+    {
+        var userId = CurrentUserId();
+        var account = await _bankAccountRepository.GetFirstWithIncludesAsync(
+            x => x.UserId == userId,
+            query => query.Include(x => x.User),
+            cancellationToken) ?? throw new BusinessException(_localizer["Payout_BankAccountNotFound"]);
+
+        // Mã còn hiệu lực thì trả lại mã cũ để thành viên không chuyển khoản theo nhiều nội dung khác nhau.
+        if (!string.IsNullOrWhiteSpace(account.VerificationCode)
+            && account.VerificationCodeIssuedAt.HasValue
+            && account.VerificationCodeIssuedAt.Value.AddDays(CodeLifetimeDays) > DateTime.UtcNow)
+        {
+            return BuildCodeResponse(account);
+        }
+
+        account.VerificationCode = BuildVerificationCode(account.AccountNumber);
+        account.VerificationCodeIssuedAt = DateTime.UtcNow;
+        account.UpdatedAt = DateTime.UtcNow;
+        account.UpdatedBy = _currentUserService.UserName;
+
+        _bankAccountRepository.Update(account);
+        await _bankAccountRepository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Đã tạo mã đối chiếu chuyển khoản cho tài khoản {UserId}", userId);
+
+        return BuildCodeResponse(account);
+    }
+
     private Guid CurrentUserId()
     {
         if (!Guid.TryParse(_currentUserService.UserId, out var userId))
@@ -177,6 +216,37 @@ public sealed class BankAccountService : IBankAccountService
 
         return userId;
     }
+
+    /// <summary>Số ngày mã đối chiếu còn hiệu lực.</summary>
+    private const int CodeLifetimeDays = 30;
+
+    /// <summary>Số tiền gợi ý chuyển khoản để xác minh (đồng).</summary>
+    private const decimal SuggestedTransferAmount = 1000;
+
+    /// <summary>Bảng ký tự sinh mã — bỏ các ký tự dễ nhầm khi đọc (I, O, 0, 1).</summary>
+    private const string CodeAlphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+    /// <summary>Mã đối chiếu gồm tiền tố KINDI, 4 số cuối tài khoản và 6 ký tự ngẫu nhiên.</summary>
+    private static string BuildVerificationCode(string accountNumber)
+    {
+        var digits = new string(accountNumber.Where(char.IsDigit).ToArray());
+        var tail = digits.Length >= 4 ? digits[^4..] : digits.PadLeft(4, '0');
+        var random = new char[6];
+        for (var i = 0; i < random.Length; i++)
+            random[i] = CodeAlphabet[RandomNumberGenerator.GetInt32(CodeAlphabet.Length)];
+
+        return $"KINDI{tail}{new string(random)}";
+    }
+
+    /// <summary>Thông tin mã đối chiếu trả cho thành viên: mã, nội dung chuyển khoản, số tiền và hạn.</summary>
+    private static BankAccountVerificationCodeResponse BuildCodeResponse(UserBankAccount account) => new()
+    {
+        VerificationCode = account.VerificationCode ?? string.Empty,
+        TransferContent = account.VerificationCode ?? string.Empty,
+        Amount = SuggestedTransferAmount,
+        IssuedAt = account.VerificationCodeIssuedAt,
+        ExpiresAt = account.VerificationCodeIssuedAt?.AddDays(CodeLifetimeDays)
+    };
 
     private static BankAccountResponse Map(UserBankAccount account) => new()
     {
@@ -192,6 +262,8 @@ public sealed class BankAccountService : IBankAccountService
         VerifiedAt = account.VerifiedAt,
         VerifiedBy = account.VerifiedBy,
         Note = account.Note,
+        VerificationCode = account.VerificationCode,
+        VerificationCodeIssuedAt = account.VerificationCodeIssuedAt,
         UpdatedAt = account.UpdatedAt ?? account.CreatedAt
     };
 }

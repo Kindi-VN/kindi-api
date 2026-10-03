@@ -1391,4 +1391,7 @@
   <data name="SystemSetting_ResetSuccess" xml:space="preserve">
     <value>Đã khôi phục cài đặt chung về mặc định.</value>
   </data>
+  <data name="BankAccount_VerificationCodeIssued" xml:space="preserve">
+    <value>Mã đối chiếu chuyển khoản để xác minh thông tin ngân hàng.</value>
+  </data>
 </root>
