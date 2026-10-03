@@ -37,6 +37,7 @@ public class GetOfferRequestByIdHandler : IRequestHandler<GetOfferRequestByIdQue
 
 		var dto = _mapper.Map<OfferRequestResponseDto>(entity);
 		await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
 		return dto;
 	}
 }

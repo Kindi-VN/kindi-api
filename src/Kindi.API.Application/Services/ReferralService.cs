@@ -77,6 +77,36 @@ public class ReferralService : IReferralService
         return exists ? code : null;
     }
 
+    public async Task<string?> ResolveForUserAsync(Guid userId, string? referralCode)
+    {
+        var user = await _queryService.GetByIdAsync<User>(userId);
+        if (user == null)
+            return await ResolveAsync(referralCode);
+
+        // Đã ghi nhận người giới thiệu → giữ nguyên, không đổi dù sau này mở link của CTV khác.
+        if (!string.IsNullOrWhiteSpace(user.ReferredByCode))
+            return user.ReferredByCode;
+
+        var resolved = await ResolveAsync(referralCode);
+        if (resolved == null)
+            return null;
+
+        user.ReferredByCode = resolved;
+        user.ReferredAt = DateTime.UtcNow;
+        _userRepository.Update(user);
+        await _userRepository.SaveChangesAsync();
+
+        return resolved;
+    }
+
+    public async Task<string?> AttributeToCurrentUserAsync(string? referralCode)
+    {
+        if (!Guid.TryParse(_currentUserService.UserId, out var userId))
+            return null;
+
+        return await ResolveForUserAsync(userId, referralCode);
+    }
+
     public async Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes)
     {
         var codes = referralCodes

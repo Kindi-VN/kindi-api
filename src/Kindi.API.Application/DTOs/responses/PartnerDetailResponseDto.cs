@@ -22,6 +22,11 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
     public CompanySize CompanySize { get; set; }
     public string? CompanyWebsite { get; set; }
     public string? ReferralCode { get; set; }
+
+    /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
+    public string? ReferredByCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
+    public string? ReferredByName { get; set; }
     public string? Note { get; set; }
     public PartnerStatus Status { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -66,7 +71,9 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
                 BusinessType = src.Company.BusinessType ?? src.BusinessType,
                 CompanySize = src.Company.CompanySize ?? src.CompanySize,
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : null)
-            } : null));
+            } : null))
+            .ForMember(dest => dest.ReferredByCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
 
         // ✅ Mapping cho các DTO con
         profile.CreateMap<User, UserBriefDto>();

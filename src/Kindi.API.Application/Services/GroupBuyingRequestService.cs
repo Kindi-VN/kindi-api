@@ -107,8 +107,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         entity.UserId = Guid.Parse(userId);
         entity.CurrentPeopleCount = 1;
         entity.Status = GroupBuyingStatus.Pending;
-        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
-        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
+        // Mã chia sẻ của link dùng để tạo yêu cầu: lần đầu thì ghi nhận vào tài khoản,
+        // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
+        entity.ReferralCode = await _referralService.ResolveForUserAsync(entity.UserId, request.ReferralCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
@@ -138,6 +139,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
         return dto;
     }
 
@@ -224,7 +226,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
         }
 
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false));
+        return await MapDetailAsync(entity, forAdmin: false);
     }
 
     /// <summary>
@@ -280,8 +282,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // Thông tin liên hệ chỉ lưu ở bảng Users — khách điền thì cập nhật vào tài khoản của họ.
         await _userService.UpdatePersonalInfoAsync(userId, request.FullName, request.Phone, request.Email, request.Zalo);
 
-        // Mã CTV của link chia sẻ người này dùng để tham gia (mã không tồn tại thì bỏ qua)
-        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+        // Mã chia sẻ của link người này dùng để tham gia: lần đầu thì ghi nhận vào tài khoản,
+        // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
+        var referralCode = await _referralService.ResolveForUserAsync(userId, request.ReferralCode);
 
         if (participant == null)
         {
@@ -359,7 +362,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: false));
+        return await MapDetailAsync(entity, forAdmin: false);
     }
 
     // =====================================================================
@@ -405,13 +408,14 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         var paged = _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
         await _referralService.FillNamesAsync(paged.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        await _referralService.FillNamesAsync(paged.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
         return paged;
     }
 
     public async Task<GroupBuyingDetailDto> GetDetailAsync(Guid id)
     {
         var entity = await GetWithParticipantsAsync(id);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true));
+        return await MapDetailAsync(entity, forAdmin: true);
     }
 
     public async Task<GroupBuyingRequestResponseDto> UpdateStatusAsync(Guid id, UpdateGroupBuyingStatusDto request)
@@ -449,6 +453,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
         return dto;
     }
 
@@ -486,6 +491,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
         await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
         return dto;
     }
 
@@ -506,7 +512,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         await SyncPeopleCountAsync(entity);
-        return await MapDetailAsync(entity, maskContact: ShouldMaskContact(forAdmin: true));
+        return await MapDetailAsync(entity, forAdmin: true);
     }
 
     public async Task DeleteAsync(Guid id)
@@ -616,8 +622,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         };
     }
 
-    private async Task<GroupBuyingDetailDto> MapDetailAsync(GroupBuyingRequest entity, bool maskContact)
+    private async Task<GroupBuyingDetailDto> MapDetailAsync(GroupBuyingRequest entity, bool forAdmin)
     {
+        // Thông tin người giới thiệu (Users.ReferredByCode) chỉ hiện ở màn quản trị.
+        var maskContact = ShouldMaskContact(forAdmin);
         var me = GetCurrentUserId();
         var joined = entity.Participants
             .Where(p => p.Status == GroupBuyingParticipantStatus.Joined)
@@ -632,7 +640,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         // Tên CTV của các mã ghi nhận được ở yêu cầu + từng người tham gia (hiển thị ở màn quản trị).
         var referralNames = await _referralService.LoadNamesAsync(
-            entity.Participants.Select(p => p.ReferralCode).Append(entity.ReferralCode));
+            entity.Participants.Select(p => p.ReferralCode)
+                .Append(entity.ReferralCode)
+                .Concat(entity.Participants.Select(p => p.User != null ? p.User.ReferredByCode : null))
+                .Append(entity.User != null ? entity.User.ReferredByCode : null));
 
         // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
@@ -662,6 +673,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 ReferralCode = p.ReferralCode,
                 ReferralName = p.ReferralCode != null && referralNames.TryGetValue(p.ReferralCode, out var referralName)
                     ? referralName
+                    : null,
+                ReferredByCode = forAdmin ? p.User?.ReferredByCode : null,
+                ReferredByName = forAdmin && p.User?.ReferredByCode != null
+                    && referralNames.TryGetValue(p.User.ReferredByCode, out var participantReferredByName)
+                    ? participantReferredByName
                     : null,
                 IsCreator = p.IsCreator,
                 IsGuestAccount = p.IsGuestAccount,
@@ -703,6 +719,11 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             ReferralCode = entity.ReferralCode,
             ReferralName = entity.ReferralCode != null && referralNames.TryGetValue(entity.ReferralCode, out var requestReferralName)
                 ? requestReferralName
+                : null,
+            ReferredByCode = forAdmin ? entity.User?.ReferredByCode : null,
+            ReferredByName = forAdmin && entity.User?.ReferredByCode != null
+                && referralNames.TryGetValue(entity.User.ReferredByCode, out var creatorReferredByName)
+                ? creatorReferredByName
                 : null,
             CreatorName = entity.User?.FullName ?? string.Empty,
             CreatorPhone = maskContact && !string.IsNullOrEmpty(entity.User?.Phone) ? MaskPhone(entity.User!.Phone) : entity.User?.Phone ?? string.Empty,

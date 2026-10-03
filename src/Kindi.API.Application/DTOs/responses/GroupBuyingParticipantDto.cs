@@ -23,6 +23,11 @@ public class GroupBuyingParticipantDto
     public string? ReferralCode { get; set; }
     /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
     public string? ReferralName { get; set; }
+
+    /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
+    public string? ReferredByCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
+    public string? ReferredByName { get; set; }
     public bool IsCreator { get; set; }
     public bool IsGuestAccount { get; set; }
     public GroupBuyingParticipantStatus Status { get; set; }

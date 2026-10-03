@@ -143,6 +143,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 
 		var result = _mapper.MapPagedList<PurchaseRequest, PurchaseRequestResponseDto>(pagedEntities);
 		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
 		return result;
 	}
 

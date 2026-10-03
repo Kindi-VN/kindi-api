@@ -33,6 +33,7 @@ public class CollaboratorService : ICollaboratorService
     private readonly IRepository<BusinessField> _businessFieldRepo;
     private readonly IBusinessFieldService _businessFieldService;
     private readonly ICompanyService _companyService;
+    private readonly IReferralService _referralService;
 
     public CollaboratorService(
         IRepository<Collaborator> repository,
@@ -44,7 +45,8 @@ public class CollaboratorService : ICollaboratorService
         IStringLocalizer<ExceptionMessages> exceptionLocalizer,
         IRepository<BusinessField> businessFieldRepo,
         IBusinessFieldService businessFieldService,
-        ICompanyService companyService)
+        ICompanyService companyService,
+        IReferralService referralService)
     {
         _businessFieldService = businessFieldService;
         _repository = repository;
@@ -56,6 +58,7 @@ public class CollaboratorService : ICollaboratorService
         _userRepo = userRepo;
         _businessFieldRepo = businessFieldRepo;
         _companyService = companyService; // injected by DI (ICompanyService)
+        _referralService = referralService;
     }
 
     public async Task<CollaboratorResponseDto> CreateAsync(CreateCollaboratorDto request)
@@ -183,6 +186,7 @@ public class CollaboratorService : ICollaboratorService
         collaborator.User = await _userService.FindByIdAsync(collaborator.UserId) ?? collaborator.User;
 
         var response = _mapper.Map<CollaboratorResponseDto>(collaborator);
+        await _referralService.FillNamesAsync(new[] { response }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
 
         if (isPublicRegistration)
         {
@@ -319,7 +323,9 @@ public class CollaboratorService : ICollaboratorService
             c => c.Id == id,
             q => q.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company));
 
-        return _mapper.Map<CollaboratorResponseDto>(updated ?? collaborator);
+        var dto = _mapper.Map<CollaboratorResponseDto>(updated ?? collaborator);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        return dto;
     }
 
     public async Task<CollaboratorResponseDto> GetByIdAsync(Guid id)
@@ -331,7 +337,9 @@ public class CollaboratorService : ICollaboratorService
         if (collaborator == null)
             throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
-        return _mapper.Map<CollaboratorResponseDto>(collaborator);
+        var dto = _mapper.Map<CollaboratorResponseDto>(collaborator);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        return dto;
     }
 
     public async Task<PagedList<CollaboratorResponseDto>> GetPagedAsync(
@@ -397,8 +405,11 @@ public class CollaboratorService : ICollaboratorService
             }
         }
 
+        var items = _mapper.Map<List<CollaboratorResponseDto>>(paged.Items);
+        await _referralService.FillNamesAsync(items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+
         return new PagedList<CollaboratorResponseDto>(
-            _mapper.Map<List<CollaboratorResponseDto>>(paged.Items),
+            items,
             paged.TotalCount,
             paged.PageNumber,
             paged.PageSize);
@@ -424,8 +435,11 @@ public class CollaboratorService : ICollaboratorService
 
         var paged = await PagedList<Collaborator>.CreateAsync(query, page, size);
 
+        var items = _mapper.Map<List<CollaboratorResponseDto>>(paged.Items);
+        await _referralService.FillNamesAsync(items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+
         return new PagedList<CollaboratorResponseDto>(
-            _mapper.Map<List<CollaboratorResponseDto>>(paged.Items),
+            items,
             paged.TotalCount,
             paged.PageNumber,
             paged.PageSize);

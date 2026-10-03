@@ -145,6 +145,8 @@ public class BusinessGroupService : IBusinessGroupService
         var members = await membersQuery.Take(20).ToListAsync();
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
+        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
 
         if (isAdmin)
         {
@@ -199,8 +201,9 @@ public class BusinessGroupService : IBusinessGroupService
         // Tài khoản vừa tạo tự động: trả tên đăng nhập (user<sđt>) cho khách để đăng nhập lại
         if (isNewAccount) username = account?.Username;
 
-        // Mã CTV của link chia sẻ người này dùng để xin vào nhóm (mã không tồn tại thì bỏ qua)
-        var referralCode = await _referralService.ResolveAsync(request.ReferralCode);
+        // Mã chia sẻ của link người này dùng để xin vào nhóm: lần đầu thì ghi nhận vào tài khoản,
+        // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
+        var referralCode = await _referralService.ResolveForUserAsync(userId, request.ReferralCode);
 
         // Thành viên đã có bản ghi trong nhóm → tái kích hoạt thay vì tạo trùng (unique index GroupId+UserId)
         var member = await _memberRepository.GetFirstAsync(m =>
@@ -760,6 +763,8 @@ public class BusinessGroupService : IBusinessGroupService
 
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
+        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
         detail.PendingMembersCount = members.Count(m => m.Status == GroupMemberStatus.Pending);
         detail.PrivateRequestsCount = await _queryService.GetAllNoTracking<BusinessGroupPost>()
             .CountAsync(x => x.BusinessGroupId == id && x.IsPrivateToAdmin && !x.IsHidden);
@@ -849,6 +854,7 @@ public class BusinessGroupService : IBusinessGroupService
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
         for (var i = 0; i < result.Items.Count; i++) FillMemberPersonalInfo(paged.Items[i], result.Items[i]);
         await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
         return result;
     }
 
@@ -891,6 +897,8 @@ public class BusinessGroupService : IBusinessGroupService
         member.User = (await _userService.FindByIdAsync(member.UserId))!;
         var dto = _mapper.Map<BusinessGroupMemberResponseDto>(member);
         FillMemberPersonalInfo(member, dto);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferralCode, (m, name) => m.ReferralName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
         return dto;
     }
 
@@ -937,6 +945,8 @@ public class BusinessGroupService : IBusinessGroupService
         dto.Phone = member.User?.Phone ?? string.Empty;
         dto.Zalo = member.User?.Zalo;
         dto.Email = UserInfo.DisplayEmail(member.User?.Email, member.User?.Phone);
+        // Người giới thiệu thành viên này (ghi nhận trên tài khoản) — chỉ hiển thị ở màn quản trị.
+        dto.ReferredByCode = member.User?.ReferredByCode;
     }
 
     private async Task<BusinessGroupMember?> GetMembershipAsync(Guid groupId, Guid userId)

@@ -19,6 +19,19 @@ public interface IReferralService
     /// </summary>
     Task<string?> ResolveAsync(string? referralCode);
 
+    /// <summary>
+    /// Mã chia sẻ dùng cho một bản ghi của <paramref name="userId"/>: lần đầu thì ghi nhận mã
+    /// vào tài khoản (<c>Users.ReferredByCode</c>), các lần sau luôn trả mã đã ghi nhận —
+    /// mở link của CTV khác cũng không ghi đè. Chưa ghi nhận và mã không hợp lệ thì trả <c>null</c>.
+    /// </summary>
+    Task<string?> ResolveForUserAsync(Guid userId, string? referralCode);
+
+    /// <summary>
+    /// Ghi nhận mã chia sẻ vào tài khoản đang đăng nhập (UI gọi khi khách mở link <c>?ref=</c>).
+    /// Trả mã đang ghi nhận của tài khoản, <c>null</c> khi chưa đăng nhập.
+    /// </summary>
+    Task<string?> AttributeToCurrentUserAsync(string? referralCode);
+
     /// <summary>Tên chủ thể theo mã (CTV hoặc tài khoản) — dùng để hiển thị ở màn quản trị.</summary>
     Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes);
 

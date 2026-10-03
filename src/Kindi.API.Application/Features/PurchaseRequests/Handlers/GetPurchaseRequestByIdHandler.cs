@@ -37,6 +37,7 @@ public class GetPurchaseRequestByIdHandler : IRequestHandler<GetPurchaseRequestB
 
 		var dto = _mapper.Map<PurchaseRequestResponseDto>(entity);
 		await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
 		return dto;
 	}
 }
