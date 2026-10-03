@@ -23,7 +23,10 @@ public static class PermissionCatalog
 
     public static IReadOnlyList<PermissionDefinition> All => _all;
 
-    /// <summary>Quyền cơ bản của khu vực thành viên — mọi tài khoản đã đăng nhập đều có.</summary>
+    /// <summary>
+    /// Quyền cơ bản của khu vực thành viên — mọi tài khoản đã đăng nhập đều có.
+    /// Quyền của tính năng đang thử nghiệm (hoa hồng) KHÔNG nằm ở đây — bật riêng cho từng tài khoản.
+    /// </summary>
     private static readonly PermissionCode[] _memberArea =
     {
         PermissionCode.ViewMyReferralStats,

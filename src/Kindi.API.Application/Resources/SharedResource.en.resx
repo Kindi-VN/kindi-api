@@ -1191,6 +1191,63 @@
   <data name="Permissions_UserUpdateSuccess">
     <value>Account permissions updated successfully</value>
   </data>
+  <data name="Commission_ListSuccess">
+    <value>Commission configurations loaded successfully</value>
+  </data>
+  <data name="Commission_SaveSuccess">
+    <value>Commission configuration saved</value>
+  </data>
+  <data name="Commission_DeleteSuccess">
+    <value>Commission configuration deleted</value>
+  </data>
+  <data name="Commission_MySuccess">
+    <value>Your commission rates loaded successfully</value>
+  </data>
+  <data name="Commission_NotFound">
+    <value>Commission configuration not found</value>
+  </data>
+  <data name="Commission_Unauthorized">
+    <value>Please sign in to view your commission</value>
+  </data>
+  <data name="Commission_NoTarget">
+    <value>Select at least one account or apply to all accounts</value>
+  </data>
+  <data name="Commission_UserNotFound">
+    <value>Some selected accounts do not exist</value>
+  </data>
+  <data name="Commission_InvalidBeneficiary">
+    <value>Invalid commission beneficiary</value>
+  </data>
+  <data name="Commission_InvalidType">
+    <value>Invalid commission type</value>
+  </data>
+  <data name="Commission_RateRequired">
+    <value>Commission rate must be greater than 0</value>
+  </data>
+  <data name="Commission_RatePercentMax">
+    <value>Percentage commission cannot exceed 100%</value>
+  </data>
+  <data name="Commission_MinOrderValueInvalid">
+    <value>Invalid minimum order value</value>
+  </data>
+  <data name="Commission_MaxCommissionInvalid">
+    <value>Invalid maximum commission</value>
+  </data>
+  <data name="Commission_NoteTooLong">
+    <value>Note cannot exceed 500 characters</value>
+  </data>
+  <data name="Commission_TiersRequired">
+    <value>Tiered commission requires at least one tier</value>
+  </data>
+  <data name="Commission_TierRateInvalid">
+    <value>Invalid tier rate</value>
+  </data>
+  <data name="Commission_TierRangeInvalid">
+    <value>Tier end value must be greater than its start value</value>
+  </data>
+  <data name="Commission_TierOverlap">
+    <value>Tiers cannot overlap in value range</value>
+  </data>
   <data name="Permissions_NoUsersSelected">
     <value>No account selected</value>
   </data>
