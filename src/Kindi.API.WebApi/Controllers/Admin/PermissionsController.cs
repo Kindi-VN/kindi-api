@@ -185,7 +185,18 @@ public class PermissionsController : ApiControllerBase
                 Module = x.Module.ToString(),
                 Kind = x.Kind.ToString(),
                 Route = x.Route,
-                Endpoints = x.Endpoints
+                Endpoints = x.Endpoints,
+                ParentCode = x.ParentCode
+            })
+            .ToList();
+
+        var groups = (await _permissionService.GetGroupsAsync())
+            .Select(x => new PermissionGroupResponse
+            {
+                Code = x.Code,
+                Name = x.Name,
+                NameEn = x.NameEn,
+                SortOrder = x.SortOrder
             })
             .ToList();
 
@@ -204,6 +215,7 @@ public class PermissionsController : ApiControllerBase
         return new PermissionMatrixResponse
         {
             Permissions = permissions,
+            Groups = groups,
             Roles = roles
         };
     }

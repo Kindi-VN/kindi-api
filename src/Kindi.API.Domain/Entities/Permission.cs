@@ -15,6 +15,12 @@ public class Permission : BaseEntity
 
     public PermissionModule Module { get; set; }
 
+    /// <summary>Mã nhóm quyền (<see cref="PermissionGroup.Code"/>) dùng để gom nhóm ở màn phân quyền.</summary>
+    public string? ParentCode { get; set; }
+
+    /// <summary>Nhóm quyền tương ứng với <see cref="ParentCode"/>.</summary>
+    public PermissionGroup? ParentGroup { get; set; }
+
     public PermissionKind Kind { get; set; }
 
     /// <summary>Route UI được quyền này mở (nếu là quyền dạng view).</summary>

@@ -35,4 +35,10 @@ public sealed class PermissionInfoAttribute : Attribute
 
     /// <summary>Các endpoint API được quyền này bảo vệ, cách nhau bằng dấu phẩy.</summary>
     public string? Endpoints { get; }
+
+    /// <summary>
+    /// Mã nhóm quyền (<see cref="Enums.PermissionGroupCodes"/>) — chỉ khai khi nhóm suy ra từ module
+    /// không còn đúng (ví dụ quyền hoa hồng, giải ngân nằm trong nhóm COMMISSION).
+    /// </summary>
+    public string? ParentCode { get; set; }
 }

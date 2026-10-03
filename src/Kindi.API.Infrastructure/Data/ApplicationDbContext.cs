@@ -42,6 +42,7 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<AuthAuditLog> AuthAuditLogs { get; set; }
     public DbSet<ReferralEvent> ReferralEvents { get; set; }
     public DbSet<Permission> Permissions { get; set; }
+    public DbSet<PermissionGroup> PermissionGroups { get; set; }
     public DbSet<RolePermission> RolePermissions { get; set; }
 
     public DbSet<UserPermission> UserPermissions { get; set; }

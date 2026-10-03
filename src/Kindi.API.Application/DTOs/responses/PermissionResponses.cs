@@ -9,6 +9,18 @@ public class PermissionItemResponse
     public string Kind { get; set; } = string.Empty;
     public string? Route { get; set; }
     public string? Endpoints { get; set; }
+
+    /// <summary>Mã nhóm quyền (PermissionGroups.Code) dùng để gom nhóm ở màn phân quyền.</summary>
+    public string? ParentCode { get; set; }
+}
+
+/// <summary>Nhóm quyền: mã, tên hiển thị và thứ tự (đọc từ bảng PermissionGroups).</summary>
+public class PermissionGroupResponse
+{
+    public string Code { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string NameEn { get; set; } = string.Empty;
+    public int SortOrder { get; set; }
 }
 
 /// <summary>Quyền đang bật của một vai trò.</summary>
@@ -26,6 +38,9 @@ public class RolePermissionResponse
 public class PermissionMatrixResponse
 {
     public IReadOnlyList<PermissionItemResponse> Permissions { get; set; } = new List<PermissionItemResponse>();
+
+    /// <summary>Danh sách nhóm quyền kèm tên hiển thị và thứ tự.</summary>
+    public IReadOnlyList<PermissionGroupResponse> Groups { get; set; } = new List<PermissionGroupResponse>();
 
     public IReadOnlyList<RolePermissionResponse> Roles { get; set; } = new List<RolePermissionResponse>();
 }
