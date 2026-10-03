@@ -1,4 +1,4 @@
-﻿namespace Kindi.API.Application.DTOs.responses;
+namespace Kindi.API.Application.DTOs.responses;
 
 /// <summary>Cấu hình chung của hệ thống dùng cho màn quản trị.</summary>
 public class SystemSettingResponse
@@ -22,6 +22,10 @@ public class SystemSettingResponse
     /// <summary>Liên kết LinkedIn của nền tảng.</summary>
     public string? LinkedinUrl { get; set; }
     public string? CopyrightText { get; set; }
+    /// <summary>Nội dung trang Chính sách bảo mật, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? PrivacyPolicy { get; set; }
+    /// <summary>Nội dung trang Điều khoản dịch vụ, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? TermsOfService { get; set; }
 
     public string DefaultLanguage { get; set; } = "vi";
     public string TimeZone { get; set; } = "Asia/Ho_Chi_Minh";
@@ -77,6 +81,10 @@ public class PublicSystemSettingResponse
     /// <summary>Liên kết LinkedIn của nền tảng.</summary>
     public string? LinkedinUrl { get; set; }
     public string? CopyrightText { get; set; }
+    /// <summary>Nội dung trang Chính sách bảo mật, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? PrivacyPolicy { get; set; }
+    /// <summary>Nội dung trang Điều khoản dịch vụ, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? TermsOfService { get; set; }
     public string DefaultLanguage { get; set; } = "vi";
     public string TimeZone { get; set; } = "Asia/Ho_Chi_Minh";
     public string CurrencySymbol { get; set; } = "₫";

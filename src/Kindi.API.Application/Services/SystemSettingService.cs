@@ -69,6 +69,8 @@ public sealed class SystemSettingService : ISystemSettingService
             ThreadsUrl = setting.ThreadsUrl,
             LinkedinUrl = setting.LinkedinUrl,
             CopyrightText = setting.CopyrightText,
+            PrivacyPolicy = setting.PrivacyPolicy,
+            TermsOfService = setting.TermsOfService,
             DefaultLanguage = setting.DefaultLanguage,
             TimeZone = setting.TimeZone,
             CurrencySymbol = setting.CurrencySymbol,
@@ -133,6 +135,8 @@ public sealed class SystemSettingService : ISystemSettingService
         setting.ThreadsUrl = request.ThreadsUrl?.Trim();
         setting.LinkedinUrl = request.LinkedinUrl?.Trim();
         setting.CopyrightText = request.CopyrightText?.Trim();
+        setting.PrivacyPolicy = request.PrivacyPolicy?.Trim();
+        setting.TermsOfService = request.TermsOfService?.Trim();
 
         setting.DefaultLanguage = request.DefaultLanguage!.Trim().ToLowerInvariant();
         setting.TimeZone = request.TimeZone!.Trim();
@@ -225,6 +229,8 @@ public sealed class SystemSettingService : ISystemSettingService
         ThreadsUrl = setting.ThreadsUrl,
         LinkedinUrl = setting.LinkedinUrl,
         CopyrightText = setting.CopyrightText,
+        PrivacyPolicy = setting.PrivacyPolicy,
+        TermsOfService = setting.TermsOfService,
         DefaultLanguage = setting.DefaultLanguage,
         TimeZone = setting.TimeZone,
         CurrencySymbol = setting.CurrencySymbol,

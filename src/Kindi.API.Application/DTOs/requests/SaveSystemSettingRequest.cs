@@ -1,4 +1,4 @@
-﻿namespace Kindi.API.Application.DTOs.requests;
+namespace Kindi.API.Application.DTOs.requests;
 
 /// <summary>Cập nhật cấu hình chung của hệ thống.</summary>
 public class SaveSystemSettingRequest
@@ -22,6 +22,10 @@ public class SaveSystemSettingRequest
     /// <summary>Liên kết LinkedIn của nền tảng.</summary>
     public string? LinkedinUrl { get; set; }
     public string? CopyrightText { get; set; }
+    /// <summary>Nội dung trang Chính sách bảo mật, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? PrivacyPolicy { get; set; }
+    /// <summary>Nội dung trang Điều khoản dịch vụ, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? TermsOfService { get; set; }
 
     public string DefaultLanguage { get; set; } = "vi";
     public string TimeZone { get; set; } = "Asia/Ho_Chi_Minh";

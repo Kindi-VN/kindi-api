@@ -1,4 +1,4 @@
-﻿// SystemSetting.cs
+// SystemSetting.cs
 namespace Kindi.API.Domain.Entities;
 
 /// <summary>
@@ -43,6 +43,10 @@ public class SystemSetting : BaseEntity
 
     /// <summary>Dòng bản quyền ở chân trang.</summary>
     public string? CopyrightText { get; set; }
+    /// <summary>Nội dung trang Chính sách bảo mật, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? PrivacyPolicy { get; set; }
+    /// <summary>Nội dung trang Điều khoản dịch vụ, soạn ở Cài đặt chung (định dạng HTML).</summary>
+    public string? TermsOfService { get; set; }
 
     /// <summary>Ngôn ngữ mặc định của giao diện.</summary>
     public string DefaultLanguage { get; set; } = "vi";

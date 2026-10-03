@@ -1,4 +1,4 @@
-﻿using Kindi.API.Domain.Entities;
+using Kindi.API.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
@@ -25,6 +25,8 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.Property(x => x.ThreadsUrl).HasMaxLength(300);
         builder.Property(x => x.LinkedinUrl).HasMaxLength(300);
         builder.Property(x => x.CopyrightText).HasMaxLength(300);
+        builder.Property(x => x.PrivacyPolicy).HasColumnType("nvarchar(max)");
+        builder.Property(x => x.TermsOfService).HasColumnType("nvarchar(max)");
         builder.Property(x => x.DefaultLanguage).HasMaxLength(10);
         builder.Property(x => x.TimeZone).HasMaxLength(100);
         builder.Property(x => x.CurrencySymbol).HasMaxLength(10);
