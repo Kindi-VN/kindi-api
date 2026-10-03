@@ -1,4 +1,4 @@
-﻿using Kindi.API.Application.Common.Configurations;
+using Kindi.API.Application.Common.Configurations;
 using Kindi.API.Application.Common.Exceptions;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Resources;
@@ -45,17 +45,21 @@ public class AuthService : IAuthService
 
     public async Task<LoginResponse?> LoginAsync(LoginRequest request)
     {
-        // Tìm user theo username, email, hoặc phone
+        // Tìm user theo tên đăng nhập, email hoặc số điện thoại; SĐT nhập có thể kèm khoảng trắng,
+        // dấu chấm hoặc tiền tố +84 nên so cả dạng đã chuẩn hoá.
+        var identifier = request.Username?.Trim() ?? string.Empty;
+        var phoneCandidates = PhoneHelper.Candidates(identifier);
+
         var users = await _userRepository.FindAsync(u =>
             !u.IsDeleted && (
-                u.Username == request.Username ||
-                u.Email == request.Username ||
-                u.Phone == request.Username
+                u.Username == identifier ||
+                u.Email == identifier ||
+                phoneCandidates.Contains(u.Phone ?? string.Empty)
             )
         );
         var user = users.FirstOrDefault();
 
-        if (user == null || !PasswordHasher.Verify(request.Password, user.PasswordHash ?? string.Empty))
+        if (user == null || !VerifyPassword(request.Password, user.PasswordHash))
         {
             _logger.LogWarning($"Login failed for user: {request.Username}");
             await _authAuditService.LogAsync(null, request.Username, AuditAction.Login, false,
@@ -181,7 +185,7 @@ public class AuthService : IAuthService
 			throw new NotFoundException(_localizer["UserNotFound"]);
 		}
 
-		if (!PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash ?? string.Empty))
+		if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
 		{
 			_logger.LogWarning("Invalid current password for user: {UserId}", userId);
 			await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, false,
@@ -247,7 +251,7 @@ public class AuthService : IAuthService
 			return false;
 		}
 
-		if (!PasswordHasher.Verify(request.CurrentPassword, user.PasswordHash ?? string.Empty))
+		if (!VerifyPassword(request.CurrentPassword, user.PasswordHash))
 		{
 			_logger.LogWarning($"Invalid current password for user: {userId}");
 			await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, false,
@@ -256,6 +260,8 @@ public class AuthService : IAuthService
 		}
 
 		user.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+		// Đã tự đặt mật khẩu mới thì không cần buộc đổi lại ở lần đăng nhập sau.
+		user.MustChangeCredentials = false;
 		await _userRepository.SaveChangesAsync();
 
 		_logger.LogInformation($"Password changed for user: {userId}");
@@ -271,32 +277,45 @@ public class AuthService : IAuthService
 			"Yêu cầu gửi link đặt lại mật khẩu");
 	}
 
-	public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+	/// <summary>
+	/// Đặt lại mật khẩu của chính tài khoản đang đăng nhập — danh tính lấy từ token,
+	/// không nhận email từ client nên không thể đổi mật khẩu của tài khoản khác.
+	/// </summary>
+	public async Task<bool> ResetPasswordAsync(Guid userId, ResetPasswordRequest request)
 	{
 		if (request.NewPassword != request.ConfirmPassword)
 		{
 			_logger.LogWarning("Password confirmation mismatch");
-			await _authAuditService.LogAsync(null, request.Email, AuditAction.ResetPassword, false,
+			await _authAuditService.LogAsync(userId, null, AuditAction.ResetPassword, false,
 				"Mật khẩu xác nhận không khớp");
 			return false;
 		}
 
-		// TODO: Validate reset token and update password
-		var users = await _userRepository.FindAsync(u => u.Email == request.Email && !u.IsDeleted);
-		var user = users.FirstOrDefault();
-
+		var user = await _userRepository.GetFirstAsync(u => u.Id == userId && !u.IsDeleted);
 		if (user == null)
 		{
-			_logger.LogWarning($"User not found for password reset: {request.Email}");
-			await _authAuditService.LogAsync(null, request.Email, AuditAction.ResetPassword, false,
+			_logger.LogWarning($"User not found for password reset: {userId}");
+			await _authAuditService.LogAsync(userId, null, AuditAction.ResetPassword, false,
 				"Không tìm thấy người dùng");
 			return false;
 		}
 
+		// Client có gửi email thì phải khớp tài khoản đang đăng nhập (tương thích request cũ).
+		if (!string.IsNullOrWhiteSpace(request.Email)
+			&& !string.Equals(user.Email?.Trim(), request.Email.Trim(), StringComparison.OrdinalIgnoreCase))
+		{
+			_logger.LogWarning($"Password reset email mismatch for user: {user.Username}");
+			await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.ResetPassword, false,
+				"Email không khớp tài khoản đang đăng nhập");
+			return false;
+		}
+
 		user.PasswordHash = PasswordHasher.Hash(request.NewPassword);
+		// Đã tự đặt mật khẩu mới thì không cần buộc đổi lại ở lần đăng nhập sau.
+		user.MustChangeCredentials = false;
 		await _userRepository.SaveChangesAsync();
 
-		_logger.LogInformation($"Password reset for user: {request.Email}");
+		_logger.LogInformation($"Password reset for user: {user.Username}");
 		await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.ResetPassword, true);
 		return true;
 	}
@@ -323,14 +342,28 @@ public class AuthService : IAuthService
 		};
 	}
 
+	/// <summary>
+	/// Kiểm tra mật khẩu: thử dạng nhập nguyên văn, sau đó tới dạng SĐT đã chuẩn hoá
+	/// (bỏ khoảng trắng/dấu, +84 → 0) để tài khoản có mật khẩu là SĐT không lệch định dạng.
+	/// </summary>
+	private static bool VerifyPassword(string password, string? passwordHash)
+	{
+		var hash = passwordHash ?? string.Empty;
+		if (PasswordHasher.Verify(password, hash))
+			return true;
+
+		var normalized = PhoneHelper.Normalize(password);
+		return normalized.Length > 0 && normalized != password && PasswordHasher.Verify(normalized, hash);
+	}
+
 	private static List<string> GetRoles(UserRole role)
 	{
+		// Claim vai trò giữ dạng số để khớp RoleConstants và [Authorize(Roles = ...)].
 		return role switch
 		{
-			UserRole.Admin => new List<string> { "Admin" },
-			UserRole.CTV => new List<string> { "CTV" },
-			UserRole.Customer => new List<string> { "Customer" },
-			_ => new List<string> { "Customer" }
+			UserRole.Admin => new List<string> { RoleConstants.Admin },
+			UserRole.CTV => new List<string> { RoleConstants.CTV },
+			_ => new List<string> { RoleConstants.Customer }
 		};
 	}
 }

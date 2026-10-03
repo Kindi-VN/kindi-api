@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Kindi.API.Application.Common.Extensions;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
@@ -21,7 +21,6 @@ namespace Kindi.API.Application.Services;
 
 public class PurchaseRequestService : IPurchaseRequestService
 {
-	private const string AdminRole = "Admin";
 
 	private readonly IRepository<PurchaseRequest> _repository;
 	private readonly IMapper _mapper;
@@ -111,7 +110,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 		var search = query.Search?.Trim();
 
 		// Quyền xem: admin thấy tất cả (hoặc chỉ của mình khi truyền mineOnly), người dùng thường chỉ thấy yêu cầu của chính mình.
-		var onlyMine = query.MineOnly || !_currentUserService.IsInRole(AdminRole);
+		var onlyMine = query.MineOnly || !_currentUserService.IsInRole(UserRole.Admin);
 		var meId = GetCurrentUserId();
 
 		if (onlyMine && meId == null)
@@ -143,6 +142,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 
 		var result = _mapper.MapPagedList<PurchaseRequest, PurchaseRequestResponseDto>(pagedEntities);
 		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
 		return result;
 	}
 

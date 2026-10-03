@@ -25,6 +25,15 @@ public class User : BaseEntity
 	public DateTime? LastLoginAt { get; set; }
 	public UserRole Role { get; set; } = UserRole.Customer;
 
-	/// <summary>Mã CTV đã mang tài khoản này tới hệ thống (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
+	/// <summary>Mã chia sẻ riêng của tài khoản (gắn vào link chia sẻ; CTV dùng mã trên hồ sơ CTV).</summary>
 	public string? ReferralCode { get; set; }
+
+	/// <summary>
+	/// Mã chia sẻ của người đã mang tài khoản này tới hệ thống (lấy từ link chia sẻ ?ref=).
+	/// Chỉ ghi nhận LẦN ĐẦU — mở link của CTV khác sau đó không ghi đè.
+	/// </summary>
+	public string? ReferredByCode { get; set; }
+
+	/// <summary>Thời điểm ghi nhận <see cref="ReferredByCode"/>.</summary>
+	public DateTime? ReferredAt { get; set; }
 }

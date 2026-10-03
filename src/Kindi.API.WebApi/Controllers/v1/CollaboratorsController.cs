@@ -5,6 +5,7 @@ using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers;
 
@@ -79,7 +80,7 @@ public class CollaboratorsController : ApiControllerBase
     /// Danh sách cộng tác viên đã xóa mềm (Admin)
     /// </summary>
     [HttpGet("deleted")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDeleted(
         [FromQuery] int page = 1,
         [FromQuery] int size = 10,
@@ -103,7 +104,7 @@ public class CollaboratorsController : ApiControllerBase
     /// Duyệt CTV
     /// </summary>
     [HttpPost("{id}/approve")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Approve(Guid id)
     {
         await _collaboratorService.ApproveAsync(id);
@@ -114,7 +115,7 @@ public class CollaboratorsController : ApiControllerBase
     /// Từ chối CTV
     /// </summary>
     [HttpPost("{id}/reject")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Reject(Guid id, [FromBody] string? reason = null)
     {
         await _collaboratorService.RejectAsync(id, reason);
@@ -125,7 +126,7 @@ public class CollaboratorsController : ApiControllerBase
     /// Xóa mềm CTV
     /// </summary>
     [HttpDelete("{id}")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _collaboratorService.DeleteAsync(id);
@@ -136,7 +137,7 @@ public class CollaboratorsController : ApiControllerBase
     /// Khôi phục CTV đã xóa
     /// </summary>
     [HttpPost("{id}/restore")]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)
     {
         await _collaboratorService.RestoreAsync(id);

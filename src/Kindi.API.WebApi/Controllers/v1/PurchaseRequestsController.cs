@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
@@ -10,6 +10,7 @@ using MediatR;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
+using Kindi.API.Shared.Constants;
 
 namespace Kindi.API.WebApi.Controllers;
 
@@ -42,7 +43,7 @@ public class PurchaseRequestsController : ApiControllerBase
         return Ok(response, _localizer["PurchaseRequest_CreatePurchaseRequestSuccess"]);
     }
 
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = RoleConstants.Admin)]
 	[HttpGet("{id:guid}")]
 	public async Task<IActionResult> GetByIdAsync(Guid id)
 	{
@@ -64,7 +65,7 @@ public class PurchaseRequestsController : ApiControllerBase
 		return OkPaged(result, _localizer["PurchaseRequestsRetrievedSuccess"]);
 	}
 
-	[Authorize(Roles = "Admin")]
+	[Authorize(Roles = RoleConstants.Admin)]
 	[HttpPatch("{id:guid}/status")]
 	public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdatePurchaseRequestStatusDto dto)
 	{
@@ -72,7 +73,7 @@ public class PurchaseRequestsController : ApiControllerBase
 		return Ok(result, _localizer["UpdateStatusSuccess"]);
 	}
 
-	[Authorize(Roles = "Admin")]
+	[Authorize(Roles = RoleConstants.Admin)]
 	[HttpGet("export")]
 	public async Task<IActionResult> ExportAsync([FromQuery] ExportPurchaseRequestsQuery query)
 	{

@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
@@ -14,6 +14,7 @@ using Kindi.API.Shared.Extensions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Localization;
 using System.Linq.Expressions;
+using Kindi.API.Application.Common.Extensions;
 
 namespace Kindi.API.Application.Services;
 
@@ -51,7 +52,7 @@ public class SocialService : ISocialService
     public async Task<PagedList<PostResponse>> GetPostsAsync(GetPostsQuery query)
     {
         var userId = _currentUserService.UserId;
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         Expression<Func<SocialPost, bool>>? predicate = null;
 
@@ -220,7 +221,7 @@ public class SocialService : ISocialService
         post.AuthorId = user.Id;
 
         // If author is Admin, mark post as approved immediately
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         post.IsApproved = isAdmin ? true : false;
         // No ApprovedAt field on SocialPost entity currently; only mark IsApproved
 
@@ -283,7 +284,7 @@ public class SocialService : ISocialService
             throw new NotFoundException(_localizer["Social_NotFound"]);
 
         var userId = _currentUserService.UserId;
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         if (post.AuthorId.ToString() != userId && !isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
@@ -365,7 +366,7 @@ public class SocialService : ISocialService
         }
 
         var userId = _currentUserService.UserId;
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
 
         if (post.AuthorId.ToString() != userId && !isAdmin)
         {
@@ -389,7 +390,7 @@ public class SocialService : ISocialService
 
     public async Task<PagedList<PostResponse>> GetPendingPostsAsync(int pageNumber, int pageSize)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -432,7 +433,7 @@ public class SocialService : ISocialService
         int pageNumber,
         int pageSize)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -498,7 +499,7 @@ public class SocialService : ISocialService
 
     public async Task<PostResponse> RestorePostAsync(Guid id)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -525,7 +526,7 @@ public class SocialService : ISocialService
 
     public async Task<PostResponse> ApprovePostAsync(Guid id)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -552,7 +553,7 @@ public class SocialService : ISocialService
 
     public async Task<PostResponse> RejectPostAsync(Guid id, string? reason = null)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -579,7 +580,7 @@ public class SocialService : ISocialService
 
     public async Task<PostResponse> PinPostAsync(Guid id)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 
@@ -606,7 +607,7 @@ public class SocialService : ISocialService
 
     public async Task<PostResponse> UnpinPostAsync(Guid id)
     {
-        var isAdmin = _currentUserService.IsInRole("Admin");
+        var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
         if (!isAdmin)
             throw new ForbiddenException(_localizer["Social_NotAuthorized"]);
 

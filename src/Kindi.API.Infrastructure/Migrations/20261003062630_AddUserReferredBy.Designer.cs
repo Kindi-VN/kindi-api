@@ -3,6 +3,7 @@ using System;
 using Kindi.API.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kindi.API.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20261003062630_AddUserReferredBy")]
+    partial class AddUserReferredBy
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -1309,92 +1312,6 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.ToTable("PurchaseRequests", (string)null);
                 });
 
-            modelBuilder.Entity("Kindi.API.Domain.Entities.ReferralEvent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<decimal?>("Amount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("CommissionAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal?>("CommissionRate")
-                        .HasPrecision(5, 2)
-                        .HasColumnType("numeric(5,2)");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("CreatedBy")
-                        .HasColumnType("text");
-
-                    b.Property<int>("EventType")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("boolean");
-
-                    b.Property<bool>("IsGuestAccount")
-                        .HasColumnType("boolean");
-
-                    b.Property<string>("Note")
-                        .HasMaxLength(500)
-                        .HasColumnType("character varying(500)");
-
-                    b.Property<string>("RefEntityCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<Guid?>("RefEntityId")
-                        .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<string>("ReferralEventCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
-                    b.Property<Guid>("ReferredUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("ReferrerUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("UpdatedBy")
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("CreatedAt");
-
-                    b.HasIndex("EventType");
-
-                    b.HasIndex("ReferralCode");
-
-                    b.HasIndex("ReferralEventCode")
-                        .IsUnique();
-
-                    b.HasIndex("ReferredUserId");
-
-                    b.HasIndex("ReferrerUserId");
-
-                    b.ToTable("ReferralEvents", (string)null);
-                });
-
             modelBuilder.Entity("Kindi.API.Domain.Entities.SocialComment", b =>
                 {
                     b.Property<Guid>("Id")
@@ -2067,24 +1984,6 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Navigation("BusinessField");
 
                     b.Navigation("User");
-                });
-
-            modelBuilder.Entity("Kindi.API.Domain.Entities.ReferralEvent", b =>
-                {
-                    b.HasOne("Kindi.API.Domain.Entities.User", "Referred")
-                        .WithMany()
-                        .HasForeignKey("ReferredUserId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("Kindi.API.Domain.Entities.User", "Referrer")
-                        .WithMany()
-                        .HasForeignKey("ReferrerUserId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.Navigation("Referred");
-
-                    b.Navigation("Referrer");
                 });
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.SocialComment", b =>

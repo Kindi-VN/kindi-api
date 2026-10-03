@@ -27,6 +27,7 @@ public class PartnerService : IPartnerService
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IRepository<User> _userRepo;
     private readonly IQueryService _queryService;
+    private readonly IReferralService _referralService;
     private readonly IRepository<PartnerProduct> _productRepo;
     private readonly IRepository<BusinessField> _businessFieldRepo;
     private readonly Kindi.API.Application.Common.Interfaces.ICompanyService _companyService;
@@ -38,6 +39,7 @@ public class PartnerService : IPartnerService
         ICurrentUserService currentUserService,
         IMapper mapper,
         IStringLocalizer<SharedResource> localizer,
+        IReferralService referralService,
         IQueryService queryService,
         IRepository<PartnerProduct> productRepo,
         IRepository<BusinessField> businessFieldRepo,
@@ -49,6 +51,7 @@ public class PartnerService : IPartnerService
         _currentUserService = currentUserService;
         _mapper = mapper;
         _localizer = localizer;
+        _referralService = referralService;
         _queryService = queryService;
         _productRepo = productRepo;
         _businessFieldRepo = businessFieldRepo;
@@ -91,6 +94,10 @@ public class PartnerService : IPartnerService
             }
         }
 
+        // Mã chia sẻ của link (?ref=) → ghi nhận vào tài khoản đăng ký (chỉ lần đầu, không ghi đè).
+        // Trả về mã đã chuẩn hoá (nếu nhận diện được) — dùng luôn cho phát sinh giới thiệu của đối tác.
+        string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
+
         // 3. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
         // userId luôn có giá trị: người dùng đang đăng nhập, hoặc tài khoản vừa tạo ở nhánh đăng ký công khai
@@ -132,6 +139,10 @@ public class PartnerService : IPartnerService
         // 7. Lưu vào DB
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
+
+        // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác.
+        await _referralService.RecordEventAsync(resolvedReferralCode ?? partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
+            partner.Id, partner.PartnerCode, null);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
         // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 2.
@@ -276,7 +287,9 @@ public class PartnerService : IPartnerService
             }
         }
 
-        return _mapper.MapPagedList<Partner, PartnerResponseDto>(result);
+        var pagedResult = _mapper.MapPagedList<Partner, PartnerResponseDto>(result);
+        await _referralService.FillNamesAsync(pagedResult.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        return pagedResult;
     }
 
     public async Task<PartnerDetailResponseDto?> GetDetailAsync(Guid id)
@@ -305,7 +318,9 @@ public class PartnerService : IPartnerService
             }
         }
 
-        return _mapper.Map<PartnerDetailResponseDto>(entity);
+        var detail = _mapper.Map<PartnerDetailResponseDto>(entity);
+        await _referralService.FillNamesAsync(new[] { detail }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        return detail;
     }
 
     public async Task<PartnerResponseDto> ApproveAsync(Guid id)

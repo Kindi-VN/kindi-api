@@ -36,6 +36,11 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
 
     /// <summary>Mã chia sẻ riêng của CTV (dùng để gắn vào link chia sẻ).</summary>
     public string? ReferralCode { get; set; }
+
+    /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
+    public string? ReferredByCode { get; set; }
+    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
+    public string? ReferredByName { get; set; }
     public CollaboratorStatus Status { get; set; }
     public bool IsApproved { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -82,5 +87,7 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
                 BusinessType = src.Company.BusinessType ?? null,
                 CompanySize = src.Company.CompanySize ?? (src.BusinessSize.HasValue ? (CompanySize?)src.BusinessSize.Value : null),
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : src.BusinessFieldName)
-            } : null));
+            } : null))
+            .ForMember(dest => dest.ReferredByCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
 }

@@ -1,4 +1,4 @@
-﻿using Kindi.API.Application.Common.Interfaces;
+using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using Kindi.API.Application.Validators;
@@ -141,13 +141,20 @@ public class AuthController : ApiControllerBase
 	}
 
 	/// <summary>
-	/// Đặt lại mật khẩu với token
+	/// Đặt lại mật khẩu cho chính tài khoản đang đăng nhập
 	/// </summary>
 	[HttpPost("reset-password")]
-	[AllowAnonymous]
+	[Authorize]
 	public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
 	{
-		var result = await _authService.ResetPasswordAsync(request);
+		var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		if (string.IsNullOrEmpty(userId))
+		{
+			return Unauthorized(_localizer["InvalidUser"],
+				new List<string> { _localizer["UserNotAuthenticated"] });
+		}
+
+		var result = await _authService.ResetPasswordAsync(Guid.Parse(userId), request);
 		if (!result)
 		{
 			return BadRequest(_localizer["ResetPasswordFailed"]);

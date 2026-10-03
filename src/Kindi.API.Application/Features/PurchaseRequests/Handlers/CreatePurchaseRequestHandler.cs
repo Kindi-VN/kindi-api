@@ -76,11 +76,16 @@ public class CreatePurchaseRequestHandler : IRequestHandler<CreatePurchaseReques
         entity.PurchaseRequestCode = CodeGenerator.Generate("PRQ");
         entity.UserId = userId;
         entity.Status = PurchaseRequestStatus.Pending;
-        // Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (mã không tồn tại thì bỏ qua)
-        entity.ReferralCode = await _referralService.ResolveAsync(request.ReferralCode);
+        // Mã chia sẻ của link dùng để tạo yêu cầu: lần đầu thì ghi nhận vào tài khoản,
+        // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
+        entity.ReferralCode = await _referralService.ResolveForUserAsync(entity.UserId, request.ReferralCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
+
+        // Ghi nhận phát sinh giới thiệu của yêu cầu tìm hàng.
+        await _referralService.RecordEventAsync(entity.ReferralCode, entity.UserId, ReferralEventType.PurchaseRequest,
+            entity.Id, entity.PurchaseRequestCode, entity.ExpectedPrice);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — form gửi lên thì cập nhật vào tài khoản.
         await _userService.UpdatePersonalInfoAsync(entity.UserId, request.FullName, request.Phone, request.Email, request.Zalo);

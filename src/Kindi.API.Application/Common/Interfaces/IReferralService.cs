@@ -1,3 +1,5 @@
+using Kindi.API.Domain.Enums;
+
 namespace Kindi.API.Application.Common.Interfaces;
 
 /// <summary>
@@ -18,6 +20,41 @@ public interface IReferralService
     /// (bỏ qua, không chặn người dùng).
     /// </summary>
     Task<string?> ResolveAsync(string? referralCode);
+
+    /// <summary>
+    /// Mã chia sẻ dùng cho một bản ghi của <paramref name="userId"/>: lần đầu thì ghi nhận mã
+    /// vào tài khoản (<c>Users.ReferredByCode</c>), các lần sau luôn trả mã đã ghi nhận —
+    /// mở link của CTV khác cũng không ghi đè. Chưa ghi nhận và mã không hợp lệ thì trả <c>null</c>.
+    /// </summary>
+    Task<string?> ResolveForUserAsync(Guid userId, string? referralCode);
+
+    /// <summary>
+    /// Ghi nhận mã chia sẻ vào tài khoản đang đăng nhập (UI gọi khi khách mở link <c>?ref=</c>).
+    /// Trả mã đang ghi nhận của tài khoản, <c>null</c> khi chưa đăng nhập.
+    /// </summary>
+    Task<string?> AttributeToCurrentUserAsync(string? referralCode);
+
+    /// <summary>
+    /// Ghi nhận một phát sinh từ mã chia sẻ (tạo đơn, tham gia, gửi yêu cầu, xin vào nhóm, đăng ký đối tác…)
+    /// để thống kê và tính hoa hồng về sau. Bỏ qua khi không có mã hoặc mã là của chính người phát sinh.
+    /// </summary>
+    Task RecordEventAsync(
+        string? referralCode,
+        Guid referredUserId,
+        ReferralEventType eventType,
+        Guid? refEntityId = null,
+        string? refEntityCode = null,
+        decimal? amount = null,
+        bool isGuestAccount = false);
+
+    /// <summary>
+    /// Cập nhật lại trạng thái phát sinh theo bản ghi gốc: người được giới thiệu huỷ thì trừ ra,
+    /// tham gia lại thì tính lại. Truyền null để giữ nguyên trạng thái hiện tại.
+    /// </summary>
+    Task SetEventStatusAsync(ReferralEventType eventType, Guid refEntityId, ReferralEventStatus? status);
+
+    /// <summary>Cập nhật trạng thái cho nhiều bản ghi cùng lúc (ví dụ xoá đơn mua chung).</summary>
+    Task SetEventStatusAsync(ReferralEventType eventType, IEnumerable<Guid> refEntityIds, ReferralEventStatus? status);
 
     /// <summary>Tên chủ thể theo mã (CTV hoặc tài khoản) — dùng để hiển thị ở màn quản trị.</summary>
     Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes);
