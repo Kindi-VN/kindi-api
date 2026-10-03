@@ -2,6 +2,8 @@ using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using Kindi.API.Shared.Constants;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -30,6 +32,7 @@ public class UsersController : ApiControllerBase
     /// Danh sách người dùng phân trang
     /// GET /api/v1/Users?pageNumber=&pageSize=&search=
     /// </summary>
+    [HasPermission(PermissionCode.ViewUsers)]
     [HttpGet]
     public async Task<IActionResult> GetPaged([FromQuery] UserQueryDto query)
     {
@@ -41,6 +44,7 @@ public class UsersController : ApiControllerBase
     /// Cấp lại mật khẩu cho người dùng: mật khẩu mới là số điện thoại của tài khoản,
     /// bắt buộc đổi ở lần đăng nhập kế tiếp (dùng khi người dùng quên mật khẩu).
     /// </summary>
+    [HasPermission(PermissionCode.ResetUserPassword)]
     [HttpPost("{id}/reset-password")]
     public async Task<IActionResult> ResetPassword(Guid id)
     {

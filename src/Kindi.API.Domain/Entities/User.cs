@@ -23,7 +23,7 @@ public class User : BaseEntity
 	/// </summary>
 	public bool MustChangeCredentials { get; set; } = false;
 	public DateTime? LastLoginAt { get; set; }
-	public UserRole Role { get; set; } = UserRole.Customer;
+	public UserRole Role { get; set; } = UserRole.User;
 
 	/// <summary>Mã chia sẻ riêng của tài khoản (gắn vào link chia sẻ; CTV dùng mã trên hồ sơ CTV).</summary>
 	public string? ReferralCode { get; set; }

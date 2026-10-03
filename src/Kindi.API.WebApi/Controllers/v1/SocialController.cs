@@ -2,6 +2,7 @@ using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Enums;
+using Kindi.API.WebApi.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -26,6 +27,8 @@ public class SocialController : ApiControllerBase
     /// <summary>
     /// Lấy danh sách bài viết (phân trang + filter; mineOnly=true để lấy bài viết của chính mình)
     /// </summary>
+    // Bảng tin công khai cho khách chưa đăng nhập (màn hình social ở guest.routes).
+    [AllowAnonymous]
     [HttpGet("posts")]
     public async Task<IActionResult> GetPosts(
         [FromQuery] int pageNumber = 1,
@@ -100,6 +103,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Lấy danh sách bài viết theo trạng thái (approved/pending/deleted/all)
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewSocialPosts)]
     [HttpGet("posts/admin")]
     public async Task<IActionResult> GetAdminPosts(
         [FromQuery] string? status = null,
@@ -117,6 +121,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Lấy danh sách bài viết cần duyệt
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewSocialPosts)]
     [HttpGet("posts/pending")]
     public async Task<IActionResult> GetPendingPosts(
         [FromQuery] int pageNumber = 1,
@@ -130,6 +135,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Duyệt bài viết
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ApproveSocialPost)]
     [HttpPost("posts/{id}/approve")]
     public async Task<IActionResult> ApprovePost(Guid id)
     {
@@ -141,6 +147,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Từ chối bài viết
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.RejectSocialPost)]
     [HttpPost("posts/{id}/reject")]
     public async Task<IActionResult> RejectPost(Guid id, [FromBody] string? reason = null)
     {
@@ -152,6 +159,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Khôi phục bài viết đã xóa
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.RestoreSocialPost)]
     [HttpPost("posts/{id}/restore")]
     public async Task<IActionResult> RestorePost(Guid id)
     {
@@ -163,6 +171,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Ghim bài viết lên đầu trang feed
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.PinSocialPost)]
     [HttpPost("posts/{id}/pin")]
     public async Task<IActionResult> PinPost(Guid id)
     {
@@ -174,6 +183,7 @@ public class SocialController : ApiControllerBase
     /// Admin: Hủy ghim bài viết
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.PinSocialPost)]
     [HttpPost("posts/{id}/unpin")]
     public async Task<IActionResult> UnpinPost(Guid id)
     {

@@ -4,6 +4,8 @@ using Kindi.API.Application.DTOs.Responses;
 using Kindi.API.Application.Resources;
 using Kindi.API.WebApi;
 using Kindi.API.WebApi.Responses;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -25,6 +27,7 @@ public class CompaniesController : ApiControllerBase
         _localizer = localizer;
     }
 
+    [HasPermission(PermissionCode.ViewCompanies)]
     [HttpGet]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetList([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10, [FromQuery] string? search = null)
@@ -33,6 +36,7 @@ public class CompaniesController : ApiControllerBase
         return OkPaged(result, _localizer["Success"]);
     }
 
+    [HasPermission(PermissionCode.ViewCompanies)]
     [HttpGet("{id}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDetail(Guid id)
@@ -42,6 +46,7 @@ public class CompaniesController : ApiControllerBase
         return Ok(result, _localizer["Success"]);
     }
 
+    [HasPermission(PermissionCode.ManageCompanies)]
     [HttpPost]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Create([FromBody] CreateCompanyDto request)
@@ -50,6 +55,7 @@ public class CompaniesController : ApiControllerBase
         return Ok(result, _localizer["Success"]);
     }
 
+    [HasPermission(PermissionCode.ManageCompanies)]
     [HttpPut("{id}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCompanyDto request)

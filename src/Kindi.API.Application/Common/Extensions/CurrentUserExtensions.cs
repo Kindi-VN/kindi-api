@@ -13,7 +13,7 @@ public static class CurrentUserExtensions
     public static bool IsInRole(this ICurrentUserService currentUser, UserRole role) => role switch
     {
         UserRole.Admin => currentUser.IsInRole(RoleConstants.Admin),
-        UserRole.CTV => currentUser.IsInRole(RoleConstants.CTV),
-        _ => currentUser.IsInRole(RoleConstants.Customer)
+        UserRole.Partner => currentUser.IsInRole(RoleConstants.Partner),
+        _ => currentUser.IsInRole(RoleConstants.User)
     };
 }

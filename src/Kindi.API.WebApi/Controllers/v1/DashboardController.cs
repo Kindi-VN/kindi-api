@@ -2,6 +2,8 @@ using Kindi.API.Application.Features.Dashboard.Queries;
 using Kindi.API.Application.Resources;
 using Kindi.API.WebApi;
 using MediatR;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -24,6 +26,7 @@ public class DashboardController : ApiControllerBase
 		_localizer = localizer;
 	}
 
+	[HasPermission(PermissionCode.ViewDashboard)]
 	[HttpGet]
 	public async Task<IActionResult> GetDashboard()
 	{
@@ -31,6 +34,7 @@ public class DashboardController : ApiControllerBase
 		return Ok(stats, _localizer["DashboardSuccess"]);
 	}
 
+	[HasPermission(PermissionCode.ViewCrmDashboard)]
 	[HttpGet("crm")]
 	public async Task<IActionResult> GetCrmDashboard()
 	{

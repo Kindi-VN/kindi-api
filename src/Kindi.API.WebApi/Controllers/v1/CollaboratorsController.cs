@@ -2,6 +2,7 @@ using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.Requests;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Enums;
+using Kindi.API.WebApi.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -53,6 +54,8 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Lấy thông tin CTV theo Id
     /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewCollaborators)]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(Guid id)
     {
@@ -63,6 +66,8 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Lấy danh sách CTV phân trang
     /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewCollaborators)]
     [HttpGet]
     public async Task<IActionResult> GetPaged(
         [FromQuery] int page = 1,
@@ -79,6 +84,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Danh sách cộng tác viên đã xóa mềm (Admin)
     /// </summary>
+    [HasPermission(PermissionCode.RestoreCollaborator)]
     [HttpGet("deleted")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDeleted(
@@ -93,6 +99,8 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Cập nhật thông tin CTV
     /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewCollaborators)]
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateCollaboratorDto request)
     {
@@ -103,6 +111,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Duyệt CTV
     /// </summary>
+    [HasPermission(PermissionCode.ApproveCollaborator)]
     [HttpPost("{id}/approve")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Approve(Guid id)
@@ -114,6 +123,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Từ chối CTV
     /// </summary>
+    [HasPermission(PermissionCode.RejectCollaborator)]
     [HttpPost("{id}/reject")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Reject(Guid id, [FromBody] string? reason = null)
@@ -125,6 +135,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Xóa mềm CTV
     /// </summary>
+    [HasPermission(PermissionCode.DeleteCollaborator)]
     [HttpDelete("{id}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
@@ -136,6 +147,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Khôi phục CTV đã xóa
     /// </summary>
+    [HasPermission(PermissionCode.RestoreCollaborator)]
     [HttpPost("{id}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

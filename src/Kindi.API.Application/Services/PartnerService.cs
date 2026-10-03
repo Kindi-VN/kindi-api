@@ -316,6 +316,10 @@ public class PartnerService : IPartnerService
         entity.Status = PartnerStatus.Approved;
         entity.ApprovedAt = DateTime.UtcNow;
 
+        // Hồ sơ đối tác được duyệt → tài khoản thuộc nhóm đối tác chiến lược.
+        if (entity.User != null && entity.User.Role == UserRole.User)
+            entity.User.Role = UserRole.Partner;
+
         _partnerRepo.Update(entity);
         await _partnerRepo.SaveChangesAsync();
 
@@ -466,6 +470,12 @@ public class PartnerService : IPartnerService
         if (entity == null)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
 
+        // Hồ sơ đối tác bị xóa → tài khoản trở lại nhóm người dùng, chỉ hạ từ Partner
+        // nên không đụng tới tài khoản quản trị.
+        var partnerUser = await _userService.FindByIdAsync(entity.UserId);
+        if (partnerUser != null && partnerUser.Role == UserRole.Partner)
+            partnerUser.Role = UserRole.User;
+
         // IRepository.Delete chuyển thành IsDeleted = true (không hard delete).
         _partnerRepo.Delete(entity);
         await _partnerRepo.SaveChangesAsync();
@@ -483,6 +493,11 @@ public class PartnerService : IPartnerService
 
         if (entity == null || !entity.IsDeleted)
             throw new NotFoundException(_localizer["Partner_NotFound"]);
+
+        // Khôi phục hồ sơ đã duyệt/đang hoạt động → trả tài khoản về nhóm đối tác chiến lược.
+        if (entity.Status is PartnerStatus.Approved or PartnerStatus.Active
+            && entity.User != null && entity.User.Role == UserRole.User)
+            entity.User.Role = UserRole.Partner;
 
         entity.IsDeleted = false;
         _partnerRepo.Update(entity);

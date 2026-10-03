@@ -1,0 +1,86 @@
+﻿namespace Kindi.API.Infrastructure.Data;
+
+using Kindi.API.Domain.Entities;
+using Kindi.API.Domain.Enums;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+
+/// <summary>
+/// Seed danh mục quyền từ enum <see cref="PermissionCode"/> và gán quyền mặc định cho từng role.
+/// Idempotent: chạy lại không nhân bản, không ghi đè cấu hình quyền mà SuperAdmin đã sửa
+/// (chỉ thêm quyền mới chưa có trong bảng).
+/// </summary>
+public static class PermissionSeeder
+{
+    public static async Task SeedAsync(ApplicationDbContext context, ILogger? logger = null, CancellationToken cancellationToken = default)
+    {
+        var existing = await context.Permissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
+        var byCode = existing.ToDictionary(x => x.Code, x => x, StringComparer.OrdinalIgnoreCase);
+
+        var added = 0;
+        foreach (var definition in PermissionCatalog.All)
+        {
+            if (byCode.TryGetValue(definition.PermissionCode, out var current))
+            {
+                // Cập nhật lại phần mô tả (tên/nhóm/route/endpoint) theo enum — nguồn duy nhất là code.
+                current.Name = definition.Name;
+                current.Module = definition.Module;
+                current.Kind = definition.Kind;
+                current.Route = definition.Route;
+                current.Endpoints = definition.Endpoints;
+                current.SortOrder = (int)definition.Code;
+                current.IsDeleted = false;
+                continue;
+            }
+
+            var entity = new Permission
+            {
+                Code = definition.PermissionCode,
+                Name = definition.Name,
+                Module = definition.Module,
+                Kind = definition.Kind,
+                Route = definition.Route,
+                Endpoints = definition.Endpoints,
+                SortOrder = (int)definition.Code
+            };
+
+            context.Permissions.Add(entity);
+            byCode[definition.PermissionCode] = entity;
+            added++;
+        }
+
+        await context.SaveChangesAsync(cancellationToken);
+
+        // Quyền mặc định cho role: chỉ thêm dòng còn thiếu, giữ nguyên cấu hình đã sửa.
+        var grantedPairs = await context.RolePermissions
+            .IgnoreQueryFilters()
+            .Select(x => new { x.Role, x.PermissionId })
+            .ToListAsync(cancellationToken);
+        var granted = grantedPairs.Select(x => (x.Role, x.PermissionId)).ToHashSet();
+
+        var addedGrants = 0;
+        foreach (var role in new[] { UserRole.User, UserRole.Partner, UserRole.Admin })
+        {
+            foreach (var permission in PermissionCatalog.DefaultFor(role))
+            {
+                var permissionId = byCode[permission.ToCode()].Id;
+                if (granted.Contains((role, permissionId))) continue;
+
+                context.RolePermissions.Add(new RolePermission
+                {
+                    Role = role,
+                    PermissionId = permissionId,
+                    IsGranted = true
+                });
+                addedGrants++;
+            }
+        }
+
+        if (addedGrants > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Grants} gán role mới", added, addedGrants);
+    }
+}

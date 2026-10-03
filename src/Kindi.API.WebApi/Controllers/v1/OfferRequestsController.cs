@@ -4,6 +4,8 @@ using Kindi.API.Application.Features.OfferRequests.Commands;
 using Kindi.API.Application.Features.OfferRequests.Queries;
 using Kindi.API.Application.Resources;
 using MediatR;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -57,6 +59,7 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Lấy chi tiết yêu cầu nhận offer theo ID (Chỉ Admin)
     /// </summary>
+    [HasPermission(PermissionCode.ViewOfferRequests)]
     [HttpGet("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetById(Guid id)
@@ -73,6 +76,7 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Cập nhật trạng thái yêu cầu nhận offer (Chỉ Admin)
     /// </summary>
+    [HasPermission(PermissionCode.UpdateOfferRequestStatus)]
     [HttpPatch("{id:guid}/status")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateOfferRequestStatusDto dto)
@@ -88,6 +92,7 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Xóa mềm yêu cầu nhận offer (Chỉ Admin)
     /// </summary>
+    [HasPermission(PermissionCode.DeleteOfferRequest)]
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)
@@ -99,6 +104,7 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Khôi phục yêu cầu nhận offer đã xóa (Chỉ Admin)
     /// </summary>
+    [HasPermission(PermissionCode.DeleteOfferRequest)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

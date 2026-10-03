@@ -5,10 +5,12 @@ using Kindi.API.Application.Resources;
 using Kindi.API.Application.Validators;
 using Kindi.API.Infrastructure;
 using Kindi.API.Infrastructure.Services;
+using Kindi.API.WebApi.Authorization;
 using Kindi.API.WebApi.Configurations;
 using Kindi.API.WebApi.Filters;
 using Kindi.API.WebApi.Responses;
 using FluentValidation;
+using Microsoft.AspNetCore.Authorization;
 using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Mvc;
@@ -110,6 +112,11 @@ public static class DependencyInjection
 		});
 
 		services.AddAuthorization();
+
+		// Phân quyền theo mã P###: policy sinh động từ tên policy + handler đọc claim "perm".
+		services.AddMemoryCache();
+		services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+		services.AddScoped<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 		// Add API Versioning
 		services.AddApiVersioningConfig();

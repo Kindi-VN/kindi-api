@@ -1,5 +1,7 @@
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
+using Kindi.API.WebApi.Authorization;
+using Kindi.API.Domain.Enums;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Kindi.API.Shared.Constants;
@@ -36,6 +38,7 @@ public class ReferralsController : ApiControllerBase
     /// Thống kê tình hình giới thiệu theo từng mã chia sẻ: số tài khoản được mời, số đơn mua chung,
     /// yêu cầu tìm hàng / offer, lượt vào nhóm, đăng ký đối tác.
     /// </summary>
+    [HasPermission(PermissionCode.ViewReferralStats)]
     [HttpGet("stats")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetStats([FromQuery] ReferralStatsQueryDto query)
@@ -44,6 +47,7 @@ public class ReferralsController : ApiControllerBase
     }
 
     /// <summary>Số liệu tổng hợp + số phát sinh theo ngày cho board thống kê (màn quản trị).</summary>
+    [HasPermission(PermissionCode.ViewReferralStats)]
     [HttpGet("stats/overview")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetStatsOverview([FromQuery] ReferralStatsQueryDto query)
@@ -52,6 +56,7 @@ public class ReferralsController : ApiControllerBase
     }
 
     /// <summary>Danh sách phát sinh của một mã chia sẻ (màn quản trị).</summary>
+    [HasPermission(PermissionCode.ViewReferralStats)]
     [HttpGet("stats/{referralCode}/events")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetStatsEvents([FromRoute] string referralCode, [FromQuery] ReferralEventQueryDto query)

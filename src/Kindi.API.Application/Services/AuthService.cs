@@ -25,6 +25,7 @@ public class AuthService : IAuthService
 	private readonly JwtSettings _jwtSettings;
 	private readonly ILogger<AuthService> _logger;
 	private readonly IAuthAuditService _authAuditService;
+	private readonly IPermissionService _permissionService;
 	private readonly IStringLocalizer<SharedResource> _localizer;
 
 	public AuthService(
@@ -33,6 +34,7 @@ public class AuthService : IAuthService
 		IOptions<JwtSettings> jwtSettings,
 		ILogger<AuthService> logger,
 		IAuthAuditService authAuditService,
+		IPermissionService permissionService,
 		IStringLocalizer<SharedResource> localizer)
 	{
 		_userRepository = userRepository;
@@ -40,6 +42,7 @@ public class AuthService : IAuthService
 		_jwtSettings = jwtSettings.Value;
 		_logger = logger;
 		_authAuditService = authAuditService;
+		_permissionService = permissionService;
 		_localizer = localizer;
 	}
 
@@ -76,7 +79,8 @@ public class AuthService : IAuthService
         }
 
         var roles = GetRoles(user.Role);
-        var token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, roles);
+        var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+        var token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, roles, permissions.Codes, permissions.Version);
 
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync();
@@ -92,7 +96,9 @@ public class AuthService : IAuthService
             Username = user.Username,
             FullName = user.FullName,
             Role = user.Role.ToString(),
-            MustChangeCredentials = user.MustChangeCredentials
+            MustChangeCredentials = user.MustChangeCredentials,
+            Permissions = permissions.Codes.ToList(),
+            PermissionsVersion = permissions.Version
         };
     }
 
@@ -118,47 +124,49 @@ public class AuthService : IAuthService
 		var oldUsername = oldPrincipal?.FindFirst(ClaimTypes.Name)?.Value;
 		var oldUserId = oldPrincipal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-		var newToken = await _jwtService.RefreshTokenAsync(token);
-		if (string.IsNullOrEmpty(newToken))
+		// Token cũ phải còn hiệu lực; đọc lại user từ DB rồi cấp token mới kèm quyền mới nhất.
+		if (oldPrincipal == null || !Guid.TryParse(oldUserId, out var oldId))
 		{
 			_logger.LogWarning("Refresh token failed");
 			await _authAuditService.LogAsync(
-				Guid.TryParse(oldUserId, out var oldId) ? oldId : null,
+				Guid.TryParse(oldUserId, out var fallbackId) ? fallbackId : null,
 				oldUsername,
 				AuditAction.RefreshToken,
 				false, "Token hết hạn hoặc không hợp lệ");
 			return null;
 		}
 
-		// Extract user info from new token
-		var principal = _jwtService.ValidateToken(newToken);
-		var username = principal?.FindFirst(ClaimTypes.Name)?.Value;
-		var userId = principal?.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+		var users = await _userRepository.FindAsync(u => u.Id == oldId && !u.IsDeleted);
+		var user = users.FirstOrDefault();
 
-		if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(userId))
+		if (user == null || !user.IsActive)
 		{
-			await _authAuditService.LogAsync(null, username ?? oldUsername, AuditAction.RefreshToken, false);
+			_logger.LogWarning("Refresh token failed: user không tồn tại hoặc đã bị vô hiệu hóa ({UserId})", oldId);
+			await _authAuditService.LogAsync(oldId, oldUsername, AuditAction.RefreshToken, false,
+				"Tài khoản không tồn tại hoặc đã bị vô hiệu hóa");
 			return null;
 		}
 
-		var users = await _userRepository.FindAsync(u => u.Id == Guid.Parse(userId) && !u.IsDeleted);
-		var user = users.FirstOrDefault();
+		// Token cũ bị vô hiệu hóa ngay khi đã cấp token mới.
+		_jwtService.BlacklistToken(token);
 
-		await _authAuditService.LogAsync(
-			Guid.TryParse(userId, out var id) ? id : null,
-			username,
-			AuditAction.RefreshToken,
-			true);
+		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+		var newToken = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role),
+			permissions.Codes, permissions.Version);
+
+		await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.RefreshToken, true);
 
 		return new LoginResponse
 		{
 			Token = newToken,
 			ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
-			Id = user?.Id ?? Guid.Empty,
-			Username = username,
-			FullName = user?.FullName ?? string.Empty,
-			Role = user?.Role.ToString() ?? string.Empty,
-			MustChangeCredentials = user?.MustChangeCredentials ?? false
+			Id = user.Id,
+			Username = user.Username,
+			FullName = user.FullName,
+			Role = user.Role.ToString(),
+			MustChangeCredentials = user.MustChangeCredentials,
+			Permissions = permissions.Codes.ToList(),
+			PermissionsVersion = permissions.Version
 		};
 	}
 
@@ -219,14 +227,18 @@ public class AuthService : IAuthService
 		await _authAuditService.LogAsync(userId, user.Username, AuditAction.ChangePassword, true,
 			$"Đổi tên đăng nhập ({oldUsername} → {user.Username}) và mật khẩu");
 
+		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+
 		return new LoginResponse
 		{
-			Token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role)),
+			Token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role), permissions.Codes, permissions.Version),
 			ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
 			Username = user.Username,
 			FullName = user.FullName,
 			Role = user.Role.ToString(),
-			MustChangeCredentials = false
+			MustChangeCredentials = false,
+			Permissions = permissions.Codes.ToList(),
+			PermissionsVersion = permissions.Version
 		};
 	}
 
@@ -327,6 +339,8 @@ public class AuthService : IAuthService
 
 		if (user == null) return null;
 
+		var permissions = await _permissionService.GetRolePermissionsAsync(user.Role);
+
 		return new UserInfoResponse
 		{
 			Id = user.Id,
@@ -338,7 +352,9 @@ public class AuthService : IAuthService
 			Role = user.Role.ToString(),
 			IsActive = user.IsActive,
 			MustChangeCredentials = user.MustChangeCredentials,
-			LastLoginAt = user.LastLoginAt
+			LastLoginAt = user.LastLoginAt,
+			Permissions = permissions.Codes.ToList(),
+			PermissionsVersion = permissions.Version
 		};
 	}
 
@@ -361,9 +377,11 @@ public class AuthService : IAuthService
 		// Claim vai trò giữ dạng số để khớp RoleConstants và [Authorize(Roles = ...)].
 		return role switch
 		{
+			// SuperAdmin kế thừa toàn bộ quyền Admin nên token mang cả 2 role.
+			UserRole.SuperAdmin => new List<string> { RoleConstants.SuperAdmin, RoleConstants.Admin },
 			UserRole.Admin => new List<string> { RoleConstants.Admin },
-			UserRole.CTV => new List<string> { RoleConstants.CTV },
-			_ => new List<string> { RoleConstants.Customer }
+			UserRole.Partner => new List<string> { RoleConstants.Partner },
+			_ => new List<string> { RoleConstants.User }
 		};
 	}
 }

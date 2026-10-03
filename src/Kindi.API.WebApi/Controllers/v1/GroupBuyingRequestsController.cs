@@ -2,6 +2,7 @@ using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Enums;
+using Kindi.API.WebApi.Authorization;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Localization;
@@ -97,6 +98,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     // ===================== ADMIN =====================
 
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewGroupBuyingRequests)]
     [HttpGet]
     public async Task<IActionResult> GetList([FromQuery] GetGroupBuyingRequestsQueryDto query)
     {
@@ -107,6 +109,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewGroupBuyingRequests)]
     [HttpGet("{id:guid}")]
     public async Task<IActionResult> GetDetail(Guid id)
     {
@@ -118,6 +121,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Duyệt / đóng / hủy yêu cầu mua chung.
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.UpdateGroupBuyingRequestStatus)]
     [HttpPut("{id:guid}/status")]
     public async Task<IActionResult> UpdateStatus(Guid id, [FromBody] UpdateGroupBuyingStatusDto request)
     {
@@ -129,6 +133,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Sửa thông tin yêu cầu mua chung (admin).
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
     [HttpPut("{id:guid}")]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateGroupBuyingRequestDto request)
     {
@@ -140,6 +145,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Xóa một người khỏi nhóm mua chung (không xóa được người mở nhóm).
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
     [HttpDelete("{id:guid}/participants/{participantId:guid}")]
     public async Task<IActionResult> RemoveParticipant(Guid id, Guid participantId)
     {
@@ -151,6 +157,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Hủy yêu cầu mua chung (xóa mềm).
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {
