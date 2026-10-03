@@ -95,7 +95,8 @@ public class PartnerService : IPartnerService
         }
 
         // Mã chia sẻ của link (?ref=) → ghi nhận vào tài khoản đăng ký (chỉ lần đầu, không ghi đè).
-        await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
+        // Trả về mã đã chuẩn hoá (nếu nhận diện được) — dùng luôn cho phát sinh giới thiệu của đối tác.
+        string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
 
         // 3. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
@@ -140,7 +141,7 @@ public class PartnerService : IPartnerService
         await _partnerRepo.SaveChangesAsync();
 
         // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác.
-        await _referralService.RecordEventAsync(partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
+        await _referralService.RecordEventAsync(resolvedReferralCode ?? partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
             partner.Id, partner.PartnerCode, null);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
