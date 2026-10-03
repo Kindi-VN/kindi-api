@@ -71,19 +71,6 @@ public class PartnersController : ApiControllerBase
         return OkPaged(result, _localizer["Success"]);
     }
 
-    [HttpGet("check-referral/{code}")]
-    [AllowAnonymous]
-    public async Task<IActionResult> CheckReferralCode([FromRoute] string code)
-    {
-        var isValid = await _partnerService.IsReferralCodeValidAsync(code);
-        if (!isValid)
-        {
-            return NotFound(_localizer["Partner_ReferralCodeNotFound"]);
-        }
-
-        return Ok(isValid,_localizer["Partner_ReferralCodeValid"]);
-    }
-
     /// <summary>
     /// Lấy danh sách đối tác phân trang.
     /// Truyền <c>isDeleted=true</c> để lấy danh sách đối tác đã xóa mềm.

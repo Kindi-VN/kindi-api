@@ -12,7 +12,6 @@ public interface IPartnerService
     /// Danh sách đối tác doanh nghiệp đã duyệt/đang hoạt động (trang Nguồn cung công khai).
     /// </summary>
     Task<PagedList<PublicPartnerResponseDto>> GetPublicPagedAsync(PublicPartnerQueryDto query);
-    Task<bool> IsReferralCodeValidAsync(string code);
     Task<PagedList<PartnerResponseDto>> GetPagedAsync(PartnerFilterRequest filter);
     Task<PartnerDetailResponseDto?> GetDetailAsync(Guid id);
     Task<PartnerResponseDto> ApproveAsync(Guid id);

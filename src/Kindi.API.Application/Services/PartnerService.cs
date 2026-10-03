@@ -25,7 +25,6 @@ public class PartnerService : IPartnerService
     private readonly ICurrentUserService _currentUserService;
     private readonly IMapper _mapper;
     private readonly IStringLocalizer<SharedResource> _localizer;
-    private readonly IRepository<User> _userRepo;
     private readonly IQueryService _queryService;
     private readonly IReferralService _referralService;
     private readonly IRepository<PartnerProduct> _productRepo;
@@ -34,7 +33,6 @@ public class PartnerService : IPartnerService
 
     public PartnerService(
         IRepository<Partner> partnerRepo,
-        IRepository<User> userRepo,
         IUserService userService,
         ICurrentUserService currentUserService,
         IMapper mapper,
@@ -46,7 +44,6 @@ public class PartnerService : IPartnerService
         Kindi.API.Application.Common.Interfaces.ICompanyService companyService)
     {
         _partnerRepo = partnerRepo;
-        _userRepo = userRepo;
         _userService = userService;
         _currentUserService = currentUserService;
         _mapper = mapper;
@@ -88,11 +85,13 @@ public class PartnerService : IPartnerService
 
         // Mã chia sẻ của link (?ref=) → ghi nhận vào tài khoản đăng ký (chỉ lần đầu, không ghi đè).
         // Mã không nhận diện được (link cũ/sai) thì bỏ qua, không chặn đăng ký.
-        // Trả về mã đã chuẩn hoá (nếu nhận diện được) — dùng luôn cho phát sinh giới thiệu của đối tác.
+        // Mã đã chuẩn hoá (nếu nhận diện được) là mã DUY NHẤT được lưu vào hồ sơ đối tác và dùng
+        // cho phát sinh giới thiệu — mã lạ không được ghi lại ở đâu cả.
         string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
 
         // 2. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
+        partner.ReferralCode = resolvedReferralCode;
         // userId luôn có giá trị: người dùng đang đăng nhập, hoặc tài khoản vừa tạo ở nhánh đăng ký công khai
         partner.UserId = Guid.Parse(userId!);
 
@@ -133,8 +132,8 @@ public class PartnerService : IPartnerService
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
 
-        // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác.
-        await _referralService.RecordEventAsync(resolvedReferralCode ?? partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
+        // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác (mã lạ đã bị loại ở trên nên không phát sinh).
+        await _referralService.RecordEventAsync(partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
             partner.Id, partner.PartnerCode, null);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
@@ -197,26 +196,6 @@ public class PartnerService : IPartnerService
         var datePart = DateTime.Now.ToString("yyMMdd");
         var randomPart = new Random().Next(1000, 9999).ToString();
         return $"PART-{datePart}-{randomPart}";
-    }
-
-    public async Task<bool> IsReferralCodeValidAsync(string code)
-    {
-        if (string.IsNullOrWhiteSpace(code)) return false;
-
-        var trimmed = code.Trim();
-
-        // Mã do nền tảng phát ra cho chủ thể (mã chia sẻ của tài khoản / mã hồ sơ CTV) — đây là mã
-        // nằm trên link chia sẻ (?ref=), phải nhận đúng như ReferralService ghi nhận giới thiệu.
-        if (await _referralService.ResolveAsync(trimmed) != null) return true;
-
-        // Mã giới thiệu có thể là SĐT hoặc UserCode (không phân biệt hoa/thường với code)
-        // UserCode so khớp đúng (không phân biệt hoa/thường) bằng ILIKE: mẫu là từ khoá đã
-        // escape, không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
-        var trimmedLike = trimmed.RemoveVietnameseSign().ToLikeEscaped();
-        var user = await _userRepo.GetFirstAsync(u =>
-            u.Phone == trimmed ||
-            (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), trimmedLike, "\\")));
-        return user != null;
     }
 
     public async Task<PagedList<PartnerResponseDto>> GetPagedAsync(PartnerFilterRequest filter)

@@ -529,7 +529,6 @@
 
   <!-- Success & Error -->
   <data name="PartnerRegisterSuccess" xml:space="preserve"><value>Partner registration successful!</value></data>
-  <data name="PartnerReferralCodeInvalid" xml:space="preserve"><value>Invalid referral code</value></data>
   <data name="PartnerValidationFailed" xml:space="preserve"><value>Invalid data</value></data>
   <data name="SalesChannelInvalid" xml:space="preserve"><value>Invalid sales channel</value></data>
   <!-- Validation Keys -->
@@ -681,13 +680,6 @@
   <!-- Success Messages -->
   <data name="OfferRequest_CreateSuccess">
     <value>Offer request submitted successfully</value>
-  </data>
-  <!-- Partner - Referral Code -->
-  <data name="Partner_ReferralCodeNotFound">
-    <value>Referral code not found</value>
-  </data>
-  <data name="Partner_ReferralCodeValid">
-    <value>Referral code is valid</value>
   </data>
   <data name="CTV_NotFound">
     <value>CTV not found</value>
