@@ -45,6 +45,12 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<RolePermission> RolePermissions { get; set; }
 
     public DbSet<UserPermission> UserPermissions { get; set; }
+    public DbSet<MembershipTier> MembershipTiers { get; set; }
+    public DbSet<UserMembership> UserMemberships { get; set; }
+    public DbSet<UserBankAccount> UserBankAccounts { get; set; }
+    public DbSet<PayoutSetting> PayoutSettings { get; set; }
+    public DbSet<PayoutPeriod> PayoutPeriods { get; set; }
+    public DbSet<PayoutStatement> PayoutStatements { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

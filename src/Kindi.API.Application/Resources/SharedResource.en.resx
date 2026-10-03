@@ -1257,4 +1257,154 @@
   <data name="Permissions_UnknownCodes">
     <value>Unknown permission codes: {0}</value>
   </data>
+  <data name="Membership_NameRequired" xml:space="preserve">
+    <value>Please enter the membership tier name.</value>
+  </data>
+  <data name="Membership_AccumulatedInvalid" xml:space="preserve">
+    <value>The minimum accumulated value is invalid.</value>
+  </data>
+  <data name="Membership_FeeRateInvalid" xml:space="preserve">
+    <value>The tier early withdrawal fee rate must be between 0 and 100%.</value>
+  </data>
+  <data name="Membership_LimitInvalid" xml:space="preserve">
+    <value>The monthly withdrawal limit is invalid.</value>
+  </data>
+  <data name="Membership_PriorityInvalid" xml:space="preserve">
+    <value>The approval priority is invalid.</value>
+  </data>
+  <data name="Membership_TierNotFound" xml:space="preserve">
+    <value>Membership tier not found.</value>
+  </data>
+  <data name="Payout_UserInvalid" xml:space="preserve">
+    <value>The current account could not be identified.</value>
+  </data>
+  <data name="Payout_BankNameRequired" xml:space="preserve">
+    <value>Please enter the bank name.</value>
+  </data>
+  <data name="Payout_AccountNumberRequired" xml:space="preserve">
+    <value>Please enter the account number.</value>
+  </data>
+  <data name="Payout_AccountHolderRequired" xml:space="preserve">
+    <value>Please enter the account holder.</value>
+  </data>
+  <data name="Payout_BankAccountNotFound" xml:space="preserve">
+    <value>This account has no bank information to verify.</value>
+  </data>
+  <data name="Payout_FeeRateInvalid" xml:space="preserve">
+    <value>The early withdrawal fee rate must be between 0 and 100%.</value>
+  </data>
+  <data name="Payout_AmountInvalid" xml:space="preserve">
+    <value>The amount is invalid.</value>
+  </data>
+  <data name="Payout_FeeAmountInvalid" xml:space="preserve">
+    <value>The minimum/maximum early withdrawal fee is invalid.</value>
+  </data>
+  <data name="Payout_FeeRangeInvalid" xml:space="preserve">
+    <value>The minimum early withdrawal fee cannot exceed the maximum.</value>
+  </data>
+  <data name="Payout_ClosingDayInvalid" xml:space="preserve">
+    <value>The closing day must be between 0 and 31.</value>
+  </data>
+  <data name="Payout_EarlyDisabled" xml:space="preserve">
+    <value>Early commission withdrawal is currently disabled.</value>
+  </data>
+  <data name="Payout_BelowMinAmount" xml:space="preserve">
+    <value>The minimum withdrawal amount is {0}.</value>
+  </data>
+  <data name="Payout_NoBankAccount" xml:space="preserve">
+    <value>Please provide the bank account for payouts.</value>
+  </data>
+  <data name="Payout_ExceedAvailable" xml:space="preserve">
+    <value>The withdrawal amount exceeds the available commission ({0}).</value>
+  </data>
+  <data name="Payout_ExceedMonthlyLimit" xml:space="preserve">
+    <value>The withdrawal exceeds the tier's monthly limit ({0}).</value>
+  </data>
+  <data name="Payout_FeeExceedAmount" xml:space="preserve">
+    <value>The early withdrawal fee is greater than the withdrawal amount.</value>
+  </data>
+  <data name="Payout_StatementNotFound" xml:space="preserve">
+    <value>Payout not found.</value>
+  </data>
+  <data name="Payout_NotOwner" xml:space="preserve">
+    <value>You do not own this withdrawal request.</value>
+  </data>
+  <data name="Payout_CancelInvalid" xml:space="preserve">
+    <value>Only a pending early withdrawal request can be cancelled.</value>
+  </data>
+  <data name="Payout_PeriodInvalid" xml:space="preserve">
+    <value>The payout period month/year is invalid.</value>
+  </data>
+  <data name="Payout_PeriodNotFound" xml:space="preserve">
+    <value>Payout period not found.</value>
+  </data>
+  <data name="Payout_PeriodNotOpen" xml:space="preserve">
+    <value>The payout period has already been closed.</value>
+  </data>
+  <data name="Payout_PeriodNotClosed" xml:space="preserve">
+    <value>The payout period has not been closed yet.</value>
+  </data>
+  <data name="Payout_StatusInvalid" xml:space="preserve">
+    <value>The payout status does not allow this action.</value>
+  </data>
+  <data name="Payout_RejectReasonRequired" xml:space="preserve">
+    <value>Please enter the rejection reason.</value>
+  </data>
+  <data name="Membership_ListSuccess" xml:space="preserve">
+    <value>Membership tiers loaded.</value>
+  </data>
+  <data name="Membership_SaveSuccess" xml:space="preserve">
+    <value>Membership tier saved.</value>
+  </data>
+  <data name="Membership_DeleteSuccess" xml:space="preserve">
+    <value>Membership tier deleted.</value>
+  </data>
+  <data name="Membership_EvaluateSuccess" xml:space="preserve">
+    <value>Membership tiers re-evaluated.</value>
+  </data>
+  <data name="Membership_MySuccess" xml:space="preserve">
+    <value>Your membership tier was loaded.</value>
+  </data>
+  <data name="BankAccount_ListSuccess" xml:space="preserve">
+    <value>Bank information loaded.</value>
+  </data>
+  <data name="BankAccount_SavedSuccess" xml:space="preserve">
+    <value>Bank information saved.</value>
+  </data>
+  <data name="BankAccount_VerifiedSuccess" xml:space="preserve">
+    <value>Bank verification updated.</value>
+  </data>
+  <data name="Payout_ListSuccess" xml:space="preserve">
+    <value>Payouts loaded.</value>
+  </data>
+  <data name="Payout_MyWalletSuccess" xml:space="preserve">
+    <value>Your commission wallet was loaded.</value>
+  </data>
+  <data name="Payout_WithdrawalSuccess" xml:space="preserve">
+    <value>Early withdrawal request submitted.</value>
+  </data>
+  <data name="Payout_CancelSuccess" xml:space="preserve">
+    <value>Withdrawal request cancelled.</value>
+  </data>
+  <data name="Payout_ProcessSuccess" xml:space="preserve">
+    <value>Payout status updated.</value>
+  </data>
+  <data name="Payout_PeriodListSuccess" xml:space="preserve">
+    <value>Payout periods loaded.</value>
+  </data>
+  <data name="Payout_PeriodSavedSuccess" xml:space="preserve">
+    <value>Payout period saved.</value>
+  </data>
+  <data name="Payout_PeriodClosedSuccess" xml:space="preserve">
+    <value>Payout period closed.</value>
+  </data>
+  <data name="Payout_PeriodPaidSuccess" xml:space="preserve">
+    <value>Payout period marked as paid.</value>
+  </data>
+  <data name="Payout_SettingSuccess" xml:space="preserve">
+    <value>Early withdrawal settings loaded.</value>
+  </data>
+  <data name="Payout_SettingSavedSuccess" xml:space="preserve">
+    <value>Early withdrawal settings saved.</value>
+  </data>
 </root>

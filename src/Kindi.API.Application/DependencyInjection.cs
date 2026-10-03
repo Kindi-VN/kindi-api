@@ -59,6 +59,9 @@ public static class DependencyInjection
         services.AddScoped<IReferralService, ReferralService>();
         services.AddScoped<IReferralEventService, ReferralEventService>();
         services.AddScoped<ICommissionConfigService, CommissionConfigService>();
+        services.AddScoped<IMembershipTierService, MembershipTierService>();
+        services.AddScoped<IBankAccountService, BankAccountService>();
+        services.AddScoped<IPayoutService, PayoutService>();
         services.AddScoped<ISocialInteractionService, SocialInteractionService>();
         services.AddScoped<IBusinessFieldService, BusinessFieldService>();
         services.AddScoped<IBusinessGroupService, BusinessGroupService>();
