@@ -221,6 +221,9 @@ public enum PermissionCode
     [PermissionInfo("Xác minh thông tin ngân hàng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
         "PUT /api/v1/bank-accounts/{userId}/verification, GET /api/v1/bank-accounts")]
     VerifyBankAccounts = 110,
+
+    [PermissionInfo("Sửa cài đặt chung", PermissionModule.System, PermissionKind.Action, null, "PUT /api/v1/settings")]
+    UpdateSystemSettings = 111,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>
