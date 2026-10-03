@@ -1127,6 +1127,63 @@
   <data name="Permissions_UserUpdateSuccess">
     <value>Cập nhật quyền cho tài khoản thành công</value>
   </data>
+  <data name="Commission_ListSuccess">
+    <value>Lấy danh sách cấu hình hoa hồng thành công</value>
+  </data>
+  <data name="Commission_SaveSuccess">
+    <value>Đã lưu cấu hình hoa hồng</value>
+  </data>
+  <data name="Commission_DeleteSuccess">
+    <value>Đã xoá cấu hình hoa hồng</value>
+  </data>
+  <data name="Commission_MySuccess">
+    <value>Lấy mức hoa hồng của bạn thành công</value>
+  </data>
+  <data name="Commission_NotFound">
+    <value>Không tìm thấy cấu hình hoa hồng</value>
+  </data>
+  <data name="Commission_Unauthorized">
+    <value>Bạn cần đăng nhập để xem hoa hồng của mình</value>
+  </data>
+  <data name="Commission_NoTarget">
+    <value>Chọn ít nhất một tài khoản hoặc chọn áp dụng chung cho mọi tài khoản</value>
+  </data>
+  <data name="Commission_UserNotFound">
+    <value>Có tài khoản trong danh sách không tồn tại</value>
+  </data>
+  <data name="Commission_InvalidBeneficiary">
+    <value>Bên nhận hoa hồng không hợp lệ</value>
+  </data>
+  <data name="Commission_InvalidType">
+    <value>Cách tính hoa hồng không hợp lệ</value>
+  </data>
+  <data name="Commission_RateRequired">
+    <value>Mức hoa hồng phải lớn hơn 0</value>
+  </data>
+  <data name="Commission_RatePercentMax">
+    <value>Hoa hồng theo phần trăm không được vượt quá 100%</value>
+  </data>
+  <data name="Commission_MinOrderValueInvalid">
+    <value>Giá trị đơn tối thiểu không hợp lệ</value>
+  </data>
+  <data name="Commission_MaxCommissionInvalid">
+    <value>Trần hoa hồng không hợp lệ</value>
+  </data>
+  <data name="Commission_NoteTooLong">
+    <value>Ghi chú không được vượt quá 500 ký tự</value>
+  </data>
+  <data name="Commission_TiersRequired">
+    <value>Cấu hình bậc thang phải có ít nhất một bậc</value>
+  </data>
+  <data name="Commission_TierRateInvalid">
+    <value>Mức hoa hồng của bậc không hợp lệ</value>
+  </data>
+  <data name="Commission_TierRangeInvalid">
+    <value>Giá trị kết thúc của bậc phải lớn hơn giá trị bắt đầu</value>
+  </data>
+  <data name="Commission_TierOverlap">
+    <value>Các bậc không được trùng khoảng giá trị</value>
+  </data>
   <data name="Permissions_NoUsersSelected">
     <value>Chưa chọn tài khoản nào</value>
   </data>

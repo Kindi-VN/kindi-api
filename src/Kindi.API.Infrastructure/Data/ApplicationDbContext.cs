@@ -28,6 +28,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
 	public DbSet<Company> Companies { get; set; }
     public DbSet<PartnerProduct> PartnerProducts { get; set; }
     public DbSet<PartnerCommission> PartnerCommissions { get; set; }
+    public DbSet<CommissionConfig> CommissionConfigs { get; set; }
+    public DbSet<CommissionTier> CommissionTiers { get; set; }
     public DbSet<SocialPost> SocialPosts { get; set; }
     public DbSet<Tag> Tags { get; set; }
     public DbSet<PostTag> PostTags { get; set; }

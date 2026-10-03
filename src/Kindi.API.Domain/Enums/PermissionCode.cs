@@ -85,6 +85,10 @@ public enum PermissionCode
         "GET /api/v1/businessgroups/mine")]
     ViewMyGroups = 31,
 
+    [PermissionInfo("Xem hoa hồng của tôi", PermissionModule.User, PermissionKind.View, "/user/my-commission",
+        "GET /api/v1/commissions/me")]
+    ViewMyCommission = 13,
+
     [PermissionInfo("Xem danh sách đối tác", PermissionModule.Partner, PermissionKind.View, "/admin/partner", "GET /api/v1/partners, GET /api/v1/partners/{id}, GET /api/v1/partners/deleted")]
     ViewPartners = 40,
 
@@ -184,6 +188,14 @@ public enum PermissionCode
     [PermissionInfo("Cấu hình quyền riêng cho người dùng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
         "GET /api/v1/permissions/users, PUT /api/v1/permissions/users/{userId}, PUT /api/v1/permissions/users")]
     UpdateUserPermissions = 104,
+
+    [PermissionInfo("Xem cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/settings",
+        "GET /api/v1/commissions")]
+    ViewCommissionConfigs = 105,
+
+    [PermissionInfo("Sửa cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+        "POST /api/v1/commissions, DELETE /api/v1/commissions/{id}")]
+    UpdateCommissionConfigs = 106,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>
