@@ -131,8 +131,26 @@ public class PermissionCoverageTests
 
         PermissionCatalog.DefaultFor(UserRole.SuperAdmin).Should().BeEmpty(
             "SuperAdmin luôn toàn quyền, không lưu ở bảng RolePermissions");
-        PermissionCatalog.DefaultFor(UserRole.User).Should().BeEmpty();
-        PermissionCatalog.DefaultFor(UserRole.Partner).Should().BeEmpty();
+
+        // User và Partner chỉ có quyền cơ bản của khu vực thành viên, không có quyền quản trị nào.
+        var memberArea = new[]
+        {
+            PermissionCode.ViewMyReferralStats,
+            PermissionCode.ViewMyGroupBuying,
+            PermissionCode.ViewMyRequests,
+            PermissionCode.ViewMyPosts,
+            PermissionCode.ViewMyGroups
+        };
+
+        PermissionCatalog.DefaultFor(UserRole.User).Should().BeEquivalentTo(memberArea,
+            "khách hàng chỉ dùng khu vực thành viên");
+        PermissionCatalog.DefaultFor(UserRole.Partner).Should().BeEquivalentTo(memberArea,
+            "đối tác là tài khoản khách hàng đã được duyệt hồ sơ");
+        PermissionCatalog.DefaultFor(UserRole.User)
+            .Concat(PermissionCatalog.DefaultFor(UserRole.Partner))
+            .Should().NotIntersectWith(PermissionCatalog.All
+                .Where(x => x.Module == PermissionModule.SuperAdmin)
+                .Select(x => x.Code), "quyền của nhóm SuperAdmin chỉ thuộc SuperAdmin");
     }
 
     [Fact]

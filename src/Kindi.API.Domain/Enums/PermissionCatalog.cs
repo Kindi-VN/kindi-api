@@ -23,10 +23,24 @@ public static class PermissionCatalog
 
     public static IReadOnlyList<PermissionDefinition> All => _all;
 
-    /// <summary>Quyền mặc định của role: Admin có toàn bộ quyền nghiệp vụ; nhóm SuperAdmin không gán cho ai.</summary>
+    /// <summary>Quyền cơ bản của khu vực thành viên — mọi tài khoản đã đăng nhập đều có.</summary>
+    private static readonly PermissionCode[] _memberArea =
+    {
+        PermissionCode.ViewMyReferralStats,
+        PermissionCode.ViewMyGroupBuying,
+        PermissionCode.ViewMyRequests,
+        PermissionCode.ViewMyPosts,
+        PermissionCode.ViewMyGroups
+    };
+
+    /// <summary>
+    /// Quyền mặc định của role: Admin có toàn bộ quyền nghiệp vụ, User và Partner (đối tác là tài khoản
+    /// khách hàng đã được duyệt hồ sơ) có quyền cơ bản của khu vực thành viên, nhóm SuperAdmin không gán cho ai.
+    /// </summary>
     public static IReadOnlyList<PermissionCode> DefaultFor(UserRole role) => role switch
     {
         UserRole.Admin => _all.Where(x => x.Module != PermissionModule.SuperAdmin).Select(x => x.Code).ToList(),
+        UserRole.User or UserRole.Partner => _memberArea,
         _ => Array.Empty<PermissionCode>()
     };
 
