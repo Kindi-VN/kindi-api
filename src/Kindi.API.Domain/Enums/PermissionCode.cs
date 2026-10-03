@@ -89,14 +89,6 @@ public enum PermissionCode
         "GET /api/v1/commissions/me")]
     ViewMyCommission = 13,
 
-    [PermissionInfo("Cập nhật thông tin ngân hàng của tôi", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
-        "PUT /api/v1/bank-accounts/me")]
-    UpdateMyBankAccount = 14,
-
-    [PermissionInfo("Yêu cầu rút hoa hồng", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
-        "POST /api/v1/payouts/withdrawals")]
-    RequestCommissionWithdrawal = 15,
-
     [PermissionInfo("Xem danh sách đối tác", PermissionModule.Partner, PermissionKind.View, "/admin/partner", "GET /api/v1/partners, GET /api/v1/partners/{id}, GET /api/v1/partners/deleted")]
     ViewPartners = 40,
 
@@ -204,6 +196,13 @@ public enum PermissionCode
     [PermissionInfo("Sửa cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
         "POST /api/v1/commissions, DELETE /api/v1/commissions/{id}")]
     UpdateCommissionConfigs = 106,
+    [PermissionInfo("Cập nhật thông tin ngân hàng của tôi", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
+        "GET /api/v1/bank-accounts/me, PUT /api/v1/bank-accounts/me")]
+    UpdateMyBankAccount = 14,
+
+    [PermissionInfo("Gửi yêu cầu rút hoa hồng (kể cả rút sớm)", PermissionModule.User, PermissionKind.Action, "/user/my-commission",
+        "POST /api/v1/payouts/withdrawals, POST /api/v1/payouts/{id}/cancel")]
+    RequestCommissionWithdrawal = 15,
 
     [PermissionInfo("Xem chi trả hoa hồng và kỳ giải ngân", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/finance",
         "GET /api/v1/payouts, GET /api/v1/payout-periods")]
@@ -218,7 +217,7 @@ public enum PermissionCode
     ManageMembershipTiers = 109,
 
     [PermissionInfo("Xác minh thông tin ngân hàng", PermissionModule.SuperAdmin, PermissionKind.Action, null,
-        "POST /api/v1/bank-accounts/{userId}/verify, GET /api/v1/bank-accounts")]
+        "PUT /api/v1/bank-accounts/{userId}/verification, GET /api/v1/bank-accounts")]
     VerifyBankAccounts = 110,
 }
 
@@ -239,4 +238,5 @@ public static class PermissionCodeExtensions
             ? (PermissionCode)number
             : null;
     }
+
 }
