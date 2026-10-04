@@ -107,7 +107,9 @@ public class PurchaseRequestService : IPurchaseRequestService
 
 	public async Task<PagedList<PurchaseRequestResponseDto>> GetPagedAsync(PurchaseRequestQueryDto query)
 	{
-		var search = query.Search?.Trim();
+        // Từ khoá đã trim + escape; tìm không phân biệt hoa/thường và không phân biệt dấu.
+        var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
 		// Quyền xem: admin thấy tất cả (hoặc chỉ của mình khi truyền mineOnly), người dùng thường chỉ thấy yêu cầu của chính mình.
 		var onlyMine = query.MineOnly || !_currentUserService.IsInRole(UserRole.Admin);
@@ -124,11 +126,12 @@ public class PurchaseRequestService : IPurchaseRequestService
 			.WhereIf(onlyMine, x => x.UserId == mineId)
 			.WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
 			.WhereIf(!string.IsNullOrEmpty(search), x =>
-				(x.PurchaseRequestCode != null && x.PurchaseRequestCode.Contains(search!)) ||
-				x.ProductName.Contains(search!) ||
-				(x.User != null && x.User.FullName.Contains(search!)) ||
-				(x.User != null && x.User.Phone != null && x.User.Phone.Contains(search!)) ||
-				(x.User != null && x.User.Email != null && x.User.Email.Contains(search!)))
+				(x.PurchaseRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PurchaseRequestCode), "%" + searchTerm + "%", "\\")) ||
+				EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+				(x.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ReferralCode), "%" + searchTerm + "%", "\\")) ||
+				(x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
+				(x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
+				(x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
 			.WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
 			.WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
 
