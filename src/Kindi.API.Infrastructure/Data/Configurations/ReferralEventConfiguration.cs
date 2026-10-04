@@ -12,7 +12,7 @@ public class ReferralEventConfiguration : IEntityTypeConfiguration<ReferralEvent
         builder.HasKey(x => x.Id);
 
         builder.Property(x => x.ReferralEventCode).HasMaxLength(30);
-        builder.Property(x => x.ReferralCode).HasMaxLength(30).IsRequired();
+        builder.Property(x => x.RecordReferrerCode).HasMaxLength(30).IsRequired();
         builder.Property(x => x.RefEntityCode).HasMaxLength(30);
         builder.Property(x => x.Note).HasMaxLength(500);
 
@@ -27,7 +27,7 @@ public class ReferralEventConfiguration : IEntityTypeConfiguration<ReferralEvent
         builder.HasIndex(x => x.ReferralEventCode).IsUnique();
 
         // Tra cứu thống kê theo mã / theo người được giới thiệu / theo thời gian.
-        builder.HasIndex(x => x.ReferralCode);
+        builder.HasIndex(x => x.RecordReferrerCode);
         builder.HasIndex(x => x.EventType);
         builder.HasIndex(x => x.ReferredUserId);
         builder.HasIndex(x => x.CreatedAt);

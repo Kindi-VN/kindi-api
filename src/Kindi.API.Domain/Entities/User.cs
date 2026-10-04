@@ -32,8 +32,8 @@ public class User : BaseEntity
 	/// Mã chia sẻ của người đã mang tài khoản này tới hệ thống (lấy từ link chia sẻ ?ref=).
 	/// Chỉ ghi nhận LẦN ĐẦU — mở link của CTV khác sau đó không ghi đè.
 	/// </summary>
-	public string? ReferredByCode { get; set; }
+	public string? AccountReferrerCode { get; set; }
 
-	/// <summary>Thời điểm ghi nhận <see cref="ReferredByCode"/>.</summary>
-	public DateTime? ReferredAt { get; set; }
+	/// <summary>Thời điểm ghi nhận <see cref="AccountReferrerCode"/>.</summary>
+	public DateTime? AccountReferrerAt { get; set; }
 }

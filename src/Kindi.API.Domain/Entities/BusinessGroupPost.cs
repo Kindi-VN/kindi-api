@@ -23,7 +23,7 @@ public class BusinessGroupPost : BaseEntity
 	public string? RefCode { get; set; }
 
 	/// <summary>Mã CTV của người chuyển tiếp bản ghi vào nhóm (ghi nhận 1 cấp).</summary>
-	public string? ReferralCode { get; set; }
+	public string? RecordReferrerCode { get; set; }
 
 	/// <summary>Bài chuyển tiếp kèm link chia sẻ để mời thành viên tham gia bản ghi gốc.</summary>
 	public bool WithShareLink { get; set; }

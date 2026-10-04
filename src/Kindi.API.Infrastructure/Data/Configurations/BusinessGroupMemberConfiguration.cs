@@ -19,7 +19,7 @@ public class BusinessGroupMemberConfiguration : IEntityTypeConfiguration<Busines
         builder.Property(x => x.Note)
             .HasMaxLength(1000);
 
-        builder.Property(x => x.ReferralCode)
+        builder.Property(x => x.RecordReferrerCode)
             .HasMaxLength(30);
 
         builder.Property(x => x.RejectionReason)

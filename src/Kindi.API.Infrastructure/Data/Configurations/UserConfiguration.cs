@@ -61,10 +61,10 @@ public class UserConfiguration : IEntityTypeConfiguration<User>
 		builder.Property(x => x.ReferralCode)
 			.HasMaxLength(30);
 
-		builder.Property(x => x.ReferredByCode)
+		builder.Property(x => x.AccountReferrerCode)
 			.HasMaxLength(30);
 
-		builder.HasIndex(x => x.ReferredByCode);
+		builder.HasIndex(x => x.AccountReferrerCode);
 
 		builder.Property(x => x.MustChangeCredentials)
 			.HasDefaultValue(false);

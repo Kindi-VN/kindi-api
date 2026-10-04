@@ -32,7 +32,7 @@ public class PurchaseRequestConfiguration : IEntityTypeConfiguration<PurchaseReq
         builder.Property(x => x.Note)
             .HasMaxLength(500);
 
-        builder.Property(x => x.ReferralCode)
+        builder.Property(x => x.RecordReferrerCode)
             .HasMaxLength(30);
 
         builder.Property(x => x.AdminNote)

@@ -18,7 +18,7 @@ public class GroupBuyingRequestCodeConfiguration : IEntityTypeConfiguration<Grou
         builder.Property(x => x.GroupBuyingRequestCode)
             .HasMaxLength(30);
 
-        builder.Property(x => x.ReferralCode)
+        builder.Property(x => x.RecordReferrerCode)
             .HasMaxLength(30);
 
         builder.HasIndex(x => x.GroupBuyingRequestCode)

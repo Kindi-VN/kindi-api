@@ -108,7 +108,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         entity.Status = GroupBuyingStatus.Pending;
         // Mã chia sẻ của link dùng để tạo yêu cầu: lần đầu thì ghi nhận vào tài khoản,
         // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
-        entity.ReferralCode = await _referralService.ResolveForUserAsync(entity.UserId, request.ReferralCode);
+        entity.RecordReferrerCode = await _referralService.ResolveForUserAsync(entity.UserId, request.RecordReferrerCode);
 
         await _repository.AddAsync(entity);
         await _repository.SaveChangesAsync();
@@ -124,7 +124,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             GroupBuyingRequestId = entity.Id,
             UserId = entity.UserId,
             Note = request.Note,
-            ReferralCode = entity.ReferralCode,
+            RecordReferrerCode = entity.RecordReferrerCode,
             IsCreator = true,
             IsGuestAccount = isGuestAccount,
             Status = GroupBuyingParticipantStatus.Joined
@@ -132,7 +132,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         await _participantRepository.SaveChangesAsync();
 
         // Ghi nhận phát sinh giới thiệu của đơn mua chung (nền cho thống kê + hoa hồng sau này).
-        await _referralService.RecordEventAsync(entity.ReferralCode, entity.UserId, ReferralEventType.GroupBuyingRequest,
+        await _referralService.RecordEventAsync(entity.RecordReferrerCode, entity.UserId, ReferralEventType.GroupBuyingRequest,
             entity.Id, entity.GroupBuyingRequestCode, entity.TargetPrice, isGuestAccount);
 
         var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
@@ -141,8 +141,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Phone = personalInfo?.Phone ?? string.Empty;
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -287,7 +287,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         // Mã chia sẻ của link người này dùng để tham gia: lần đầu thì ghi nhận vào tài khoản,
         // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
-        var referralCode = await _referralService.ResolveForUserAsync(userId, request.ReferralCode);
+        var referralCode = await _referralService.ResolveForUserAsync(userId, request.RecordReferrerCode);
 
         if (participant == null)
         {
@@ -297,7 +297,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 GroupBuyingRequestId = entity.Id,
                 UserId = userId,
                 Note = string.IsNullOrWhiteSpace(request.Note) ? null : request.Note.Trim(),
-                ReferralCode = referralCode,
+                RecordReferrerCode = referralCode,
                 IsCreator = false,
                 IsGuestAccount = isGuestAccount,
                 Status = GroupBuyingParticipantStatus.Joined
@@ -311,7 +311,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             participant.Status = GroupBuyingParticipantStatus.Joined;
             participant.UpdatedAt = DateTime.UtcNow;
             if (!string.IsNullOrWhiteSpace(request.Note)) participant.Note = request.Note.Trim();
-            if (referralCode != null) participant.ReferralCode = referralCode;
+            if (referralCode != null) participant.RecordReferrerCode = referralCode;
             _participantRepository.Update(participant);
         }
 
@@ -411,7 +411,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                (x.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ReferralCode), "%" + searchTerm + "%", "\\")) ||
+                (x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")) ||
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\") ||
                 (x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
                 (x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
@@ -424,8 +424,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             defaultSortBy: "CreatedAt");
 
         var paged = _mapper.MapPagedList<GroupBuyingRequest, GroupBuyingRequestResponseDto>(result);
-        await _referralService.FillNamesAsync(paged.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-        await _referralService.FillNamesAsync(paged.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(paged.Items, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(paged.Items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return paged;
     }
 
@@ -475,8 +475,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Phone = personalInfo?.Phone ?? string.Empty;
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -513,8 +513,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Phone = personalInfo?.Phone ?? string.Empty;
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -586,8 +586,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         dto.Phone = personalInfo?.Phone ?? string.Empty;
         dto.Zalo = personalInfo?.Zalo;
         dto.Email = personalInfo?.Email ?? string.Empty;
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -690,7 +690,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
     private async Task<GroupBuyingDetailDto> MapDetailAsync(GroupBuyingRequest entity, bool forAdmin)
     {
-        // Thông tin người giới thiệu (Users.ReferredByCode) chỉ hiện ở màn quản trị.
+        // Thông tin người giới thiệu (Users.AccountReferrerCode) chỉ hiện ở màn quản trị.
         var maskContact = ShouldMaskContact(forAdmin);
         var me = GetCurrentUserId();
         var joined = entity.Participants
@@ -706,10 +706,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         // Tên CTV của các mã ghi nhận được ở yêu cầu + từng người tham gia (hiển thị ở màn quản trị).
         var referralNames = await _referralService.LoadNamesAsync(
-            entity.Participants.Select(p => p.ReferralCode)
-                .Append(entity.ReferralCode)
-                .Concat(entity.Participants.Select(p => p.User != null ? p.User.ReferredByCode : null))
-                .Append(entity.User != null ? entity.User.ReferredByCode : null));
+            entity.Participants.Select(p => p.RecordReferrerCode)
+                .Append(entity.RecordReferrerCode)
+                .Concat(entity.Participants.Select(p => p.User != null ? p.User.AccountReferrerCode : null))
+                .Append(entity.User != null ? entity.User.AccountReferrerCode : null));
 
         // Chỉ admin xem được liên hệ đầy đủ; người dùng khác (kể cả người mở nhóm) chỉ thấy
         // liên hệ của chính mình để tránh lộ số điện thoại qua tài khoản đăng ký ảo.
@@ -736,13 +736,13 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                     ? MaskEmail(DisplayEmailOf(p.User))
                     : DisplayEmailOf(p.User),
                 Note = p.Note,
-                ReferralCode = p.ReferralCode,
-                ReferralName = p.ReferralCode != null && referralNames.TryGetValue(p.ReferralCode, out var referralName)
+                RecordReferrerCode = p.RecordReferrerCode,
+                RecordReferrerName = p.RecordReferrerCode != null && referralNames.TryGetValue(p.RecordReferrerCode, out var referralName)
                     ? referralName
                     : null,
-                ReferredByCode = forAdmin ? p.User?.ReferredByCode : null,
-                ReferredByName = forAdmin && p.User?.ReferredByCode != null
-                    && referralNames.TryGetValue(p.User.ReferredByCode, out var participantReferredByName)
+                AccountReferrerCode = forAdmin ? p.User?.AccountReferrerCode : null,
+                AccountReferrerName = forAdmin && p.User?.AccountReferrerCode != null
+                    && referralNames.TryGetValue(p.User.AccountReferrerCode, out var participantReferredByName)
                     ? participantReferredByName
                     : null,
                 IsCreator = p.IsCreator,
@@ -782,13 +782,13 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             CreatedAt = entity.CreatedAt,
             ApprovedAt = entity.ApprovedAt,
             ClosedReason = entity.ClosedReason,
-            ReferralCode = entity.ReferralCode,
-            ReferralName = entity.ReferralCode != null && referralNames.TryGetValue(entity.ReferralCode, out var requestReferralName)
+            RecordReferrerCode = entity.RecordReferrerCode,
+            RecordReferrerName = entity.RecordReferrerCode != null && referralNames.TryGetValue(entity.RecordReferrerCode, out var requestReferralName)
                 ? requestReferralName
                 : null,
-            ReferredByCode = forAdmin ? entity.User?.ReferredByCode : null,
-            ReferredByName = forAdmin && entity.User?.ReferredByCode != null
-                && referralNames.TryGetValue(entity.User.ReferredByCode, out var creatorReferredByName)
+            AccountReferrerCode = forAdmin ? entity.User?.AccountReferrerCode : null,
+            AccountReferrerName = forAdmin && entity.User?.AccountReferrerCode != null
+                && referralNames.TryGetValue(entity.User.AccountReferrerCode, out var creatorReferredByName)
                 ? creatorReferredByName
                 : null,
             CreatorName = entity.User?.FullName ?? string.Empty,

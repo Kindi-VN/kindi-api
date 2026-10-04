@@ -75,7 +75,7 @@ public class ReferralEventService : IReferralEventService
         var (from, to) = Range(query.From, query.To);
 
         var paged = await _queryService.GetAllNoTracking<ReferralEvent>()
-            .Where(e => e.ReferralCode == code)
+            .Where(e => e.RecordReferrerCode == code)
             .Where(e => e.CreatedAt >= from && e.CreatedAt <= to)
             .WhereIf(query.EventType.HasValue, e => e.EventType == query.EventType!.Value)
             .OrderByDescending(e => e.CreatedAt)
@@ -85,7 +85,7 @@ public class ReferralEventService : IReferralEventService
         {
             Id = e.Id,
             ReferralEventCode = e.ReferralEventCode,
-            ReferralCode = e.ReferralCode,
+            RecordReferrerCode = e.RecordReferrerCode,
             ReferredUserId = e.ReferredUserId,
             EventType = e.EventType,
             RefEntityId = e.RefEntityId,
@@ -144,11 +144,11 @@ public class ReferralEventService : IReferralEventService
 
         var items = await _queryService.GetAllNoTracking<ReferralEvent>()
             .Where(e => e.CreatedAt >= from && e.CreatedAt <= to)
-            .WhereIf(!string.IsNullOrWhiteSpace(onlyCode), e => e.ReferralCode == onlyCode)
-            .GroupBy(e => e.ReferralCode)
+            .WhereIf(!string.IsNullOrWhiteSpace(onlyCode), e => e.RecordReferrerCode == onlyCode)
+            .GroupBy(e => e.RecordReferrerCode)
             .Select(g => new ReferralStatsItemDto
             {
-                ReferralCode = g.Key,
+                RecordReferrerCode = g.Key,
                 // Đếm theo NGƯỜI được giới thiệu, không đếm theo lượt và không tính tài khoản khách.
                 // Phát sinh đã huỷ/bị từ chối bị loại khỏi mọi cột — huỷ thì trừ ra, tham gia lại thì tính lại.
                 ReferredUsers = g
@@ -178,9 +178,9 @@ public class ReferralEventService : IReferralEventService
             .ToListAsync();
 
         // Tên chủ mã (CTV hoặc tài khoản) — tra theo mã.
-        var names = await _referralService.LoadNamesAsync(items.Select(i => i.ReferralCode));
+        var names = await _referralService.LoadNamesAsync(items.Select(i => i.RecordReferrerCode));
         foreach (var item in items)
-            if (names.TryGetValue(item.ReferralCode, out var name))
+            if (names.TryGetValue(item.RecordReferrerCode, out var name))
                 item.ReferrerName = name;
 
         // Tìm theo mã hoặc tên chủ mã: số mã chia sẻ phát sinh trong một khoảng là nhỏ nên lọc ở bộ nhớ.
@@ -189,14 +189,14 @@ public class ReferralEventService : IReferralEventService
         {
             var keyword = search.ToLowerInvariant();
             items = items
-                .Where(i => i.ReferralCode.ToLowerInvariant().Contains(keyword)
+                .Where(i => i.RecordReferrerCode.ToLowerInvariant().Contains(keyword)
                     || (i.ReferrerName ?? string.Empty).ToLowerInvariant().Contains(keyword))
                 .ToList();
         }
 
         return items
             .OrderByDescending(i => i.TotalEvents)
-            .ThenBy(i => i.ReferralCode)
+            .ThenBy(i => i.RecordReferrerCode)
             .ToList();
     }
 
@@ -226,7 +226,7 @@ public class ReferralEventService : IReferralEventService
     {
         var stamps = await _queryService.GetAllNoTracking<ReferralEvent>()
             .Where(e => e.CreatedAt >= from && e.CreatedAt <= to)
-            .WhereIf(!string.IsNullOrWhiteSpace(onlyCode), e => e.ReferralCode == onlyCode)
+            .WhereIf(!string.IsNullOrWhiteSpace(onlyCode), e => e.RecordReferrerCode == onlyCode)
             .Select(e => e.CreatedAt)
             .ToListAsync();
 

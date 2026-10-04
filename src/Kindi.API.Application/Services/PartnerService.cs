@@ -87,7 +87,7 @@ public class PartnerService : IPartnerService
         // Mã không nhận diện được (link cũ/sai) thì bỏ qua, không chặn đăng ký.
         // Mã đã chuẩn hoá (nếu nhận diện được) là mã DUY NHẤT được lưu vào hồ sơ đối tác và dùng
         // cho phát sinh giới thiệu — mã lạ không được ghi lại ở đâu cả.
-        string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
+        string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.RecordReferrerCode);
 
         // 2. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
@@ -265,7 +265,7 @@ public class PartnerService : IPartnerService
         }
 
         var pagedResult = _mapper.MapPagedList<Partner, PartnerResponseDto>(result);
-        await _referralService.FillNamesAsync(pagedResult.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(pagedResult.Items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return pagedResult;
     }
 
@@ -296,7 +296,7 @@ public class PartnerService : IPartnerService
         }
 
         var detail = _mapper.Map<PartnerDetailResponseDto>(entity);
-        await _referralService.FillNamesAsync(new[] { detail }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { detail }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return detail;
     }
 

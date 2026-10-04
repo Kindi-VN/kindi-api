@@ -60,6 +60,10 @@ public class PurchaseRequestsController : ApiControllerBase
 	/// <summary>
 	/// Lấy danh sách yêu cầu mua (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình)
 	/// </summary>
+	/// <remarks>
+	/// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+	/// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
+	/// </remarks>
 	[Authorize]
 	[HttpGet]
 	public async Task<IActionResult> GetListAsync([FromQuery] PurchaseRequestQueryDto query)

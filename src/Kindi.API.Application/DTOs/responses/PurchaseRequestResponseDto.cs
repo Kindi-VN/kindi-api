@@ -23,15 +23,15 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
     public string? Note { get; set; }
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
-    public string? ReferralCode { get; set; }
+    public string? RecordReferrerCode { get; set; }
 
     /// <summary>Tên chủ thể của mã chia sẻ (CTV hoặc tài khoản) — hiển thị ở màn quản trị.</summary>
-    public string? ReferralName { get; set; }
+    public string? RecordReferrerName { get; set; }
 
     /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
-    public string? ReferredByCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
-    public string? ReferredByName { get; set; }
+    public string? AccountReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="AccountReferrerCode"/>.</summary>
+    public string? AccountReferrerName { get; set; }
     public PurchaseRequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 
@@ -43,7 +43,7 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
             .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.User != null ? src.User.Phone : string.Empty))
             .ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null))
-            .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+            .ForMember(dest => dest.AccountReferrerCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
     }
 }

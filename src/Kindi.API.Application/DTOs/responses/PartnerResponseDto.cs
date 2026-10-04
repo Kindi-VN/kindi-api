@@ -29,9 +29,9 @@ public class PartnerResponseDto : IMapFrom<Partner>
     public string? ReferralCode { get; set; }
 
     /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
-    public string? ReferredByCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
-    public string? ReferredByName { get; set; }
+    public string? AccountReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="AccountReferrerCode"/>.</summary>
+    public string? AccountReferrerName { get; set; }
     public string? Note { get; set; }
     public PartnerStatus Status { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -56,7 +56,7 @@ public class PartnerResponseDto : IMapFrom<Partner>
             .ForMember(dest => dest.CompanyTax, opt => opt.MapFrom(src => src.Company != null ? src.Company.TaxCode : src.CompanyTax))
             .ForMember(dest => dest.CompanyAddress, opt => opt.MapFrom(src => src.Company != null ? src.Company.Address : src.CompanyAddress))
             .ForMember(dest => dest.CompanyWebsite, opt => opt.MapFrom(src => src.Company != null ? src.Company.Website : src.CompanyWebsite))
-            .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+            .ForMember(dest => dest.AccountReferrerCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
     }
 }

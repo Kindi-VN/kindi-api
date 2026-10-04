@@ -17,7 +17,7 @@ public class BusinessGroupMember : BaseEntity
 	public string? Note { get; set; }
 
 	/// <summary>Mã CTV của link mà người này dùng để xin vào nhóm (ghi nhận 1 cấp).</summary>
-	public string? ReferralCode { get; set; }
+	public string? RecordReferrerCode { get; set; }
 
 	public GroupMemberRole Role { get; set; } = GroupMemberRole.Member;
 	public GroupMemberStatus Status { get; set; } = GroupMemberStatus.Pending;

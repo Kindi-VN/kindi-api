@@ -144,8 +144,8 @@ public class BusinessGroupService : IBusinessGroupService
         var members = await membersQuery.Take(20).ToListAsync();
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
 
         if (isAdmin)
         {
@@ -202,7 +202,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         // Mã chia sẻ của link người này dùng để xin vào nhóm: lần đầu thì ghi nhận vào tài khoản,
         // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
-        var referralCode = await _referralService.ResolveForUserAsync(userId, request.ReferralCode);
+        var referralCode = await _referralService.ResolveForUserAsync(userId, request.RecordReferrerCode);
 
         // Thành viên đã có bản ghi trong nhóm → tái kích hoạt thay vì tạo trùng (unique index GroupId+UserId)
         var member = await _memberRepository.GetFirstAsync(m =>
@@ -217,7 +217,7 @@ public class BusinessGroupService : IBusinessGroupService
 
             member.Status = memberStatus;
             member.Note = request.Note?.Trim();
-            if (referralCode != null) member.ReferralCode = referralCode;
+            if (referralCode != null) member.RecordReferrerCode = referralCode;
             member.JoinedAt = memberStatus == GroupMemberStatus.Active ? DateTime.UtcNow : null;
             member.RejectionReason = null;
             _memberRepository.Update(member);
@@ -230,7 +230,7 @@ public class BusinessGroupService : IBusinessGroupService
                 BusinessGroupId = id,
                 UserId = userId,
                 Note = request.Note?.Trim(),
-                ReferralCode = referralCode,
+                RecordReferrerCode = referralCode,
                 Role = GroupMemberRole.Member,
                 Status = memberStatus,
                 IsGuestAccount = isGuestAccount,
@@ -353,7 +353,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
-        await _referralService.FillNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
+        await _referralService.FillNamesAsync(result.Items, p => p.RecordReferrerCode, (p, name) => p.RecordReferrerName = name);
         return result;
     }
 
@@ -405,7 +405,7 @@ public class BusinessGroupService : IBusinessGroupService
         var isSharedPost = post.RefId.HasValue && !string.IsNullOrWhiteSpace(post.RefCode);
         if (isSharedPost)
         {
-            post.ReferralCode = await _referralService.GetSharerReferralCodeAsync();
+            post.RecordReferrerCode = await _referralService.GetSharerReferralCodeAsync();
             post.WithShareLink = request.WithShareLink;
         }
 
@@ -811,8 +811,8 @@ public class BusinessGroupService : IBusinessGroupService
 
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         detail.PendingMembersCount = members.Count(m => m.Status == GroupMemberStatus.Pending);
         detail.PrivateRequestsCount = await _queryService.GetAllNoTracking<BusinessGroupPost>()
             .CountAsync(x => x.BusinessGroupId == id && x.IsPrivateToAdmin && !x.IsHidden);
@@ -923,8 +923,8 @@ public class BusinessGroupService : IBusinessGroupService
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
         for (var i = 0; i < result.Items.Count; i++) FillMemberPersonalInfo(paged.Items[i], result.Items[i]);
-        await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(result.Items, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         return result;
     }
 
@@ -967,8 +967,8 @@ public class BusinessGroupService : IBusinessGroupService
         member.User = (await _userService.FindByIdAsync(member.UserId))!;
         var dto = _mapper.Map<BusinessGroupMemberResponseDto>(member);
         FillMemberPersonalInfo(member, dto);
-        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         return dto;
     }
 
@@ -1019,7 +1019,7 @@ public class BusinessGroupService : IBusinessGroupService
         dto.Zalo = member.User?.Zalo;
         dto.Email = UserInfo.DisplayEmail(member.User?.Email, member.User?.Phone);
         // Người giới thiệu thành viên này (ghi nhận trên tài khoản) — chỉ hiển thị ở màn quản trị.
-        dto.ReferredByCode = member.User?.ReferredByCode;
+        dto.AccountReferrerCode = member.User?.AccountReferrerCode;
     }
 
     private async Task<BusinessGroupMember?> GetMembershipAsync(Guid groupId, Guid userId)

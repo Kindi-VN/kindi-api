@@ -125,15 +125,11 @@ public class PurchaseRequestService : IPurchaseRequestService
 			.Include(x => x.User)
 			.WhereIf(onlyMine, x => x.UserId == mineId)
 			.WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
-			.WhereIf(!string.IsNullOrEmpty(search), x =>
-				(x.PurchaseRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PurchaseRequestCode), "%" + searchTerm + "%", "\\")) ||
-				EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-				(x.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ReferralCode), "%" + searchTerm + "%", "\\")) ||
-				(x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
-				(x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
-				(x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
 			.WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
 			.WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
+
+		// searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
+		q = RequestSearchFilters.ApplyPurchase(q, searchTerm, query.SearchField);
 
 		var pagedEntities = await q.ToPagedListAsync(
 			query.Page,
@@ -144,8 +140,8 @@ public class PurchaseRequestService : IPurchaseRequestService
 		);
 
 		var result = _mapper.MapPagedList<PurchaseRequest, PurchaseRequestResponseDto>(pagedEntities);
-		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-		await _referralService.FillNamesAsync(result.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
 		return result;
 	}
 

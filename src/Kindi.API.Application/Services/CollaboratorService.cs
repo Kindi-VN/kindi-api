@@ -196,13 +196,13 @@ public class CollaboratorService : ICollaboratorService
 
         //  Mã chia sẻ trên link (?ref=) → ghi nhận người giới thiệu cho tài khoản đăng ký (chỉ ghi lần đầu,
         //  mã không nhận diện được thì bỏ qua, không chặn đăng ký). Mã chia sẻ của chính CTV vẫn là mã CTV.
-        await _referralService.ResolveForUserAsync(collaborator.UserId, request.ReferredByCode);
+        await _referralService.ResolveForUserAsync(collaborator.UserId, request.AccountReferrerCode);
 
         // Nạp tài khoản vào navigation để response trả họ tên/SĐT/email/Zalo (dữ liệu ở bảng Users).
         collaborator.User = await _userService.FindByIdAsync(collaborator.UserId) ?? collaborator.User;
 
         var response = _mapper.Map<CollaboratorResponseDto>(collaborator);
-        await _referralService.FillNamesAsync(new[] { response }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { response }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
 
         if (isPublicRegistration)
         {
@@ -353,7 +353,7 @@ public class CollaboratorService : ICollaboratorService
             q => q.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company));
 
         var dto = _mapper.Map<CollaboratorResponseDto>(updated ?? collaborator);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -367,7 +367,7 @@ public class CollaboratorService : ICollaboratorService
             throw new AppException(CollaboratorError.NotFound.WithParams(id));
 
         var dto = _mapper.Map<CollaboratorResponseDto>(collaborator);
-        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
         return dto;
     }
 
@@ -435,7 +435,7 @@ public class CollaboratorService : ICollaboratorService
         }
 
         var items = _mapper.Map<List<CollaboratorResponseDto>>(paged.Items);
-        await _referralService.FillNamesAsync(items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
 
         return new PagedList<CollaboratorResponseDto>(
             items,
@@ -465,7 +465,7 @@ public class CollaboratorService : ICollaboratorService
         var paged = await PagedList<Collaborator>.CreateAsync(query, page, size);
 
         var items = _mapper.Map<List<CollaboratorResponseDto>>(paged.Items);
-        await _referralService.FillNamesAsync(items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        await _referralService.FillNamesAsync(items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
 
         return new PagedList<CollaboratorResponseDto>(
             items,

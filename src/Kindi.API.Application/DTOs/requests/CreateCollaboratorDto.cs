@@ -40,7 +40,7 @@ public class CreateCollaboratorDto : IMapFrom<Collaborator>
     /// Mã chia sẻ trên link (?ref=) — mã của người giới thiệu tài khoản đăng ký.
     /// Không phải mã chia sẻ của hồ sơ CTV (mã đó lấy theo CollaboratorCode).
     /// </summary>
-    public string? ReferredByCode { get; set; }
+    public string? AccountReferrerCode { get; set; }
 
     public void Mapping(Profile profile)
       => profile.CreateMap<CreateCollaboratorDto, Collaborator>()

@@ -8,6 +8,13 @@ public class PurchaseRequestQueryDto
 	public int PageSize { get; set; } = 20;
 	public PurchaseRequestStatus? Status { get; set; }
 	public string? Search { get; set; }
+
+	/// <summary>
+	/// Chỉ tìm theo đúng một trường (không OR lan sang trường khác); bỏ trống = tìm mọi trường như trước.
+	/// Giá trị hợp lệ: productName, code, recordReferrerCode, customerName, customerPhone, customerEmail.
+	/// </summary>
+	public RequestSearchField? SearchField { get; set; }
+
 	public string? SortBy { get; set; }    // VD: "CreatedAt"
 	public string? SortOrder { get; set; } // "asc" | "desc"
 	public DateTime? FromDate { get; set; }
