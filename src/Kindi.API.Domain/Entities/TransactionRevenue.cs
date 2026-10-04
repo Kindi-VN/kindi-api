@@ -57,4 +57,7 @@ public class TransactionRevenue : BaseEntity
 
     /// <summary>Hoa hồng chia cho từng bên trong giao dịch này.</summary>
     public ICollection<TransactionCommission> Commissions { get; set; } = new List<TransactionCommission>();
+
+    /// <summary>Các dòng chi phí phát sinh của giao dịch; tổng các dòng là <see cref="ExtraCost"/>.</summary>
+    public ICollection<TransactionExpense> Expenses { get; set; } = new List<TransactionExpense>();
 }

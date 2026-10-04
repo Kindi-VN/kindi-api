@@ -64,6 +64,7 @@ public static class DependencyInjection
         services.AddScoped<IPayoutService, PayoutService>();
         services.AddScoped<ISystemSettingService, SystemSettingService>();
         services.AddScoped<ITransactionRevenueService, TransactionRevenueService>();
+        services.AddScoped<IRevenueExpenseTypeService, RevenueExpenseTypeService>();
         services.AddScoped<ISocialInteractionService, SocialInteractionService>();
         services.AddScoped<IBusinessFieldService, BusinessFieldService>();
         services.AddScoped<IBusinessGroupService, BusinessGroupService>();

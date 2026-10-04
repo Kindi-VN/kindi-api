@@ -55,6 +55,9 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<PayoutPeriod> PayoutPeriods { get; set; }
     public DbSet<PayoutStatement> PayoutStatements { get; set; }
     public DbSet<SystemSetting> SystemSettings { get; set; }
+    public DbSet<RevenueExpenseType> RevenueExpenseTypes { get; set; }
+    public DbSet<RevenueExpenseTypeScope> RevenueExpenseTypeScopes { get; set; }
+    public DbSet<TransactionExpense> TransactionExpenses { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

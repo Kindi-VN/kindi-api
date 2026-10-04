@@ -15,6 +15,16 @@ public class TransactionCommissionRequest
     public decimal RatePercent { get; set; }
 }
 
+/// <summary>Một dòng chi phí phát sinh trong bản khai doanh thu.</summary>
+public class TransactionExpenseRequest
+{
+    /// <summary>Tên chi phí.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Số tiền chi phí.</summary>
+    public decimal Amount { get; set; }
+}
+
 /// <summary>Khai doanh thu cho một giao dịch.</summary>
 public class SaveTransactionRevenueRequest
 {
@@ -36,11 +46,14 @@ public class SaveTransactionRevenueRequest
     /// <summary>Tỷ lệ thuế (%); bỏ trống thì lấy theo cài đặt chung.</summary>
     public decimal? TaxPercent { get; set; }
 
-    /// <summary>Chi phí phát sinh ngoài thuế và hoa hồng.</summary>
+    /// <summary>Chi phí phát sinh; giữ lại để tương thích client cũ, không còn dùng — chi phí lấy từ <see cref="Expenses"/>.</summary>
     public decimal ExtraCost { get; set; }
 
-    /// <summary>Ghi chú cho chi phí phát sinh.</summary>
+    /// <summary>Ghi chú cho chi phí phát sinh; giữ lại để tương thích client cũ, không còn dùng.</summary>
     public string? ExtraCostNote { get; set; }
+
+    /// <summary>Các dòng chi phí phát sinh; chi phí phát sinh của bản khai bằng tổng các dòng này.</summary>
+    public List<TransactionExpenseRequest> Expenses { get; set; } = new();
 
     /// <summary>Hoa hồng từng bên nhận.</summary>
     public List<TransactionCommissionRequest> Commissions { get; set; } = new();
