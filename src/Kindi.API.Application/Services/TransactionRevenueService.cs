@@ -371,8 +371,9 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
         }
 
         await _expenseRepository.AddRangeAsync(rows, cancellationToken);
-        foreach (var row in rows)
-            entity.Expenses.Add(row);
+
+        // AddRangeAsync đã tự gắn các dòng mới vào navigation của bản khai, thêm lại ở đây sẽ khiến
+        // danh sách chi phí trong kết quả trả về bị nhân đôi.
     }
 
     private static TransactionRevenueResponse Map(TransactionRevenue entity) => new()
