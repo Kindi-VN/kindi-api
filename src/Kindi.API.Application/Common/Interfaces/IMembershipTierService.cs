@@ -15,6 +15,12 @@ public interface IMembershipTierService
     /// <summary>Xoá một hạng thành viên.</summary>
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Danh sách hạng thành viên đã xoá mềm (bỏ qua global soft-delete filter).</summary>
+    Task<List<MembershipTierResponse>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Khôi phục một hạng thành viên đã xoá mềm.</summary>
+    Task<MembershipTierResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Xét lại hạng thành viên theo doanh số tích luỹ; trả về số tài khoản đã xét.</summary>
     Task<int> EvaluateAsync(EvaluateMembershipRequest request, CancellationToken cancellationToken = default);
 

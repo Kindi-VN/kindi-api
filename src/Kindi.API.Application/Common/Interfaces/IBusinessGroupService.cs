@@ -24,6 +24,9 @@ public interface IBusinessGroupService
     Task<BusinessGroupPostResponseDto> CreatePostAsync(Guid groupId, CreateBusinessGroupPostDto request);
     Task DeletePostAsync(Guid groupId, Guid postId);
 
+    /// <summary>Admin khôi phục một bài đăng trong nhóm đã xoá mềm.</summary>
+    Task<BusinessGroupPostResponseDto> RestorePostAsync(Guid groupId, Guid postId);
+
     Task<PagedList<BusinessGroupCommentResponseDto>> GetCommentsAsync(Guid postId, GroupCommentQueryDto query);
     Task<BusinessGroupCommentResponseDto> CreateCommentAsync(Guid postId, CreateBusinessGroupCommentDto request);
     Task DeleteCommentAsync(Guid postId, Guid commentId);
@@ -34,6 +37,9 @@ public interface IBusinessGroupService
     Task<BusinessGroupResponseDto> CreateAsync(CreateBusinessGroupDto request);
     Task<BusinessGroupResponseDto> UpdateAsync(Guid id, UpdateBusinessGroupDto request);
     Task DeleteAsync(Guid id);
+
+    /// <summary>Admin khôi phục một nhóm đã xoá mềm.</summary>
+    Task<BusinessGroupResponseDto> RestoreAsync(Guid id);
 
     Task<PagedList<BusinessGroupMemberResponseDto>> GetMembersAsync(Guid id, BusinessGroupMemberQueryDto query);
     Task<BusinessGroupMemberResponseDto> UpdateMemberStatusAsync(Guid id, Guid memberId, UpdateGroupMemberStatusDto request);

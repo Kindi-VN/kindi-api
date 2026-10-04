@@ -45,4 +45,7 @@ public interface IGroupBuyingRequestService
 
 	/// <summary>Admin hủy yêu cầu mua chung (xóa mềm).</summary>
 	Task DeleteAsync(Guid id);
+
+	/// <summary>Admin khôi phục yêu cầu mua chung đã xoá mềm.</summary>
+	Task<GroupBuyingRequestResponseDto> RestoreAsync(Guid id);
 }

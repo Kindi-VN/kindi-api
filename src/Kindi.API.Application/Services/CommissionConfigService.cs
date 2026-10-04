@@ -47,8 +47,10 @@ public sealed class CommissionConfigService : ICommissionConfigService
     /// <inheritdoc />
     public async Task<PagedList<CommissionConfigResponse>> GetPagedAsync(CommissionConfigQueryDto query, CancellationToken cancellationToken = default)
     {
-        var configs = _queryService.GetAllNoTracking<CommissionConfig>()
-            .Where(x => !x.IsDeleted);
+        // Tab "Đã xoá": bỏ global soft-delete filter để lấy các cấu hình đã xoá mềm.
+        var configs = query.IsDeleted == true
+            ? _queryService.GetQueryable<CommissionConfig>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
+            : _queryService.GetAllNoTracking<CommissionConfig>();
 
         if (query.Beneficiary.HasValue)
             configs = configs.Where(x => x.Beneficiary == query.Beneficiary.Value);
@@ -188,6 +190,29 @@ public sealed class CommissionConfigService : ICommissionConfigService
 
         _configRepository.Update(config);
         await _configRepository.SaveChangesAsync(cancellationToken);
+    }
+
+    /// <inheritdoc />
+    public async Task<CommissionConfigResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // Bỏ global filter để tìm cấu hình đã xoá (kèm các bậc bị xoá cùng) rồi khôi phục cả cụm.
+        var config = await _configRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .Include(x => x.Tiers)
+            .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+        if (config == null || !config.IsDeleted)
+            throw new NotFoundException(_localizer["Commission_NotFound"]);
+
+        config.IsDeleted = false;
+        foreach (var tier in config.Tiers.Where(x => x.IsDeleted))
+            tier.IsDeleted = false;
+
+        _configRepository.Update(config);
+        await _configRepository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Đã khôi phục cấu hình hoa hồng {Beneficiary}", config.Beneficiary);
+
+        return Map(config);
     }
 
     /// <inheritdoc />

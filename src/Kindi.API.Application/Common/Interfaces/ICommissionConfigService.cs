@@ -21,6 +21,9 @@ public interface ICommissionConfigService
     /// <summary>Xoá một cấu hình hoa hồng.</summary>
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Khôi phục một cấu hình hoa hồng đã xoá mềm (kèm các bậc của nó).</summary>
+    Task<CommissionConfigResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Mức hoa hồng đang áp cho chính người gọi, theo từng bên nhận.</summary>
     Task<MyCommissionResponse> GetMineAsync(CancellationToken cancellationToken = default);
 

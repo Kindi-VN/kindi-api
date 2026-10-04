@@ -331,7 +331,14 @@ public class BusinessGroupService : IBusinessGroupService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
-        var q = _queryService.GetAllNoTracking<BusinessGroupPost>()
+        // Tab "Đã xoá" (chỉ admin): bỏ global soft-delete filter để lấy các bài đã xoá mềm.
+        var onlyDeleted = query.IsDeleted == true;
+        if (onlyDeleted && !isAdmin)
+            throw new ForbiddenException(_localizer["BusinessGroup_AdminOnly"]);
+
+        var q = (onlyDeleted
+                ? _queryService.GetQueryable<BusinessGroupPost>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
+                : _queryService.GetAllNoTracking<BusinessGroupPost>())
             .Where(x => x.BusinessGroupId == groupId)
             .WhereIf(!isAdmin, x => !x.IsHidden && !x.IsPrivateToAdmin)
             .WhereIf(query.PrivateOnly, x => x.IsPrivateToAdmin)
@@ -500,6 +507,38 @@ public class BusinessGroupService : IBusinessGroupService
         }
     }
 
+    /// <summary>Admin khôi phục một bài đăng trong nhóm đã xoá mềm.</summary>
+    public async Task<BusinessGroupPostResponseDto> RestorePostAsync(Guid groupId, Guid postId)
+    {
+        // Bỏ global soft-delete filter để tìm được bài đã xoá; chỉ khôi phục bài thuộc đúng nhóm.
+        var post = await _postRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .Where(p => p.Id == postId && p.BusinessGroupId == groupId && p.IsDeleted)
+            .Include(p => p.Author)
+            .FirstOrDefaultAsync()
+            ?? throw new NotFoundException(_localizer["BusinessGroup_PostNotFound"]);
+
+        post.IsDeleted = false;
+        post.UpdatedAt = DateTime.UtcNow;
+        _postRepository.Update(post);
+        await _postRepository.SaveChangesAsync();
+
+        // Đồng bộ lại số bài của nhóm (chỉ đếm bài chưa xoá).
+        var group = await _repository.GetByIdAsync(groupId);
+        if (group != null)
+        {
+            group.PostsCount = await _queryService.GetAllNoTracking<BusinessGroupPost>()
+                .CountAsync(x => x.BusinessGroupId == groupId);
+            _repository.Update(group);
+            await _repository.SaveChangesAsync();
+        }
+
+        if (post.Author == null)
+            post.Author = (await _userService.FindByIdAsync(post.AuthorId))!;
+
+        return _mapper.Map<BusinessGroupPostResponseDto>(post);
+    }
+
     public async Task<PagedList<BusinessGroupCommentResponseDto>> GetCommentsAsync(Guid postId, GroupCommentQueryDto query)
     {
         var me = GetCurrentUserId();
@@ -556,7 +595,8 @@ public class BusinessGroupService : IBusinessGroupService
         if (!isAdmin && comment.UserId != me)
             throw new ForbiddenException(_localizer["BusinessGroup_DeleteCommentForbidden"]);
 
-        comment.IsHidden = true;
+        // Xoá mềm: đánh dấu IsDeleted để global query filter ẩn bình luận ở mọi truy vấn đọc.
+        comment.IsDeleted = true;
         _commentRepository.Update(comment);
         await _commentRepository.SaveChangesAsync();
 
@@ -723,7 +763,10 @@ public class BusinessGroupService : IBusinessGroupService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
-        var q = _queryService.GetAllNoTracking<BusinessGroup>()
+        // Tab "Đã xoá": bỏ global soft-delete filter để lấy các nhóm đã xoá mềm.
+        var q = (query.IsDeleted == true
+                ? _queryService.GetQueryable<BusinessGroup>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
+                : _queryService.GetAllNoTracking<BusinessGroup>())
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(query.ApprovalStatus.HasValue, x => x.ApprovalStatus == query.ApprovalStatus!.Value)
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
@@ -830,6 +873,28 @@ public class BusinessGroupService : IBusinessGroupService
         group.IsDeleted = true;
         _repository.Update(group);
         await _repository.SaveChangesAsync();
+    }
+
+    /// <summary>Admin khôi phục một nhóm đã xoá mềm.</summary>
+    public async Task<BusinessGroupResponseDto> RestoreAsync(Guid id)
+    {
+        // Bỏ global soft-delete filter để tìm được nhóm đã xoá; chỉ khôi phục bản ghi đang ở trạng thái xoá.
+        var group = await _queryService.GetQueryable<BusinessGroup>()
+            .IgnoreQueryFilters()
+            .Include(x => x.BusinessField)
+            .FirstOrDefaultAsync(x => x.Id == id);
+
+        if (group == null || !group.IsDeleted)
+            throw new NotFoundException(_localizer["BusinessGroup_NotFound"]);
+
+        group.IsDeleted = false;
+        group.UpdatedAt = DateTime.UtcNow;
+        _repository.Update(group);
+        await _repository.SaveChangesAsync();
+
+        var dto = _mapper.Map<BusinessGroupResponseDto>(group);
+        dto.BusinessFieldName = await ResolveBusinessFieldNameAsync(group);
+        return dto;
     }
 
     public async Task<PagedList<BusinessGroupMemberResponseDto>> GetMembersAsync(Guid id, BusinessGroupMemberQueryDto query)

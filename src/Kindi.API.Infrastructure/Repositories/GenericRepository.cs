@@ -133,7 +133,9 @@ public class GenericRepository<T> : IRepository<T> where T : class
     {
         if (typeof(BaseEntity).IsAssignableFrom(typeof(T)))
         {
+            // Bỏ global soft-delete filter, nếu không điều kiện IsDeleted = true sẽ không bao giờ khớp.
             return await _dbSet
+                .IgnoreQueryFilters()
                 .Where(e => ((BaseEntity)(object)e).IsDeleted)
                 .ToListAsync(cancellationToken);
         }

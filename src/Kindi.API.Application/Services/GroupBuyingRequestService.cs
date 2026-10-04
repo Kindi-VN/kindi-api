@@ -399,8 +399,13 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         var hasStatusFilter = !string.IsNullOrEmpty(normalizedStatus)
             && Enum.TryParse(normalizedStatus, true, out statusFilter);
 
+        // Tab "Đã xoá" (chỉ admin): bỏ global soft-delete filter để lấy các yêu cầu đã xoá mềm.
+        var onlyDeleted = query.IsDeleted == true && isAdmin;
+
         // Lọc trước rồi mới include
-        var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
+        var q = (onlyDeleted
+                ? _queryService.GetQueryable<GroupBuyingRequest>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
+                : _queryService.GetQueryableNoTracking<GroupBuyingRequest>())
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
@@ -552,6 +557,38 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
 
         await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingRequest, entity.Id, ReferralEventStatus.Cancelled);
         await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingJoin, participantIds, ReferralEventStatus.Cancelled);
+    }
+
+    public async Task<GroupBuyingRequestResponseDto> RestoreAsync(Guid id)
+    {
+        // Bỏ global filter để tìm yêu cầu đã xoá mềm.
+        var entity = await _repository.GetByIdIncludingDeletedAsync(id)
+            ?? throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
+
+        if (!entity.IsDeleted)
+            throw new NotFoundException(_localizer["GroupBuyingRequest_NotFound"]);
+
+        _repository.Restore(entity);
+        await _repository.SaveChangesAsync();
+
+        // Khôi phục yêu cầu → tính lại phát sinh giới thiệu của đơn và của những người đã tham gia.
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingRequest, entity.Id, ReferralEventStatus.Pending);
+
+        var participantIds = (await _queryService.GetListAsync<GroupBuyingParticipant>(p => p.GroupBuyingRequestId == id))
+            .Select(p => p.Id)
+            .ToList();
+
+        await _referralService.SetEventStatusAsync(ReferralEventType.GroupBuyingJoin, participantIds, ReferralEventStatus.Pending);
+
+        var dto = _mapper.Map<GroupBuyingRequestResponseDto>(entity);
+        var personalInfo = await _userService.GetPersonalInfoAsync(entity.UserId);
+        dto.FullName = personalInfo?.FullName ?? string.Empty;
+        dto.Phone = personalInfo?.Phone ?? string.Empty;
+        dto.Zalo = personalInfo?.Zalo;
+        dto.Email = personalInfo?.Email ?? string.Empty;
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferralCode, (x, name) => x.ReferralName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+        return dto;
     }
 
     // =====================================================================

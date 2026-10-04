@@ -23,6 +23,12 @@ public interface IRevenueExpenseTypeService
     /// <summary>Xoá một loại chi phí cùng các scope của nó.</summary>
     Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
 
+    /// <summary>Danh sách loại chi phí đã xoá mềm (bỏ qua global soft-delete filter).</summary>
+    Task<List<RevenueExpenseTypeResponse>> GetDeletedAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>Khôi phục một loại chi phí đã xoá mềm (kèm các scope của nó).</summary>
+    Task<RevenueExpenseTypeResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default);
+
     /// <summary>Đặt lại scope của một nhóm loại chi phí đúng bằng danh sách loại giao dịch truyền vào.</summary>
     Task AssignAsync(AssignRevenueExpenseTypeScopesRequest request, CancellationToken cancellationToken = default);
 
