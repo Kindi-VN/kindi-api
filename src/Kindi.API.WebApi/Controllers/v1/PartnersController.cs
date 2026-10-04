@@ -181,7 +181,7 @@ public class PartnersController : ApiControllerBase
     /// Khôi phục đối tác đã xóa
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.DeletePartner)]
+    [HasPermission(PermissionCode.RestorePartner, PermissionCode.DeletePartner)]
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {
@@ -232,7 +232,7 @@ public class PartnersController : ApiControllerBase
     /// Xóa mềm sản phẩm/dịch vụ của đối tác
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.ManagePartnerProducts)]
+    [HasPermission(PermissionCode.DeletePartnerProduct, PermissionCode.ManagePartnerProducts)]
     [HttpDelete("{id}/products/{productId}")]
     public async Task<IActionResult> DeleteProduct(Guid id, Guid productId)
     {

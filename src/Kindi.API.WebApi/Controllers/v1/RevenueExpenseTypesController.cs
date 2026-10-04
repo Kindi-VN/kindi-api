@@ -32,7 +32,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Toàn bộ loại chi phí kèm các loại giao dịch được gắn.</summary>
     [HttpGet]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.ViewRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> GetAll()
     {
         var result = await _expenseTypeService.GetAllAsync();
@@ -41,7 +41,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Tạo một loại chi phí mới.</summary>
     [HttpPost]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.UpdateRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> Create([FromBody] SaveRevenueExpenseTypeRequest request)
     {
         var result = await _expenseTypeService.CreateAsync(request);
@@ -50,7 +50,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Cập nhật một loại chi phí và thay toàn bộ scope của nó.</summary>
     [HttpPut("{id:guid}")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.UpdateRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> Update(Guid id, [FromBody] SaveRevenueExpenseTypeRequest request)
     {
         var result = await _expenseTypeService.UpdateAsync(id, request);
@@ -59,7 +59,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Xoá một loại chi phí cùng các scope của nó.</summary>
     [HttpDelete("{id:guid}")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.DeleteRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _expenseTypeService.DeleteAsync(id);
@@ -86,7 +86,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Gán hàng loạt loại giao dịch cho một nhóm loại chi phí (rỗng = chuyển về mặc định).</summary>
     [HttpPut("assign")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.UpdateRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> Assign([FromBody] AssignRevenueExpenseTypeScopesRequest request)
     {
         await _expenseTypeService.AssignAsync(request);
@@ -95,7 +95,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Hai cột cấu hình thuế doanh thu trong cài đặt chung.</summary>
     [HttpGet("config")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.ViewRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> GetConfig()
     {
         var result = await _expenseTypeService.GetConfigAsync();
@@ -104,7 +104,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Cập nhật riêng hai cột cấu hình thuế doanh thu, giữ nguyên mọi cột khác.</summary>
     [HttpPut("config")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.UpdateRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> SaveConfig([FromBody] RevenueExpenseConfigRequest request)
     {
         var result = await _expenseTypeService.SaveConfigAsync(request);

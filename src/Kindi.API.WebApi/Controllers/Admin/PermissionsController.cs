@@ -186,7 +186,9 @@ public class PermissionsController : ApiControllerBase
                 Kind = x.Kind.ToString(),
                 Route = x.Route,
                 Endpoints = x.Endpoints,
-                ParentCode = x.ParentCode
+                ParentCode = x.ParentCode,
+                Screen = x.Screen,
+                ScreenName = x.ScreenName
             })
             .ToList();
 

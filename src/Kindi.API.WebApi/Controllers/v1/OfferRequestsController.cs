@@ -104,7 +104,7 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Khôi phục yêu cầu nhận offer đã xóa (Chỉ Admin)
     /// </summary>
-    [HasPermission(PermissionCode.DeleteOfferRequest)]
+    [HasPermission(PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

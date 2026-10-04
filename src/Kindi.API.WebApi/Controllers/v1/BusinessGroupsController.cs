@@ -244,7 +244,7 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Xoá nhóm</summary>
-    [HasPermission(PermissionCode.ManageGroups)]
+    [HasPermission(PermissionCode.DeleteGroup, PermissionCode.ManageGroups)]
     [HttpDelete("{id:guid}")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Delete(Guid id)

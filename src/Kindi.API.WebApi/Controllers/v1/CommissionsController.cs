@@ -49,7 +49,7 @@ public class CommissionsController : ApiControllerBase
 
     /// <summary>Xoá một cấu hình hoa hồng.</summary>
     [HttpDelete("{id:guid}")]
-    [HasPermission(PermissionCode.UpdateCommissionConfigs)]
+    [HasPermission(PermissionCode.DeleteCommissionConfig, PermissionCode.UpdateCommissionConfigs)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _commissionConfigService.DeleteAsync(id);

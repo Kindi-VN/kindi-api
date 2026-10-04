@@ -13,9 +13,14 @@ public enum PermissionModule
     SuperAdmin = 8
 }
 
-/// <summary>Loại quyền: màn hình (View) hay thao tác (Action).</summary>
+/// <summary>
+/// Loại quyền, dùng để gom nhóm hành động của một màn hình: xem (View), thêm/sửa (Update),
+/// xoá (Delete) và thao tác đặc thù không thuộc ba nhóm trên (Action — duyệt, từ chối, kích hoạt...).
+/// </summary>
 public enum PermissionKind
 {
     View = 1,
-    Action = 2
+    Action = 2,
+    Update = 3,
+    Delete = 4
 }
