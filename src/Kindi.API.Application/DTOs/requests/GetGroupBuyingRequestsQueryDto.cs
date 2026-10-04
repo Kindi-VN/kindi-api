@@ -1,4 +1,6 @@
-﻿namespace Kindi.API.Application.DTOs.requests;
+﻿using Kindi.API.Domain.Enums;
+
+namespace Kindi.API.Application.DTOs.requests;
 
 public class GetGroupBuyingRequestsQueryDto
 {
@@ -6,6 +8,13 @@ public class GetGroupBuyingRequestsQueryDto
 	public int PageSize { get; set; } = 20;
 	public string? Status { get; set; }
 	public string? Search { get; set; }
+
+	/// <summary>
+	/// Chỉ tìm theo đúng một trường (không OR lan sang trường khác); bỏ trống = tìm mọi trường như trước.
+	/// Giá trị hợp lệ: productName, code, recordReferrerCode, customerName, customerPhone, customerEmail.
+	/// </summary>
+	public RequestSearchField? SearchField { get; set; }
+
 	public string? SortBy { get; set; }    // VD: "CreatedAt"
 	public string? SortOrder { get; set; } // "asc" | "desc"
 

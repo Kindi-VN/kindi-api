@@ -78,4 +78,34 @@ public static class RequestSearchFilters
             _ => query
         };
     }
+
+    /// <summary>
+    /// Lọc danh sách yêu cầu mua chung. <paramref name="search"/> đã được trim; tìm theo kiểu chứa.
+    /// Người mở nhóm nằm ở bảng Users nên tên/SĐT/email lấy qua quan hệ <c>User</c>.
+    /// </summary>
+    public static IQueryable<GroupBuyingRequest> ApplyGroupBuying(
+        IQueryable<GroupBuyingRequest> query, string? search, RequestSearchField? searchField)
+    {
+        if (string.IsNullOrEmpty(search))
+            return query;
+
+        return searchField switch
+        {
+            null => query.Where(x =>
+                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.Contains(search)) ||
+                x.ProductName.Contains(search) ||
+                (x.RecordReferrerCode != null && x.RecordReferrerCode.Contains(search)) ||
+                (x.User != null && x.User.FullName.Contains(search)) ||
+                (x.User != null && x.User.Phone != null && x.User.Phone.Contains(search)) ||
+                (x.User != null && x.User.Email != null && x.User.Email.Contains(search))),
+
+            RequestSearchField.ProductName => query.Where(x => x.ProductName.Contains(search)),
+            RequestSearchField.Code => query.Where(x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.Contains(search)),
+            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && x.RecordReferrerCode.Contains(search)),
+            RequestSearchField.CustomerName => query.Where(x => x.User != null && x.User.FullName.Contains(search)),
+            RequestSearchField.CustomerPhone => query.Where(x => x.User != null && x.User.Phone != null && x.User.Phone.Contains(search)),
+            RequestSearchField.CustomerEmail => query.Where(x => x.User != null && x.User.Email != null && x.User.Email.Contains(search)),
+            _ => query
+        };
+    }
 }

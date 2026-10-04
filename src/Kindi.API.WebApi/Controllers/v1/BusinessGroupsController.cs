@@ -33,6 +33,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách nhóm đang hoạt động</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>description</c>, <c>businessFieldName</c>.
+    /// </remarks>
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPublic([FromQuery] BusinessGroupQueryDto query)
@@ -73,6 +77,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách hội nhóm: hội đã duyệt + hội của chính mình (mọi trạng thái)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>topic</c>, <c>description</c>.
+    /// </remarks>
     [HttpGet("community")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCommunity([FromQuery] BusinessGroupQueryDto query)
@@ -82,6 +90,10 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Nhóm của tôi: nhóm mình tạo và/hoặc nhóm mình đã tham gia (nhóm ngành + hội nhóm)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>topic</c>, <c>description</c>.
+    /// </remarks>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine([FromQuery] BusinessGroupQueryDto query)
@@ -204,6 +216,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách nhóm (admin)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>code</c>, <c>businessFieldName</c>.
+    /// </remarks>
     [HasPermission(PermissionCode.ViewGroups)]
     [HttpGet]
     [Authorize(Roles = RoleConstants.Admin)]

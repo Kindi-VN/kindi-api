@@ -85,12 +85,17 @@ public class BusinessGroupService : IBusinessGroupService
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
             .Where(x => x.Type == BusinessGroupType.Industry && x.IsActive)
-            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
-            .WhereIf(query.MineOnly && me != null,
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+
+        q = q.WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
 
@@ -622,8 +627,12 @@ public class BusinessGroupService : IBusinessGroupService
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
-            .Where(x => x.Type == BusinessGroupType.Community)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .Where(x => x.Type == BusinessGroupType.Community);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
@@ -661,8 +670,12 @@ public class BusinessGroupService : IBusinessGroupService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
-        var q = _queryService.GetAllNoTracking<BusinessGroup>()
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+        var q = _queryService.GetAllNoTracking<BusinessGroup>();
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
@@ -769,12 +782,17 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(query.ApprovalStatus.HasValue, x => x.ApprovalStatus == query.ApprovalStatus!.Value)
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
-            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
-            .WhereIf(query.HasPendingMembers,
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+
+        q = q.WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,
                 x => x.Posts.Any(p => p.IsPrivateToAdmin && !p.IsHidden))

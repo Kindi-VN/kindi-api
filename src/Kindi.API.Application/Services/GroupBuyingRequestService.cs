@@ -389,10 +389,8 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (!isAdmin && string.IsNullOrEmpty(userId))
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
-        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
-        // ILIKE nên tìm không phân biệt hoa/thường.
+        // Từ khoá đã trim; việc chọn trường do helper quyết định (không dựng mẫu LIKE thủ công nữa).
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var statusFilter = GroupBuyingStatus.Pending;
         var normalizedStatus = query.Status.NormalizeSearchFilter();
@@ -407,15 +405,12 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                 ? _queryService.GetQueryable<GroupBuyingRequest>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
                 : _queryService.GetQueryableNoTracking<GroupBuyingRequest>())
             .WhereIf(userId != null, x => x.UserId == Guid.Parse(userId!))
-            .WhereIf(hasStatusFilter, x => x.Status == statusFilter)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                (x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\") ||
-                (x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
-                (x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
-            .Include(x => x.User)
+            .WhereIf(hasStatusFilter, x => x.Status == statusFilter);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
+        q = RequestSearchFilters.ApplyGroupBuying(q, search, query.SearchField);
+
+        q = q.Include(x => x.User)
             .Include(x => x.BusinessField);
 
         var result = await q.ToPagedListAsync(
