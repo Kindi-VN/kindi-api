@@ -37,5 +37,6 @@ public class SystemSettingConfiguration : IEntityTypeConfiguration<SystemSetting
         builder.Property(x => x.NotificationSenderName).HasMaxLength(200);
         builder.Property(x => x.NotificationReplyTo).HasMaxLength(200);
         builder.Property(x => x.Note).HasMaxLength(500);
+        builder.Property(x => x.RevenueTaxPercent).HasPrecision(5, 2);
     }
 }

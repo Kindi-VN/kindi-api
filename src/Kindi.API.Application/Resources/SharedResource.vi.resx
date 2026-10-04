@@ -1397,4 +1397,43 @@
   <data name="BankAccount_VerificationCodeIssued" xml:space="preserve">
     <value>Mã đối chiếu chuyển khoản để xác minh thông tin ngân hàng.</value>
   </data>
+  <data name="Revenue_ListSuccess" xml:space="preserve">
+    <value>Danh sách bản khai doanh thu.</value>
+  </data>
+  <data name="Revenue_DetailSuccess" xml:space="preserve">
+    <value>Thông tin bản khai doanh thu.</value>
+  </data>
+  <data name="Revenue_Saved" xml:space="preserve">
+    <value>Đã lưu bản khai doanh thu.</value>
+  </data>
+  <data name="Revenue_Confirmed" xml:space="preserve">
+    <value>Đã chốt doanh thu giao dịch.</value>
+  </data>
+  <data name="Revenue_StatsSuccess" xml:space="preserve">
+    <value>Thống kê doanh thu.</value>
+  </data>
+  <data name="Revenue_NotFound" xml:space="preserve">
+    <value>Không tìm thấy bản khai doanh thu.</value>
+  </data>
+  <data name="Revenue_AlreadyConfirmed" xml:space="preserve">
+    <value>Bản khai đã chốt nên không sửa được nữa.</value>
+  </data>
+  <data name="Revenue_ReferenceRequired" xml:space="preserve">
+    <value>Thiếu giao dịch cần khai doanh thu.</value>
+  </data>
+  <data name="Revenue_AmountInvalid" xml:space="preserve">
+    <value>Doanh thu nhập vào không hợp lệ.</value>
+  </data>
+  <data name="Revenue_CostInvalid" xml:space="preserve">
+    <value>Chi phí phát sinh không hợp lệ.</value>
+  </data>
+  <data name="Revenue_RateInvalid" xml:space="preserve">
+    <value>Tỷ lệ thuế và tỷ lệ hoa hồng phải trong khoảng 0-100%.</value>
+  </data>
+  <data name="Revenue_DuplicateBeneficiary" xml:space="preserve">
+    <value>Mỗi bên nhận hoa hồng chỉ được khai một dòng.</value>
+  </data>
+  <data name="Revenue_RangeInvalid" xml:space="preserve">
+    <value>Khoảng thời gian thống kê không hợp lệ.</value>
+  </data>
 </root>
