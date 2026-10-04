@@ -389,8 +389,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (!isAdmin && string.IsNullOrEmpty(userId))
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
-        // Từ khoá đã trim; việc chọn trường do helper quyết định (không dựng mẫu LIKE thủ công nữa).
+        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
+        // ILIKE nên tìm không phân biệt hoa/thường và không phân biệt dấu.
         var search = query.Search.NormalizeSearchFilter();
+        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var statusFilter = GroupBuyingStatus.Pending;
         var normalizedStatus = query.Status.NormalizeSearchFilter();
@@ -408,7 +410,7 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter);
 
         // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
-        q = RequestSearchFilters.ApplyGroupBuying(q, search, query.SearchField);
+        q = RequestSearchFilters.ApplyGroupBuying(q, searchTerm, query.SearchField);
 
         q = q.Include(x => x.User)
             .Include(x => x.BusinessField);
