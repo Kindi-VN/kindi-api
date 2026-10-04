@@ -42,18 +42,20 @@ public static class QueryableExtensions
     /// <summary>
     /// Sort động theo chuỗi (vd "CreatedAt" + "desc"). Tên cột được validate qua reflection
     /// để tránh SQL injection / lỗi runtime; nếu không hợp lệ sẽ fallback về defaultSortBy.
+    /// Mặc định mới nhất trước: chỉ sắp xếp tăng dần khi client truyền rõ sortOrder = "asc".
     /// </summary>
     public static IQueryable<T> OrderByDynamic<T>(
         this IQueryable<T> source,
         string? sortBy,
-        string? sortOrder = "asc",
+        string? sortOrder = null,
         string? defaultSortBy = null)
     {
-        var direction = string.Equals(sortOrder, "desc", StringComparison.OrdinalIgnoreCase) ? "descending" : "ascending";
         var column = ResolveSortColumn<T>(sortBy) ?? ResolveSortColumn<T>(defaultSortBy);
 
         if (string.IsNullOrEmpty(column))
             return source;
+
+        var direction = string.Equals(sortOrder, "asc", StringComparison.OrdinalIgnoreCase) ? "ascending" : "descending";
 
         return source.OrderBy($"{column} {direction}");
     }

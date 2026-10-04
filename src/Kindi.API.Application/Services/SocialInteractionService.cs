@@ -135,7 +135,7 @@ public class SocialInteractionService : ISocialInteractionService
                     .ThenInclude(r => r.User),
             predicate: c => c.PostId == postId && c.ParentCommentId == null,
             orderBy: c => c.CreatedAt,
-            isDescending: false);
+            isDescending: true);
 
         return comments.ToList();
     }

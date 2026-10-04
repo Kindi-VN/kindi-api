@@ -35,7 +35,7 @@ public static class PagingExtensions
         int pageNumber,
         int pageSize,
         string? sortBy,
-        string? sortOrder = "asc",
+        string? sortOrder = null,
         string? defaultSortBy = null,
         CancellationToken cancellationToken = default)
     {

@@ -173,7 +173,8 @@ public class CompanyService : ICompanyService
             queryable = queryable.Where(c => c.Name.Contains(s) || (c.TaxCode != null && c.TaxCode.Contains(s)));
         }
 
-        var paged = await _companyRepo.GetPagedWithIncludesAsync(pageNumber, pageSize, includes: null, predicate: null);
+        // Mặc định mới nhất trước để bản ghi vừa tạo nằm đầu danh sách.
+        var paged = await _companyRepo.GetPagedWithIncludesAsync(pageNumber, pageSize, includes: null, predicate: null, orderBy: c => c.CreatedAt);
         return _mapper.Map<PagedList<CompanyResponseDto>>(paged);
     }
 
