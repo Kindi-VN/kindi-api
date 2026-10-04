@@ -224,6 +224,14 @@ public enum PermissionCode
 
     [PermissionInfo("Sửa cài đặt chung", PermissionModule.System, PermissionKind.Action, null, "PUT /api/v1/settings")]
     UpdateSystemSettings = 111,
+
+    [PermissionInfo("Khai và chốt doanh thu giao dịch", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+        "POST /api/v1/revenues, PUT /api/v1/revenues/{id}, POST /api/v1/revenues/{id}/confirm")]
+    ManageTransactionRevenue = 112,
+
+    [PermissionInfo("Xem thống kê doanh thu giao dịch", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/revenue",
+        "GET /api/v1/revenues, GET /api/v1/revenues/stats")]
+    ViewTransactionRevenue = 113,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

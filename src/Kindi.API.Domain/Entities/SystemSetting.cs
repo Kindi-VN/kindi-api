@@ -75,6 +75,12 @@ public class SystemSetting : BaseEntity
     /// <summary>Thời hạn của refresh token (ngày).</summary>
     public int RefreshTokenDays { get; set; } = 30;
 
+    /// <summary>Tỷ lệ thuế (%) áp dụng khi khai doanh thu giao dịch.</summary>
+    public decimal RevenueTaxPercent { get; set; }
+
+    /// <summary>Doanh thu nhập khi khai đã bao gồm thuế hay chưa.</summary>
+    public bool RevenueTaxIncluded { get; set; }
+
     /// <summary>Số lần đăng nhập sai liên tiếp thì khoá tài khoản.</summary>
     public int MaxFailedLoginAttempts { get; set; } = 5;
 

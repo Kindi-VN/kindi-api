@@ -49,6 +49,8 @@ public class ApplicationDbContext : DbContext, IApplicationDbContext
     public DbSet<MembershipTier> MembershipTiers { get; set; }
     public DbSet<UserMembership> UserMemberships { get; set; }
     public DbSet<UserBankAccount> UserBankAccounts { get; set; }
+    public DbSet<TransactionRevenue> TransactionRevenues { get; set; }
+    public DbSet<TransactionCommission> TransactionCommissions { get; set; }
     public DbSet<PayoutSetting> PayoutSettings { get; set; }
     public DbSet<PayoutPeriod> PayoutPeriods { get; set; }
     public DbSet<PayoutStatement> PayoutStatements { get; set; }
