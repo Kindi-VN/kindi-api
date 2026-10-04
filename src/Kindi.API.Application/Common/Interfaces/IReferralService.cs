@@ -64,7 +64,7 @@ public interface IReferralService
     /// từ khoá — dùng để tìm bản ghi theo TÊN người giới thiệu (bản ghi chỉ lưu MÃ, không lưu tên).
     /// <paramref name="searchTerm"/> phải cùng dạng với tham số truyền cho bộ lọc:
     /// <paramref name="unaccentAndCaseInsensitive"/> = <c>true</c> thì bỏ dấu + không phân biệt hoa/thường (ILIKE),
-    /// <c>false</c> thì khớp chứa phân biệt hoa/thường (đúng như luồng offer). Không khớp thì trả danh sách rỗng.
+    /// <c>false</c> thì khớp chứa phân biệt hoa/thường. Không khớp thì trả danh sách rỗng.
     /// </summary>
     Task<IReadOnlyCollection<string>> FindReferrerCodesByNameAsync(string searchTerm, bool unaccentAndCaseInsensitive);
 

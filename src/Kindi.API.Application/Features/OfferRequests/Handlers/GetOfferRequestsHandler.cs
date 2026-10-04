@@ -75,8 +75,11 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			&& (request.SearchField is null
 				or RequestSearchField.RecordReferrerName
 				or RequestSearchField.AccountReferrerName);
+		// Tên người giới thiệu phải khớp KHÔNG PHÂN BIỆT hoa/thường và KHÔNG DẤU như các danh sách khác:
+		// tra mã theo từ khoá đã bỏ dấu + escape (ILIKE + Unaccent), không dùng Contains thô.
 		var offerReferrerCodes = needsOfferReferrerCodes
-			? await _referralService.FindReferrerCodesByNameAsync(search!, unaccentAndCaseInsensitive: false)
+			? await _referralService.FindReferrerCodesByNameAsync(
+				search!.RemoveVietnameseSign().ToLikeEscaped(), unaccentAndCaseInsensitive: true)
 			: null;
 
 		q = RequestSearchFilters.ApplyOffer(q, search, request.SearchField, offerReferrerCodes);
