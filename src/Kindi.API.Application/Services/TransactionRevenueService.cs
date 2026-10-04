@@ -187,8 +187,11 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     public async Task<RevenueStatsResponse> GetStatsAsync(RevenueStatsQueryDto query, CancellationToken cancellationToken = default)
     {
         var today = DateTime.UtcNow.Date;
-        var from = (query.From?.Date ?? new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc));
-        var to = query.To?.Date ?? today;
+
+        // Ngày người dùng gửi lên không kèm múi giờ; phải quy về UTC mới so được với mốc thời gian
+        // trong bảng (cột lưu dạng timestamp kèm múi giờ).
+        var from = query.From?.Date.ToUniversalTime() ?? new DateTime(today.Year, today.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        var to = query.To?.Date.ToUniversalTime() ?? today;
 
         if (to < from)
             throw new BusinessException(_localizer["Revenue_RangeInvalid"]);
