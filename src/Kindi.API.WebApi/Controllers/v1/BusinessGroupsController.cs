@@ -33,6 +33,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách nhóm đang hoạt động</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>description</c>, <c>businessFieldName</c>.
+    /// </remarks>
     [HttpGet("public")]
     [AllowAnonymous]
     public async Task<IActionResult> GetPublic([FromQuery] BusinessGroupQueryDto query)
@@ -73,6 +77,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách hội nhóm: hội đã duyệt + hội của chính mình (mọi trạng thái)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>topic</c>, <c>description</c>.
+    /// </remarks>
     [HttpGet("community")]
     [AllowAnonymous]
     public async Task<IActionResult> GetCommunity([FromQuery] BusinessGroupQueryDto query)
@@ -82,6 +90,10 @@ public class BusinessGroupsController : ApiControllerBase
     }
 
     /// <summary>Nhóm của tôi: nhóm mình tạo và/hoặc nhóm mình đã tham gia (nhóm ngành + hội nhóm)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>topic</c>, <c>description</c>.
+    /// </remarks>
     [HttpGet("mine")]
     [Authorize]
     public async Task<IActionResult> GetMine([FromQuery] BusinessGroupQueryDto query)
@@ -204,6 +216,10 @@ public class BusinessGroupsController : ApiControllerBase
     // =====================================================================
 
     /// <summary>Danh sách nhóm (admin)</summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>name</c>, <c>code</c>, <c>businessFieldName</c>.
+    /// </remarks>
     [HasPermission(PermissionCode.ViewGroups)]
     [HttpGet]
     [Authorize(Roles = RoleConstants.Admin)]
@@ -253,8 +269,19 @@ public class BusinessGroupsController : ApiControllerBase
         return Ok(new { message = _localizer["BusinessGroup_Deleted"].Value });
     }
 
+    /// <summary>Danh sách nhóm đã xoá mềm (admin)</summary>
+    [HasPermission(PermissionCode.ViewRestoreGroup, PermissionCode.RestoreGroup, PermissionCode.ViewGroups)]
+    [HttpGet("deleted")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> GetDeleted([FromQuery] AdminBusinessGroupQueryDto query)
+    {
+        query.IsDeleted = true;
+        var result = await _groupService.GetAdminPagedAsync(query);
+        return OkPaged(result, _localizer["BusinessGroup_ListRetrieved"]);
+    }
+
     /// <summary>Khôi phục nhóm đã xoá mềm</summary>
-    [HasPermission(PermissionCode.ManageGroups)]
+    [HasPermission(PermissionCode.ViewRestoreGroup, PermissionCode.RestoreGroup, PermissionCode.ManageGroups)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

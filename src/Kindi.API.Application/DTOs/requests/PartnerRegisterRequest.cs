@@ -13,7 +13,7 @@ public class PartnerRegisterRequest : IMapFrom<Partner>
     public string Email { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string Position { get; set; } = string.Empty;
-    public string? ReferralCode { get; set; }
+    public string? RecordReferrerCode { get; set; }
 
     // Step 2: Business Info (lĩnh vực hoạt động quản lý tập trung qua BusinessField)
     public string CompanyName { get; set; } = string.Empty;

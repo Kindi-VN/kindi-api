@@ -26,7 +26,7 @@ public class BusinessGroupPostConfiguration : IEntityTypeConfiguration<BusinessG
         builder.Property(x => x.RefCode)
             .HasMaxLength(30);
 
-        builder.Property(x => x.ReferralCode)
+        builder.Property(x => x.RecordReferrerCode)
             .HasMaxLength(30);
 
         builder.Property(x => x.Type)

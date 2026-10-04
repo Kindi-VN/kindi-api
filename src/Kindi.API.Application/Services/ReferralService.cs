@@ -93,15 +93,15 @@ public class ReferralService : IReferralService
             return await ResolveAsync(referralCode);
 
         // Đã ghi nhận người giới thiệu → giữ nguyên, không đổi dù sau này mở link của CTV khác.
-        if (!string.IsNullOrWhiteSpace(user.ReferredByCode))
-            return user.ReferredByCode;
+        if (!string.IsNullOrWhiteSpace(user.AccountReferrerCode))
+            return user.AccountReferrerCode;
 
         var resolved = await ResolveAsync(referralCode);
         if (resolved == null)
             return null;
 
-        user.ReferredByCode = resolved;
-        user.ReferredAt = DateTime.UtcNow;
+        user.AccountReferrerCode = resolved;
+        user.AccountReferrerAt = DateTime.UtcNow;
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
@@ -163,7 +163,7 @@ public class ReferralService : IReferralService
         await _referralEventRepository.AddAsync(new ReferralEvent
         {
             ReferralEventCode = CodeGenerator.Generate("RFE"),
-            ReferralCode = code,
+            RecordReferrerCode = code,
             ReferrerUserId = referrerUserId,
             ReferredUserId = referredUserId,
             EventType = eventType,

@@ -97,6 +97,13 @@ public class GroupBuyingRequestsController : ApiControllerBase
 
     // ===================== ADMIN =====================
 
+    /// <summary>
+    /// Danh sách yêu cầu mua chung (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình).
+    /// </summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
+    /// </remarks>
     [Authorize(Roles = RoleConstants.Admin)]
     [HasPermission(PermissionCode.ViewGroupBuyingRequests)]
     [HttpGet]
@@ -166,10 +173,23 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách yêu cầu mua chung đã xoá mềm (admin).
+    /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewRestoreGroupBuyingRequest, PermissionCode.RestoreGroupBuyingRequest, PermissionCode.ViewGroupBuyingRequests)]
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeleted([FromQuery] GetGroupBuyingRequestsQueryDto query)
+    {
+        query.IsDeleted = true;
+        var result = await _service.GetPagedAsync(query);
+        return OkPaged(result, _localizer["GroupBuyingRequest_ListRetrievedSuccess"]);
+    }
+
+    /// <summary>
     /// Khôi phục yêu cầu mua chung đã xoá mềm.
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
+    [HasPermission(PermissionCode.ViewRestoreGroupBuyingRequest, PermissionCode.RestoreGroupBuyingRequest, PermissionCode.UpdateGroupBuyingRequest)]
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {

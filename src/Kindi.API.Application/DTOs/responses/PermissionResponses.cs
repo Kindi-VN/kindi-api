@@ -50,3 +50,32 @@ public class PermissionMatrixResponse
 
     public IReadOnlyList<RolePermissionResponse> Roles { get; set; } = new List<RolePermissionResponse>();
 }
+
+/// <summary>
+/// Một node trong cây quyền đệ quy: Nhóm (group) → Màn hình (screen) → Hành động (action).
+/// <see cref="NameKey"/> là khoá dịch để UI hiển thị tên node; <see cref="IsGranted"/> là trạng thái cấp
+/// trực tiếp, <see cref="IsEffective"/> là hiệu lực sau kế thừa (bản thân + mọi tổ tiên đều được cấp).
+/// </summary>
+public class PermissionTreeNodeResponse
+{
+    /// <summary>Mã node: hành động P###, màn hình/nhóm mã chữ.</summary>
+    public string Code { get; set; } = string.Empty;
+
+    /// <summary>Khoá dịch của tên node (ví dụ Permission_P020, PermissionScreen_OFFERS, PermissionGroup_ADMIN).</summary>
+    public string NameKey { get; set; } = string.Empty;
+
+    /// <summary>Loại node: <c>group</c> | <c>screen</c> | <c>action</c>.</summary>
+    public string Kind { get; set; } = string.Empty;
+
+    /// <summary>Mã node cha (null với node nhóm gốc).</summary>
+    public string? ParentCode { get; set; }
+
+    /// <summary>Node đang được tick trực tiếp cho vai trò đang xét.</summary>
+    public bool IsGranted { get; set; }
+
+    /// <summary>Node có hiệu lực sau kế thừa (chính nó và mọi tổ tiên đều được cấp).</summary>
+    public bool IsEffective { get; set; }
+
+    /// <summary>Các node con trực tiếp.</summary>
+    public List<PermissionTreeNodeResponse> Children { get; set; } = new();
+}

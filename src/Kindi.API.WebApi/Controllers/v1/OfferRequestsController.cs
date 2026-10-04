@@ -47,6 +47,10 @@ public class OfferRequestsController : ApiControllerBase
     /// <summary>
     /// Lấy danh sách yêu cầu nhận offer (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình)
     /// </summary>
+    /// <remarks>
+    /// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+    /// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
+    /// </remarks>
     [HttpGet]
     [Authorize]
     public async Task<IActionResult> GetList([FromQuery] OfferRequestQueryDto query)
@@ -102,9 +106,24 @@ public class OfferRequestsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách yêu cầu nhận offer đã xóa mềm (Chỉ Admin).
+    /// </summary>
+    [HasPermission(PermissionCode.ViewRestoreOfferRequest, PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
+    [HttpGet("deleted")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> GetDeleted([FromQuery] OfferRequestQueryDto query)
+    {
+        var request = _mapper.Map<GetOfferRequestsQuery>(query);
+        request.IncludeDeleted = true;
+        request.MineOnly = false;
+        var result = await _mediator.Send(request);
+        return OkPaged(result, _localizer["OfferRequestListRetrievedSuccess"]);
+    }
+
+    /// <summary>
     /// Khôi phục yêu cầu nhận offer đã xóa (Chỉ Admin)
     /// </summary>
-    [HasPermission(PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
+    [HasPermission(PermissionCode.ViewRestoreOfferRequest, PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

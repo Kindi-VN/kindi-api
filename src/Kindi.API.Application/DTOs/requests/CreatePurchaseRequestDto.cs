@@ -18,7 +18,7 @@ public class CreatePurchaseRequestDto : IMapFrom<PurchaseRequest>
     public string? Note { get; set; }
 
     /// <summary>Mã CTV của link chia sẻ khách dùng để tạo yêu cầu (không bắt buộc).</summary>
-    public string? ReferralCode { get; set; }
+    public string? RecordReferrerCode { get; set; }
 
     public void Mapping(Profile profile)
     {

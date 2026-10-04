@@ -23,7 +23,7 @@ public interface IReferralService
 
     /// <summary>
     /// Mã chia sẻ dùng cho một bản ghi của <paramref name="userId"/>: lần đầu thì ghi nhận mã
-    /// vào tài khoản (<c>Users.ReferredByCode</c>), các lần sau luôn trả mã đã ghi nhận —
+    /// vào tài khoản (<c>Users.AccountReferrerCode</c>), các lần sau luôn trả mã đã ghi nhận —
     /// mở link của CTV khác cũng không ghi đè. Chưa ghi nhận và mã không hợp lệ thì trả <c>null</c>.
     /// </summary>
     Task<string?> ResolveForUserAsync(Guid userId, string? referralCode);

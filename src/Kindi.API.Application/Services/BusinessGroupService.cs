@@ -85,12 +85,17 @@ public class BusinessGroupService : IBusinessGroupService
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
             .Where(x => x.Type == BusinessGroupType.Industry && x.IsActive)
-            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
-            .WhereIf(query.MineOnly && me != null,
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+
+        q = q.WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
 
@@ -144,8 +149,8 @@ public class BusinessGroupService : IBusinessGroupService
         var members = await membersQuery.Take(20).ToListAsync();
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
 
         if (isAdmin)
         {
@@ -202,7 +207,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         // Mã chia sẻ của link người này dùng để xin vào nhóm: lần đầu thì ghi nhận vào tài khoản,
         // các lần sau lấy mã đã ghi nhận (mã không tồn tại thì bỏ qua).
-        var referralCode = await _referralService.ResolveForUserAsync(userId, request.ReferralCode);
+        var referralCode = await _referralService.ResolveForUserAsync(userId, request.RecordReferrerCode);
 
         // Thành viên đã có bản ghi trong nhóm → tái kích hoạt thay vì tạo trùng (unique index GroupId+UserId)
         var member = await _memberRepository.GetFirstAsync(m =>
@@ -217,7 +222,7 @@ public class BusinessGroupService : IBusinessGroupService
 
             member.Status = memberStatus;
             member.Note = request.Note?.Trim();
-            if (referralCode != null) member.ReferralCode = referralCode;
+            if (referralCode != null) member.RecordReferrerCode = referralCode;
             member.JoinedAt = memberStatus == GroupMemberStatus.Active ? DateTime.UtcNow : null;
             member.RejectionReason = null;
             _memberRepository.Update(member);
@@ -230,7 +235,7 @@ public class BusinessGroupService : IBusinessGroupService
                 BusinessGroupId = id,
                 UserId = userId,
                 Note = request.Note?.Trim(),
-                ReferralCode = referralCode,
+                RecordReferrerCode = referralCode,
                 Role = GroupMemberRole.Member,
                 Status = memberStatus,
                 IsGuestAccount = isGuestAccount,
@@ -353,7 +358,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupPost, BusinessGroupPostResponseDto>(paged);
-        await _referralService.FillNamesAsync(result.Items, p => p.ReferralCode, (p, name) => p.ReferralName = name);
+        await _referralService.FillNamesAsync(result.Items, p => p.RecordReferrerCode, (p, name) => p.RecordReferrerName = name);
         return result;
     }
 
@@ -405,7 +410,7 @@ public class BusinessGroupService : IBusinessGroupService
         var isSharedPost = post.RefId.HasValue && !string.IsNullOrWhiteSpace(post.RefCode);
         if (isSharedPost)
         {
-            post.ReferralCode = await _referralService.GetSharerReferralCodeAsync();
+            post.RecordReferrerCode = await _referralService.GetSharerReferralCodeAsync();
             post.WithShareLink = request.WithShareLink;
         }
 
@@ -622,8 +627,12 @@ public class BusinessGroupService : IBusinessGroupService
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
-            .Where(x => x.Type == BusinessGroupType.Community)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .Where(x => x.Type == BusinessGroupType.Community);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
@@ -661,8 +670,12 @@ public class BusinessGroupService : IBusinessGroupService
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
-        var q = _queryService.GetAllNoTracking<BusinessGroup>()
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+        var q = _queryService.GetAllNoTracking<BusinessGroup>();
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
@@ -769,12 +782,17 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(query.ApprovalStatus.HasValue, x => x.ApprovalStatus == query.ApprovalStatus!.Value)
             .WhereIf(query.IsActive.HasValue, x => x.IsActive == query.IsActive!.Value)
-            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
+            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value);
+
+        // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì giữ nguyên tập trường như trước.
+        q = query.SearchField.HasValue
+            ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
+            : q.WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
-            .WhereIf(query.HasPendingMembers,
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+
+        q = q.WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,
                 x => x.Posts.Any(p => p.IsPrivateToAdmin && !p.IsHidden))
@@ -811,8 +829,8 @@ public class BusinessGroupService : IBusinessGroupService
 
         detail.Members = _mapper.Map<List<BusinessGroupMemberResponseDto>>(members);
         for (var i = 0; i < members.Count; i++) FillMemberPersonalInfo(members[i], detail.Members[i]);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(detail.Members, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(detail.Members, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         detail.PendingMembersCount = members.Count(m => m.Status == GroupMemberStatus.Pending);
         detail.PrivateRequestsCount = await _queryService.GetAllNoTracking<BusinessGroupPost>()
             .CountAsync(x => x.BusinessGroupId == id && x.IsPrivateToAdmin && !x.IsHidden);
@@ -923,8 +941,8 @@ public class BusinessGroupService : IBusinessGroupService
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);
         for (var i = 0; i < result.Items.Count; i++) FillMemberPersonalInfo(paged.Items[i], result.Items[i]);
-        await _referralService.FillNamesAsync(result.Items, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(result.Items, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(result.Items, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         return result;
     }
 
@@ -967,8 +985,8 @@ public class BusinessGroupService : IBusinessGroupService
         member.User = (await _userService.FindByIdAsync(member.UserId))!;
         var dto = _mapper.Map<BusinessGroupMemberResponseDto>(member);
         FillMemberPersonalInfo(member, dto);
-        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferralCode, (m, name) => m.ReferralName = name);
-        await _referralService.FillNamesAsync(new[] { dto }, m => m.ReferredByCode, (m, name) => m.ReferredByName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.RecordReferrerCode, (m, name) => m.RecordReferrerName = name);
+        await _referralService.FillNamesAsync(new[] { dto }, m => m.AccountReferrerCode, (m, name) => m.AccountReferrerName = name);
         return dto;
     }
 
@@ -1019,7 +1037,7 @@ public class BusinessGroupService : IBusinessGroupService
         dto.Zalo = member.User?.Zalo;
         dto.Email = UserInfo.DisplayEmail(member.User?.Email, member.User?.Phone);
         // Người giới thiệu thành viên này (ghi nhận trên tài khoản) — chỉ hiển thị ở màn quản trị.
-        dto.ReferredByCode = member.User?.ReferredByCode;
+        dto.AccountReferrerCode = member.User?.AccountReferrerCode;
     }
 
     private async Task<BusinessGroupMember?> GetMembershipAsync(Guid groupId, Guid userId)

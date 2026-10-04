@@ -1,8 +1,8 @@
 namespace Kindi.API.Domain.Enums;
 
 /// <summary>
-/// Mã màn hình — gom các hành động của cùng một màn hình/nghiệp vụ lại với nhau. Ma trận quyền hiển thị
-/// theo cấu trúc Nhóm (module) → Màn hình → hành động (Xem/Sửa/Xoá), nên mỗi quyền phải khai màn hình.
+/// Mã màn hình — gom các hành động của cùng một màn hình/nghiệp vụ lại với nhau. Cây quyền hiển thị
+/// theo cấu trúc Nhóm (group) → Màn hình (screen) → hành động (action), nên mỗi quyền phải khai màn hình.
 /// </summary>
 public static class PermissionScreens
 {
@@ -43,53 +43,57 @@ public static class PermissionScreens
     public const string RevenueConfig = "REVENUE_CONFIG";
 }
 
-/// <summary>Một màn hình trong danh mục quyền: mã, tên hiển thị và thứ tự.</summary>
+/// <summary>
+/// Một màn hình trong danh mục quyền: mã, tên hiển thị, nhóm chứa nó (nhóm quyền) và thứ tự.
+/// <see cref="Group"/> chính là <c>ParentCode</c> của node màn hình trong cây quyền.
+/// </summary>
 public sealed record PermissionScreenDefinition(
     string Code,
     string Name,
     string NameEn,
+    string Group,
     int SortOrder);
 
 /// <summary>
-/// Danh mục màn hình — nguồn duy nhất để đặt tên nhóm hành động khi render ma trận quyền.
+/// Danh mục màn hình — nguồn duy nhất để đặt tên nhóm hành động khi render cây quyền.
 /// Thứ tự sắp xếp theo nhóm chức năng để các màn hình cùng khu vực đứng cạnh nhau.
 /// </summary>
 public static class PermissionScreenCatalog
 {
     public static IReadOnlyList<PermissionScreenDefinition> All { get; } = new List<PermissionScreenDefinition>
     {
-        new(PermissionScreens.Dashboard, "Bảng điều khiển", "Dashboard", 10),
-        new(PermissionScreens.CrmDashboard, "Dashboard CRM", "CRM dashboard", 20),
-        new(PermissionScreens.Reports, "Báo cáo", "Reports", 30),
-        new(PermissionScreens.AuditLogs, "Nhật ký hệ thống", "Audit logs", 40),
-        new(PermissionScreens.SystemSettings, "Cấu hình hệ thống", "System settings", 50),
-        new(PermissionScreens.ReferralStats, "Thống kê giới thiệu", "Referral statistics", 60),
+        new(PermissionScreens.Dashboard, "Bảng điều khiển", "Dashboard", PermissionGroupCodes.Admin, 10),
+        new(PermissionScreens.CrmDashboard, "Dashboard CRM", "CRM dashboard", PermissionGroupCodes.Admin, 20),
+        new(PermissionScreens.Reports, "Báo cáo", "Reports", PermissionGroupCodes.Admin, 30),
+        new(PermissionScreens.AuditLogs, "Nhật ký hệ thống", "Audit logs", PermissionGroupCodes.Admin, 40),
+        new(PermissionScreens.SystemSettings, "Cấu hình hệ thống", "System settings", PermissionGroupCodes.Admin, 50),
+        new(PermissionScreens.ReferralStats, "Thống kê giới thiệu", "Referral statistics", PermissionGroupCodes.Admin, 60),
 
-        new(PermissionScreens.Users, "Người dùng", "Users", 100),
-        new(PermissionScreens.Collaborators, "Hồ sơ cộng tác viên", "Collaborators", 110),
-        new(PermissionScreens.Partners, "Đối tác", "Partners", 120),
-        new(PermissionScreens.PartnerProducts, "Sản phẩm đối tác", "Partner products", 130),
-        new(PermissionScreens.Companies, "Công ty", "Companies", 140),
-        new(PermissionScreens.PurchaseRequests, "Yêu cầu mua hàng", "Purchase requests", 150),
-        new(PermissionScreens.Offers, "Offer", "Offers", 160),
-        new(PermissionScreens.GroupBuying, "Yêu cầu mua chung", "Group buying", 170),
-        new(PermissionScreens.Groups, "Nhóm", "Groups", 180),
-        new(PermissionScreens.SocialPosts, "Bài đăng", "Social posts", 190),
+        new(PermissionScreens.Users, "Người dùng", "Users", PermissionGroupCodes.Admin, 100),
+        new(PermissionScreens.Collaborators, "Hồ sơ cộng tác viên", "Collaborators", PermissionGroupCodes.Admin, 110),
+        new(PermissionScreens.Partners, "Đối tác", "Partners", PermissionGroupCodes.Admin, 120),
+        new(PermissionScreens.PartnerProducts, "Sản phẩm đối tác", "Partner products", PermissionGroupCodes.Admin, 130),
+        new(PermissionScreens.Companies, "Công ty", "Companies", PermissionGroupCodes.Admin, 140),
+        new(PermissionScreens.PurchaseRequests, "Yêu cầu mua hàng", "Purchase requests", PermissionGroupCodes.Admin, 150),
+        new(PermissionScreens.Offers, "Offer", "Offers", PermissionGroupCodes.Admin, 160),
+        new(PermissionScreens.GroupBuying, "Yêu cầu mua chung", "Group buying", PermissionGroupCodes.Admin, 170),
+        new(PermissionScreens.Groups, "Nhóm", "Groups", PermissionGroupCodes.Admin, 180),
+        new(PermissionScreens.SocialPosts, "Bài đăng", "Social posts", PermissionGroupCodes.Admin, 190),
 
-        new(PermissionScreens.PermissionMatrix, "Phân quyền", "Permission matrix", 200),
-        new(PermissionScreens.CommissionConfig, "Cấu hình hoa hồng", "Commission config", 210),
-        new(PermissionScreens.Payouts, "Chi trả & giải ngân", "Payouts", 220),
-        new(PermissionScreens.MembershipTiers, "Hạng thành viên", "Membership tiers", 230),
-        new(PermissionScreens.BankAccounts, "Tài khoản ngân hàng", "Bank accounts", 240),
-        new(PermissionScreens.Revenues, "Doanh thu giao dịch", "Transaction revenue", 250),
-        new(PermissionScreens.RevenueConfig, "Cấu hình doanh thu", "Revenue config", 260),
+        new(PermissionScreens.PermissionMatrix, "Phân quyền", "Permission matrix", PermissionGroupCodes.Admin, 200),
+        new(PermissionScreens.CommissionConfig, "Cấu hình hoa hồng", "Commission config", PermissionGroupCodes.Admin, 210),
+        new(PermissionScreens.Payouts, "Chi trả & giải ngân", "Payouts", PermissionGroupCodes.Admin, 220),
+        new(PermissionScreens.MembershipTiers, "Hạng thành viên", "Membership tiers", PermissionGroupCodes.Admin, 230),
+        new(PermissionScreens.BankAccounts, "Tài khoản ngân hàng", "Bank accounts", PermissionGroupCodes.Admin, 240),
+        new(PermissionScreens.Revenues, "Doanh thu giao dịch", "Transaction revenue", PermissionGroupCodes.Admin, 250),
+        new(PermissionScreens.RevenueConfig, "Cấu hình doanh thu", "Revenue config", PermissionGroupCodes.Admin, 260),
 
-        new(PermissionScreens.MyReferral, "Giới thiệu của tôi", "My referral", 300),
-        new(PermissionScreens.MyCommission, "Hoa hồng của tôi", "My commission", 310),
-        new(PermissionScreens.MyGroupBuying, "Mua chung của tôi", "My group buying", 320),
-        new(PermissionScreens.MyRequests, "Yêu cầu của tôi", "My requests", 330),
-        new(PermissionScreens.MyPosts, "Bài viết của tôi", "My posts", 340),
-        new(PermissionScreens.MyGroups, "Nhóm của tôi", "My groups", 350)
+        new(PermissionScreens.MyReferral, "Giới thiệu của tôi", "My referral", PermissionGroupCodes.Member, 300),
+        new(PermissionScreens.MyCommission, "Hoa hồng của tôi", "My commission", PermissionGroupCodes.Member, 310),
+        new(PermissionScreens.MyGroupBuying, "Mua chung của tôi", "My group buying", PermissionGroupCodes.Member, 320),
+        new(PermissionScreens.MyRequests, "Yêu cầu của tôi", "My requests", PermissionGroupCodes.Member, 330),
+        new(PermissionScreens.MyPosts, "Bài viết của tôi", "My posts", PermissionGroupCodes.Member, 340),
+        new(PermissionScreens.MyGroups, "Nhóm của tôi", "My groups", PermissionGroupCodes.Member, 350)
     };
 
     private static readonly IReadOnlyDictionary<string, PermissionScreenDefinition> ByCode =

@@ -41,6 +41,20 @@ public class PermissionsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Cây quyền đệ quy: Nhóm → Màn hình → Hành động. Mỗi node trả <c>code</c>, <c>nameKey</c>,
+    /// <c>kind</c> (group|screen|action), <c>parentCode</c>, <c>children</c>, kèm <c>isGranted</c>
+    /// (tick trực tiếp) và <c>isEffective</c> (hiệu lực sau kế thừa) của vai trò đang xét.
+    /// </summary>
+    /// <param name="role">Giá trị số của vai trò (1 User, 2 Partner, 3 Admin, 8 SuperAdmin). Bỏ trống = Admin.</param>
+    [HttpGet("tree")]
+    [HasPermission(PermissionCode.ViewPermissions)]
+    public async Task<IActionResult> GetTree([FromQuery] int? role = null)
+    {
+        var tree = await _permissionService.GetTreeAsync(role);
+        return Ok(tree, _localizer["Permissions_ListSuccess"]);
+    }
+
+    /// <summary>
     /// Cập nhật danh sách quyền được bật cho một vai trò (chỉ SuperAdmin có quyền P101).
     /// </summary>
     [HttpPut("roles/{role:int}")]
@@ -54,9 +68,8 @@ public class PermissionsController : ApiControllerBase
         if (!RoleRules.IsAssignable(userRole))
             return BadRequest(_localizer["Permissions_RoleNotAssignable"]);
 
-        var known = _permissionService.GetCatalog()
-            .Select(x => x.PermissionCode)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Hợp lệ cả node hành động (P###) lẫn node màn hình/nhóm — để UI lưu được cả trạng thái bật/tắt node cha.
+        var known = PermissionTreeCatalog.AllCodes;
         var unknown = request.PermissionCodes
             .Where(code => !known.Contains(code))
             .ToList();
@@ -154,9 +167,8 @@ public class PermissionsController : ApiControllerBase
     /// <summary>Mã quyền gửi lên không có trong danh mục.</summary>
     private List<string> FindUnknownCodes(IEnumerable<string> permissionCodes)
     {
-        var known = _permissionService.GetCatalog()
-            .Select(x => x.PermissionCode)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Hợp lệ cả node hành động (P###) lẫn node màn hình/nhóm — để UI lưu được cả trạng thái bật/tắt node cha.
+        var known = PermissionTreeCatalog.AllCodes;
 
         return permissionCodes.Where(code => !known.Contains(code)).ToList();
     }
@@ -186,7 +198,7 @@ public class PermissionsController : ApiControllerBase
                 Kind = x.Kind.ToString(),
                 Route = x.Route,
                 Endpoints = x.Endpoints,
-                ParentCode = x.ParentCode,
+                ParentCode = x.Group,
                 Screen = x.Screen,
                 ScreenName = x.ScreenName
             })

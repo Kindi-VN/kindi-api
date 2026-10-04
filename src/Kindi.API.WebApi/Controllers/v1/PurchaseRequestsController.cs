@@ -60,6 +60,10 @@ public class PurchaseRequestsController : ApiControllerBase
 	/// <summary>
 	/// Lấy danh sách yêu cầu mua (admin thấy tất cả, người dùng thường chỉ thấy yêu cầu của chính mình)
 	/// </summary>
+	/// <remarks>
+	/// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
+	/// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
+	/// </remarks>
 	[Authorize]
 	[HttpGet]
 	public async Task<IActionResult> GetListAsync([FromQuery] PurchaseRequestQueryDto query)
@@ -85,5 +89,36 @@ public class PurchaseRequestsController : ApiControllerBase
 		var bytes = await _mediator.Send(query);
 		var fileName = $"purchase_requests_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 		return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
+	}
+
+	/// <summary>Xoá mềm một yêu cầu mua hàng (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.DeletePurchaseRequest)]
+	[HttpDelete("{id:guid}")]
+	public async Task<IActionResult> Delete(Guid id)
+	{
+		await _service.DeleteAsync(id);
+		return Ok(new { Id = id }, _localizer["PurchaseRequest_DeleteSuccess"]);
+	}
+
+	/// <summary>Danh sách yêu cầu mua hàng đã xoá mềm (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ViewRestorePurchaseRequest, PermissionCode.RestorePurchaseRequest)]
+	[HttpGet("deleted")]
+	public async Task<IActionResult> GetDeleted([FromQuery] PurchaseRequestQueryDto query)
+	{
+		query.IsDeleted = true;
+		var result = await _service.GetPagedAsync(query);
+		return OkPaged(result, _localizer["PurchaseRequestsRetrievedSuccess"]);
+	}
+
+	/// <summary>Khôi phục một yêu cầu mua hàng đã xoá mềm (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ViewRestorePurchaseRequest, PermissionCode.RestorePurchaseRequest)]
+	[HttpPost("{id:guid}/restore")]
+	public async Task<IActionResult> Restore(Guid id)
+	{
+		var result = await _service.RestoreAsync(id);
+		return Ok(result, _localizer["RestoreSuccess"]);
 	}
 }

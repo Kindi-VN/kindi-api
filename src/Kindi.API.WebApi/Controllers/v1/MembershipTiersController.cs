@@ -57,7 +57,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Danh sách hạng thành viên đã xoá mềm.</summary>
     [HttpGet("deleted")]
-    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    [HasPermission(PermissionCode.ViewRestoreMembershipTier, PermissionCode.RestoreMembershipTier, PermissionCode.ManageMembershipTiers)]
     public async Task<IActionResult> GetDeleted()
     {
         var result = await _membershipTierService.GetDeletedAsync();
@@ -66,7 +66,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Khôi phục một hạng thành viên đã xoá mềm.</summary>
     [HttpPost("{id:guid}/restore")]
-    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    [HasPermission(PermissionCode.ViewRestoreMembershipTier, PermissionCode.RestoreMembershipTier, PermissionCode.ManageMembershipTiers)]
     public async Task<IActionResult> Restore(Guid id)
     {
         var result = await _membershipTierService.RestoreAsync(id);

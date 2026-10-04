@@ -14,5 +14,5 @@ public class JoinGroupBuyingRequestDto
     public string? Note { get; set; }
 
     /// <summary>Mã CTV của link chia sẻ khách dùng để tham gia (không bắt buộc).</summary>
-    public string? ReferralCode { get; set; }
+    public string? RecordReferrerCode { get; set; }
 }
