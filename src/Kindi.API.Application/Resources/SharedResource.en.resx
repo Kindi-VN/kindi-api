@@ -1461,4 +1461,43 @@
   <data name="BankAccount_VerificationCodeIssued" xml:space="preserve">
     <value>Bank transfer reference code for verifying your bank account.</value>
   </data>
+  <data name="Revenue_ListSuccess" xml:space="preserve">
+    <value>Revenue records.</value>
+  </data>
+  <data name="Revenue_DetailSuccess" xml:space="preserve">
+    <value>Revenue record details.</value>
+  </data>
+  <data name="Revenue_Saved" xml:space="preserve">
+    <value>Revenue record saved.</value>
+  </data>
+  <data name="Revenue_Confirmed" xml:space="preserve">
+    <value>Transaction revenue confirmed.</value>
+  </data>
+  <data name="Revenue_StatsSuccess" xml:space="preserve">
+    <value>Revenue statistics.</value>
+  </data>
+  <data name="Revenue_NotFound" xml:space="preserve">
+    <value>Revenue record not found.</value>
+  </data>
+  <data name="Revenue_AlreadyConfirmed" xml:space="preserve">
+    <value>This revenue record is confirmed and can no longer be edited.</value>
+  </data>
+  <data name="Revenue_ReferenceRequired" xml:space="preserve">
+    <value>The transaction to record revenue for is missing.</value>
+  </data>
+  <data name="Revenue_AmountInvalid" xml:space="preserve">
+    <value>The revenue amount is invalid.</value>
+  </data>
+  <data name="Revenue_CostInvalid" xml:space="preserve">
+    <value>The extra cost is invalid.</value>
+  </data>
+  <data name="Revenue_RateInvalid" xml:space="preserve">
+    <value>Tax and commission rates must be between 0 and 100%.</value>
+  </data>
+  <data name="Revenue_DuplicateBeneficiary" xml:space="preserve">
+    <value>Each commission beneficiary can only appear once.</value>
+  </data>
+  <data name="Revenue_RangeInvalid" xml:space="preserve">
+    <value>The statistics date range is invalid.</value>
+  </data>
 </root>
