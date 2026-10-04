@@ -410,7 +410,16 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(hasStatusFilter, x => x.Status == statusFilter);
 
         // searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
-        q = RequestSearchFilters.ApplyGroupBuying(q, searchTerm, query.SearchField);
+        // Tên người giới thiệu không nằm trong bảng yêu cầu (chỉ có MÃ) — quy tên về tập mã trước khi lọc.
+        var needsReferrerCodes = !string.IsNullOrEmpty(searchTerm)
+            && (query.SearchField is null
+                or RequestSearchField.RecordReferrerName
+                or RequestSearchField.AccountReferrerName);
+        var referrerCodes = needsReferrerCodes
+            ? await _referralService.FindReferrerCodesByNameAsync(searchTerm!, unaccentAndCaseInsensitive: true)
+            : null;
+
+        q = RequestSearchFilters.ApplyGroupBuying(q, searchTerm, query.SearchField, referrerCodes);
 
         q = q.Include(x => x.User)
             .Include(x => x.BusinessField);

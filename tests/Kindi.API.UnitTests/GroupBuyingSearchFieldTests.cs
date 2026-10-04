@@ -42,4 +42,15 @@ public class GroupBuyingSearchFieldTests
         RequestSearchFilters.ApplyGroupBuying(Requests(), "", RequestSearchField.CustomerEmail)
             .Should().HaveCount(2);
     }
+
+    [Fact]
+    public void Ten_nguoi_gioi_thieu_ban_ghi_loc_theo_tap_ma_quy_doi()
+    {
+        // Nhánh tên người giới thiệu chỉ so tập mã (không dùng ILIKE) nên chạy được trong bộ nhớ.
+        // Nhánh mặc định của mua chung trộn ILIKE + Unaccent nên chỉ kiểm chứng được dưới PostgreSQL.
+        RequestSearchFilters.ApplyGroupBuying(Requests(), "luc8", RequestSearchField.RecordReferrerName, new[] { "CTV-AAA" })
+            .Select(x => x.GroupBuyingRequestCode).Should().Equal("GBR-002");
+        RequestSearchFilters.ApplyGroupBuying(Requests(), "luc8", RequestSearchField.RecordReferrerName, Array.Empty<string>())
+            .Should().BeEmpty();
+    }
 }

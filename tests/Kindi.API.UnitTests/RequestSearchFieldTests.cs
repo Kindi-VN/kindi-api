@@ -95,11 +95,54 @@ public class RequestSearchFieldTests
     public void Danh_sach_truong_hop_le_khop_hop_dong_ui_va_ten_enum()
     {
         RequestSearchFilters.ValidFieldNames.Should().Equal(
-            "productName", "code", "recordReferrerCode", "customerName", "customerPhone", "customerEmail");
+            "productName", "code", "recordReferrerCode", "customerName", "customerPhone", "customerEmail",
+            "recordReferrerName", "accountReferrerName");
 
         // Danh sách tài liệu phải khớp tên enum dạng camelCase (UI gửi lên đúng chuỗi này).
         var fromEnum = Enum.GetNames<RequestSearchField>()
             .Select(JsonNamingPolicy.CamelCase.ConvertName);
         RequestSearchFilters.ValidFieldNames.Should().BeEquivalentTo(fromEnum);
+    }
+
+    [Fact]
+    public void Tim_theo_ten_nguoi_gioi_thieu_ban_ghi_khi_biet_tap_ma()
+    {
+        // Bản ghi chỉ lưu MÃ; caller quy tên -> tập mã rồi truyền vào. "AAA" là RecordReferrerCode của OFR-002.
+        var codes = new[] { "CTV-AAA" };
+
+        RequestSearchFilters.ApplyOffer(Offers(), "Luc8", RequestSearchField.RecordReferrerName, codes)
+            .Select(x => x.OfferRequestCode).Should().Equal("OFR-002");
+
+        // Tập mã rỗng (không ai tên khớp) thì không ra bản ghi nào.
+        RequestSearchFilters.ApplyOffer(Offers(), "Luc8", RequestSearchField.RecordReferrerName, Array.Empty<string>())
+            .Should().BeEmpty();
+
+        // Bỏ trống searchField: tên người giới thiệu nằm trong tập trường mặc định của offer.
+        RequestSearchFilters.ApplyOffer(Offers(), "Luc8", null, codes)
+            .Select(x => x.OfferRequestCode).Should().Equal("OFR-002");
+    }
+
+    [Fact]
+    public void Tim_theo_ten_nguoi_gioi_thieu_tai_khoan()
+    {
+        var offers = new List<OfferRequest>
+        {
+            new()
+            {
+                Id = Guid.NewGuid(),
+                ProductName = "P",
+                Unit = "cái",
+                User = new User { Id = Guid.NewGuid(), FullName = "X", AccountReferrerCode = "CTV-ACC" }
+            }
+        }.AsQueryable();
+
+        RequestSearchFilters.ApplyOffer(offers, "Luc8", RequestSearchField.AccountReferrerName, new[] { "CTV-ACC" })
+            .Should().HaveCount(1);
+        RequestSearchFilters.ApplyOffer(offers, "Luc8", RequestSearchField.AccountReferrerName, new[] { "CTV-OTHER" })
+            .Should().BeEmpty();
+
+        // Mặc định cũng dò tên người giới thiệu tài khoản.
+        RequestSearchFilters.ApplyOffer(offers, "Luc8", null, new[] { "CTV-ACC" })
+            .Should().HaveCount(1);
     }
 }
