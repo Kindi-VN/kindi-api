@@ -181,14 +181,18 @@ static void ConfigureServices(WebApplicationBuilder builder)
         ? !string.Equals(seqEnabledSetting, "false", StringComparison.OrdinalIgnoreCase)
         : builder.Configuration.GetValue("Serilog:Seq:Enabled", true);
 
-    // Đọc từ appsettings trước, fallback sang env variable
-    var telegramToken = builder.Configuration["Telegram:ErrorBot:BotToken"]
-                        ?? builder.Configuration["TELEGRAM_BOT_TOKEN"]
-                        ?? throw new Exception("Telegram ErrorBot Token is required");
+    // Đọc từ appsettings trước, fallback sang env variable; giá trị rỗng coi như chưa cấu hình
+    var telegramToken = builder.Configuration["Telegram:ErrorBot:BotToken"];
+    if (string.IsNullOrWhiteSpace(telegramToken))
+    {
+        telegramToken = builder.Configuration["TELEGRAM_BOT_TOKEN"];
+    }
 
-    var chatId = builder.Configuration["Telegram:ErrorBot:ChatId"]
-                 ?? builder.Configuration["TELEGRAM_CHAT_ID"]
-                 ?? throw new Exception("Telegram ErrorBot ChatId is required");
+    var chatId = builder.Configuration["Telegram:ErrorBot:ChatId"];
+    if (string.IsNullOrWhiteSpace(chatId))
+    {
+        chatId = builder.Configuration["TELEGRAM_CHAT_ID"];
+    }
 
     var loggerConfiguration = new LoggerConfiguration()
         .ReadFrom.Configuration(builder.Configuration)
@@ -212,11 +216,21 @@ static void ConfigureServices(WebApplicationBuilder builder)
         Log.Information("📡 Seq sink: tắt (Serilog:Seq:ServerUrl trống hoặc Enabled=false)");
     }
 
-    loggerConfiguration.WriteTo.TelegramBot(telegramToken, chatId,
-        applicationName: "Kindi.API",
-        renderMessageImplementation: TelegramMessageFormatter.Build,
-        restrictedToMinimumLevel: LogEventLevel.Error,
-        parseMode: ParseMode.HTML);
+    // Thiếu token/chatId thì bỏ qua sink thay vì để app chết lúc khởi động
+    if (!string.IsNullOrWhiteSpace(telegramToken) && !string.IsNullOrWhiteSpace(chatId))
+    {
+        loggerConfiguration.WriteTo.TelegramBot(telegramToken, chatId,
+            applicationName: "Kindi.API",
+            renderMessageImplementation: TelegramMessageFormatter.Build,
+            restrictedToMinimumLevel: LogEventLevel.Error,
+            parseMode: ParseMode.HTML);
+
+        Log.Information("📡 Telegram sink: bật (báo lỗi mức Error)");
+    }
+    else
+    {
+        Log.Information("📡 Telegram sink: tắt (thiếu Telegram:ErrorBot:BotToken hoặc ChatId)");
+    }
 
     Log.Logger = loggerConfiguration.CreateLogger();
 
