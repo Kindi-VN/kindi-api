@@ -105,6 +105,9 @@ public sealed class SystemSettingService : ISystemSettingService
         if (request.CommissionAttributionDays is < 0 or > 365)
             throw new BusinessException(_localizer["SystemSetting_AttributionInvalid"]);
 
+        if (request.RevenueTaxPercent is < 0 or > 100)
+            throw new BusinessException(_localizer["SystemSetting_RevenueTaxInvalid"]);
+
         if (request.MaxUploadSizeMb is < 1 or > 200 || request.MaxImagesPerPost is < 0 or > 50)
             throw new BusinessException(_localizer["SystemSetting_UploadInvalid"]);
 
@@ -153,6 +156,8 @@ public sealed class SystemSettingService : ISystemSettingService
         setting.ReferralCodePrefix = referralPrefix;
         setting.ReferralCodeLength = request.ReferralCodeLength;
         setting.CommissionAttributionDays = request.CommissionAttributionDays;
+        setting.RevenueTaxPercent = request.RevenueTaxPercent;
+        setting.RevenueTaxIncluded = request.RevenueTaxIncluded;
 
         setting.MaxUploadSizeMb = request.MaxUploadSizeMb;
         setting.AllowedImageExtensions = request.AllowedImageExtensions?.Trim();
@@ -231,6 +236,8 @@ public sealed class SystemSettingService : ISystemSettingService
         CopyrightText = setting.CopyrightText,
         PrivacyPolicy = setting.PrivacyPolicy,
         TermsOfService = setting.TermsOfService,
+        RevenueTaxPercent = setting.RevenueTaxPercent,
+        RevenueTaxIncluded = setting.RevenueTaxIncluded,
         DefaultLanguage = setting.DefaultLanguage,
         TimeZone = setting.TimeZone,
         CurrencySymbol = setting.CurrencySymbol,
