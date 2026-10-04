@@ -18,6 +18,16 @@ public class TransactionCommissionResponse
     public decimal Amount { get; set; }
 }
 
+/// <summary>Một dòng chi phí phát sinh trong bản khai doanh thu.</summary>
+public class TransactionExpenseResponse
+{
+    /// <summary>Tên chi phí.</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Số tiền chi phí.</summary>
+    public decimal Amount { get; set; }
+}
+
 /// <summary>Bản khai doanh thu của một giao dịch, kèm số đã bóc tách.</summary>
 public class TransactionRevenueResponse
 {
@@ -56,6 +66,9 @@ public class TransactionRevenueResponse
 
     /// <summary>Ghi chú chi phí phát sinh.</summary>
     public string? ExtraCostNote { get; set; }
+
+    /// <summary>Các dòng chi phí phát sinh của bản khai.</summary>
+    public List<TransactionExpenseResponse> Expenses { get; set; } = new();
 
     /// <summary>Số thực nhận sau thuế, hoa hồng và chi phí.</summary>
     public decimal ActualRevenue { get; set; }

@@ -1500,4 +1500,46 @@
   <data name="Revenue_RangeInvalid" xml:space="preserve">
     <value>The statistics date range is invalid.</value>
   </data>
+  <data name="Revenue_ExpenseTooMany" xml:space="preserve">
+    <value>Each revenue record can have at most 20 expense lines.</value>
+  </data>
+  <data name="Revenue_ExpenseNameInvalid" xml:space="preserve">
+    <value>Expense name is required and must be at most 200 characters.</value>
+  </data>
+  <data name="RevenueExpenseType_ListSuccess" xml:space="preserve">
+    <value>Revenue expense types.</value>
+  </data>
+  <data name="RevenueExpenseType_Saved" xml:space="preserve">
+    <value>Revenue expense type saved.</value>
+  </data>
+  <data name="RevenueExpenseType_Deleted" xml:space="preserve">
+    <value>Revenue expense type deleted.</value>
+  </data>
+  <data name="RevenueExpenseType_Assigned" xml:space="preserve">
+    <value>Transaction types assigned to expense types.</value>
+  </data>
+  <data name="RevenueExpenseType_ResolveSuccess" xml:space="preserve">
+    <value>Expense types applying to the transaction.</value>
+  </data>
+  <data name="RevenueExpenseType_ConfigSuccess" xml:space="preserve">
+    <value>Revenue tax configuration.</value>
+  </data>
+  <data name="RevenueExpenseType_ConfigSaved" xml:space="preserve">
+    <value>Revenue tax configuration saved.</value>
+  </data>
+  <data name="RevenueExpenseType_NameRequired" xml:space="preserve">
+    <value>Expense type name is required.</value>
+  </data>
+  <data name="RevenueExpenseType_NameTooLong" xml:space="preserve">
+    <value>Expense type name must be at most 200 characters.</value>
+  </data>
+  <data name="RevenueExpenseType_TypeInvalid" xml:space="preserve">
+    <value>Invalid transaction type.</value>
+  </data>
+  <data name="RevenueExpenseType_NotFound" xml:space="preserve">
+    <value>Revenue expense type not found.</value>
+  </data>
+  <data name="RevenueExpenseType_NoTarget" xml:space="preserve">
+    <value>No expense type selected to assign.</value>
+  </data>
 </root>

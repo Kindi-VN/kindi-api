@@ -1436,4 +1436,46 @@
   <data name="Revenue_RangeInvalid" xml:space="preserve">
     <value>Khoảng thời gian thống kê không hợp lệ.</value>
   </data>
+  <data name="Revenue_ExpenseTooMany" xml:space="preserve">
+    <value>Mỗi bản khai chỉ được tối đa 20 dòng chi phí.</value>
+  </data>
+  <data name="Revenue_ExpenseNameInvalid" xml:space="preserve">
+    <value>Tên chi phí bắt buộc và tối đa 200 ký tự.</value>
+  </data>
+  <data name="RevenueExpenseType_ListSuccess" xml:space="preserve">
+    <value>Danh sách loại chi phí doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_Saved" xml:space="preserve">
+    <value>Đã lưu loại chi phí doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_Deleted" xml:space="preserve">
+    <value>Đã xoá loại chi phí doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_Assigned" xml:space="preserve">
+    <value>Đã gán loại giao dịch cho loại chi phí.</value>
+  </data>
+  <data name="RevenueExpenseType_ResolveSuccess" xml:space="preserve">
+    <value>Loại chi phí áp cho giao dịch.</value>
+  </data>
+  <data name="RevenueExpenseType_ConfigSuccess" xml:space="preserve">
+    <value>Cấu hình thuế doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_ConfigSaved" xml:space="preserve">
+    <value>Đã lưu cấu hình thuế doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_NameRequired" xml:space="preserve">
+    <value>Tên loại chi phí là bắt buộc.</value>
+  </data>
+  <data name="RevenueExpenseType_NameTooLong" xml:space="preserve">
+    <value>Tên loại chi phí tối đa 200 ký tự.</value>
+  </data>
+  <data name="RevenueExpenseType_TypeInvalid" xml:space="preserve">
+    <value>Loại giao dịch không hợp lệ.</value>
+  </data>
+  <data name="RevenueExpenseType_NotFound" xml:space="preserve">
+    <value>Không tìm thấy loại chi phí doanh thu.</value>
+  </data>
+  <data name="RevenueExpenseType_NoTarget" xml:space="preserve">
+    <value>Chưa chọn loại chi phí cần gán.</value>
+  </data>
 </root>

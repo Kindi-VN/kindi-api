@@ -2,6 +2,7 @@ namespace Kindi.API.Application.Services;
 
 using System.Globalization;
 using Kindi.API.Application.Common.Exceptions;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
@@ -27,6 +28,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
 {
     private readonly IRepository<TransactionRevenue> _revenueRepository;
     private readonly IRepository<TransactionCommission> _commissionRepository;
+    private readonly IRepository<TransactionExpense> _expenseRepository;
     private readonly IRepository<SystemSetting> _settingRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IStringLocalizer<SharedResource> _localizer;
@@ -35,6 +37,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     public TransactionRevenueService(
         IRepository<TransactionRevenue> revenueRepository,
         IRepository<TransactionCommission> commissionRepository,
+        IRepository<TransactionExpense> expenseRepository,
         IRepository<SystemSetting> settingRepository,
         ICurrentUserService currentUserService,
         IStringLocalizer<SharedResource> localizer,
@@ -42,6 +45,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     {
         _revenueRepository = revenueRepository;
         _commissionRepository = commissionRepository;
+        _expenseRepository = expenseRepository;
         _settingRepository = settingRepository;
         _currentUserService = currentUserService;
         _localizer = localizer;
@@ -51,7 +55,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     /// <inheritdoc />
     public async Task<PagedList<TransactionRevenueResponse>> GetPagedAsync(RevenueQueryDto query, CancellationToken cancellationToken = default)
     {
-        var source = _revenueRepository.GetQueryable().Include(r => r.Commissions).AsQueryable();
+        var source = _revenueRepository.GetQueryable().Include(r => r.Commissions).Include(r => r.Expenses).AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(query.Keyword))
         {
@@ -78,7 +82,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     {
         var entity = await _revenueRepository.GetFirstWithIncludesAsync(
             r => r.Type == type && r.ReferenceId == referenceId,
-            q => q.Include(r => r.Commissions),
+            q => q.Include(r => r.Commissions).Include(r => r.Expenses),
             cancellationToken);
 
         return entity is null ? null : Map(entity);
@@ -89,7 +93,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     {
         var entity = await _revenueRepository.GetFirstWithIncludesAsync(
             r => r.Id == id,
-            q => q.Include(r => r.Commissions),
+            q => q.Include(r => r.Commissions).Include(r => r.Expenses),
             cancellationToken);
 
         return entity is null ? null : Map(entity);
@@ -110,7 +114,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
 
         var entity = await _revenueRepository.GetFirstWithIncludesAsync(
             r => r.Type == request.Type && r.ReferenceId == request.ReferenceId,
-            q => q.Include(r => r.Commissions),
+            q => q.Include(r => r.Commissions).Include(r => r.Expenses),
             cancellationToken);
 
         if (entity is null)
@@ -129,6 +133,10 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
         }
 
         await _revenueRepository.SaveChangesAsync(cancellationToken);
+
+        // Danh sách chi phí do bản khai sở hữu nên phải ghi sau khi bản khai đã có Id (trường hợp khai mới).
+        await SyncExpensesAsync(entity, request.Expenses ?? new List<TransactionExpenseRequest>(), cancellationToken);
+
         _logger.LogInformation("Đã lưu bản khai doanh thu giao dịch {Code}", entity.ReferenceCode);
 
         return Map(entity);
@@ -139,7 +147,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     {
         var entity = await _revenueRepository.GetFirstWithIncludesAsync(
             r => r.Id == id,
-            q => q.Include(r => r.Commissions),
+            q => q.Include(r => r.Commissions).Include(r => r.Expenses),
             cancellationToken);
 
         if (entity is null)
@@ -246,8 +254,6 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
     {
         if (request.GrossRevenue < 0)
             throw new BusinessException(_localizer["Revenue_AmountInvalid"]);
-        if (request.ExtraCost < 0)
-            throw new BusinessException(_localizer["Revenue_CostInvalid"]);
         if (taxPercent is < 0 or > 100)
             throw new BusinessException(_localizer["Revenue_RateInvalid"]);
 
@@ -257,6 +263,20 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
 
         if (request.Commissions.Any(c => c.RatePercent is < 0 or > 100))
             throw new BusinessException(_localizer["Revenue_RateInvalid"]);
+
+        // Chi phí phát sinh nay là danh sách dòng: tối đa 20 dòng, tên bắt buộc ≤ 200 ký tự, số tiền không âm.
+        var expenses = request.Expenses ?? new List<TransactionExpenseRequest>();
+        if (expenses.Count > 20)
+            throw new BusinessException(_localizer["Revenue_ExpenseTooMany"]);
+
+        foreach (var expense in expenses)
+        {
+            var expenseName = expense.Name?.Trim();
+            if (string.IsNullOrWhiteSpace(expenseName) || expenseName.Length > 200)
+                throw new BusinessException(_localizer["Revenue_ExpenseNameInvalid"]);
+            if (expense.Amount < 0)
+                throw new BusinessException(_localizer["Revenue_CostInvalid"]);
+        }
     }
 
     private static RevenueCalculator.RevenueBreakdown Calculate(SaveTransactionRevenueRequest request, bool taxIncluded, decimal taxPercent)
@@ -265,7 +285,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
             taxIncluded,
             taxPercent,
             request.Commissions.Select(c => new RevenueCalculator.CommissionRate(c.Beneficiary, c.RatePercent)),
-            request.ExtraCost);
+            RevenueExpenseHelper.Total(request.Expenses));
 
     /// <summary>Ghi số đã tính lên bản khai và đồng bộ danh sách hoa hồng từng bên.</summary>
     private void Apply(
@@ -283,7 +303,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
         entity.NetRevenue = breakdown.NetRevenue;
         entity.TotalCommission = breakdown.TotalCommission;
         entity.ExtraCost = breakdown.ExtraCost;
-        entity.ExtraCostNote = request.ExtraCostNote;
+        // ExtraCostNote giữ lại trong cột nhưng không dùng nữa: chi phí nay tách thành từng dòng riêng.
         entity.ActualRevenue = breakdown.ActualRevenue;
 
         var tracked = entity.Commissions.Where(c => !c.IsDeleted).ToList();
@@ -316,6 +336,45 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
             _commissionRepository.Delete(item);
     }
 
+    /// <summary>
+    /// Đồng bộ dòng chi phí của bản khai: ẩn các dòng cũ rồi ghi lại đúng danh sách vừa nhập. Ghi tường
+    /// minh qua repository thay vì để EF Add cả đồ thị, tránh dòng mới có sẵn Id bị đánh dấu sửa.
+    /// </summary>
+    private async Task SyncExpensesAsync(
+        TransactionRevenue entity,
+        IReadOnlyList<TransactionExpenseRequest> lines,
+        CancellationToken cancellationToken)
+    {
+        var active = entity.Expenses.Where(e => !e.IsDeleted).ToList();
+        if (active.Count > 0)
+        {
+            foreach (var old in active)
+                old.IsDeleted = true;
+
+            _expenseRepository.UpdateRange(active);
+            await _expenseRepository.SaveChangesAsync(cancellationToken);
+        }
+
+        if (lines.Count == 0)
+            return;
+
+        var rows = new List<TransactionExpense>(lines.Count);
+        for (var index = 0; index < lines.Count; index++)
+        {
+            rows.Add(new TransactionExpense
+            {
+                TransactionRevenueId = entity.Id,
+                Name = lines[index].Name.Trim(),
+                Amount = lines[index].Amount,
+                SortOrder = index
+            });
+        }
+
+        await _expenseRepository.AddRangeAsync(rows, cancellationToken);
+        foreach (var row in rows)
+            entity.Expenses.Add(row);
+    }
+
     private static TransactionRevenueResponse Map(TransactionRevenue entity) => new()
     {
         Id = entity.Id,
@@ -341,6 +400,11 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
         TotalCommission = entity.TotalCommission,
         ExtraCost = entity.ExtraCost,
         ExtraCostNote = entity.ExtraCostNote,
+        Expenses = entity.Expenses
+            .Where(e => !e.IsDeleted)
+            .OrderBy(e => e.SortOrder)
+            .Select(e => new TransactionExpenseResponse { Name = e.Name, Amount = e.Amount })
+            .ToList(),
         ActualRevenue = entity.ActualRevenue,
         Status = entity.Status,
         ConfirmedBy = entity.ConfirmedBy,
