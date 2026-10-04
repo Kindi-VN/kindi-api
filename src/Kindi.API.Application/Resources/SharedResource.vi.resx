@@ -83,6 +83,9 @@
 	<data name="InvalidStatus" xml:space="preserve">
     <value>Giá trị trạng thái không hợp lệ</value>
   </data>
+	<data name="InvalidStatusMessage" xml:space="preserve">
+    <value>Trạng thái không hợp lệ</value>
+  </data>
 
 	<!-- Export Purchase Requests -->
 	<data name="ExportPurchaseRequestsTitle" xml:space="preserve">
@@ -200,6 +203,9 @@
   </data>
 	<data name="LoginSuccess" xml:space="preserve">
     <value>Đăng nhập thành công</value>
+  </data>
+	<data name="LoginFailed" xml:space="preserve">
+    <value>Tên đăng nhập hoặc mật khẩu không đúng</value>
   </data>
 	<data name="InvalidCredentials" xml:space="preserve">
     <value>Tên đăng nhập hoặc mật khẩu không đúng</value>
@@ -888,13 +894,6 @@
   </data>
   <data name="Collaborator_LevelExceeded">
     <value>Cấp bậc cộng tác viên vượt quá giới hạn cho phép</value>
-  </data>
-  
-  <data name="User_PhoneRequired">
-    <value>Số điện thoại là bắt buộc</value>
-  </data>
-  <data name="User_PhoneAlreadyExists">
-    <value>Số điện thoại đã tồn tại trong hệ thống</value>
   </data>
   <!-- Social - Get Pending Posts -->
   <data name="Social_GetPendingSuccess">
