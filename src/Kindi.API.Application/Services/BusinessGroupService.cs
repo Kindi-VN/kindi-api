@@ -548,8 +548,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var q = _queryService.GetAllNoTracking<BusinessGroupComment>()
             .Where(x => x.BusinessGroupPostId == postId && !x.IsHidden)
-            .Include(x => x.User)
-            .OrderBy(x => x.CreatedAt);
+            .Include(x => x.User);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         return _mapper.MapPagedList<BusinessGroupComment, BusinessGroupCommentResponseDto>(paged);
@@ -805,7 +804,7 @@ public class BusinessGroupService : IBusinessGroupService
         var members = await _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id && x.Status != GroupMemberStatus.Left)
             .OrderBy(x => x.Status)
-            .ThenBy(x => x.CreatedAt)
+            .ThenByDescending(x => x.CreatedAt)
             .Include(x => x.User)
             .Take(50)
             .ToListAsync();
@@ -919,7 +918,7 @@ public class BusinessGroupService : IBusinessGroupService
                 (x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
             .Include(x => x.User)
             .OrderBy(x => x.Status)
-            .ThenBy(x => x.CreatedAt);
+            .ThenByDescending(x => x.CreatedAt);
 
         var paged = await q.ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
         var result = _mapper.MapPagedList<BusinessGroupMember, BusinessGroupMemberResponseDto>(paged);

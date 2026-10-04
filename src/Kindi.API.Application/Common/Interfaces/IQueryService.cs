@@ -97,7 +97,7 @@ public interface IQueryService
         int pageSize,
         Expression<Func<T, bool>>? predicate,
         string? sortBy,
-        string? sortOrder = "asc",
+        string? sortOrder = null,
         string? defaultSortBy = null,
         CancellationToken cancellationToken = default) where T : class;
 
