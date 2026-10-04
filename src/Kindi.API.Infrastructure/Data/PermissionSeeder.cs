@@ -138,7 +138,95 @@ public static class PermissionSeeder
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới",
-            added, addedGroups, hiddenGroups, addedGrants);
+        // Chuyển quyền đã cấp (role + cấu hình riêng của tài khoản) từ mã gộp cũ sang các mã mới tách ra,
+        // theo khai báo "Replaces" ở enum — bảo đảm không ai mất quyền đang có khi tách Xem/Sửa/Xoá.
+        var copiedGrants = await CopyReplacedGrantsAsync(context, byCode, cancellationToken);
+
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới, {Copied} quyền chuyển tiếp đã sao chép",
+            added, addedGroups, hiddenGroups, addedGrants, copiedGrants);
+    }
+
+    /// <summary>
+    /// Sao chép quyền đã cấp từ mã cũ sang mã mới theo cặp ở <see cref="PermissionCatalog.Replacements"/>.
+    /// Idempotent: chỉ thêm dòng còn thiếu hoặc khôi phục dòng bị xoá mềm, không ghi đè cấu hình đã có;
+    /// giữ nguyên cả dòng tắt quyền riêng (<c>IsGranted = false</c>) để không vô tình bật lại quyền đã tắt.
+    /// </summary>
+    private static async Task<int> CopyReplacedGrantsAsync(
+        ApplicationDbContext context,
+        IReadOnlyDictionary<string, Permission> byCode,
+        CancellationToken cancellationToken)
+    {
+        var pairs = PermissionCatalog.Replacements
+            .Where(x => byCode.ContainsKey(x.OldCode) && byCode.ContainsKey(x.NewCode))
+            .ToList();
+        if (pairs.Count == 0) return 0;
+
+        // Đọc cả dòng xoá mềm: bảng có ràng buộc duy nhất (role/user, quyền) nên phải tái dùng dòng cũ,
+        // tránh lỗi trùng khoá khi thêm mới.
+        var roleRows = await context.RolePermissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
+        var roleByKey = roleRows
+            .GroupBy(x => (x.Role, x.PermissionId))
+            .ToDictionary(x => x.Key, x => x.First());
+
+        var userRows = await context.UserPermissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
+        var userByKey = userRows
+            .GroupBy(x => (x.UserId, x.PermissionId))
+            .ToDictionary(x => x.Key, x => x.First());
+
+        var changed = 0;
+
+        foreach (var pair in pairs)
+        {
+            var oldId = byCode[pair.OldCode].Id;
+            var newId = byCode[pair.NewCode].Id;
+
+            // Chỉ lấy dòng đang hiệu lực (chưa xoá mềm) làm nguồn sao chép.
+            foreach (var source in roleRows.Where(x => x.PermissionId == oldId && !x.IsDeleted))
+            {
+                var key = (source.Role, newId);
+                if (roleByKey.TryGetValue(key, out var existing))
+                {
+                    if (existing.IsDeleted)
+                    {
+                        existing.IsDeleted = false;
+                        existing.IsGranted = source.IsGranted;
+                        changed++;
+                    }
+                    continue;
+                }
+
+                var row = new RolePermission { Role = source.Role, PermissionId = newId, IsGranted = source.IsGranted };
+                context.RolePermissions.Add(row);
+                roleByKey[key] = row;
+                changed++;
+            }
+
+            foreach (var source in userRows.Where(x => x.PermissionId == oldId && !x.IsDeleted))
+            {
+                var key = (source.UserId, newId);
+                if (userByKey.TryGetValue(key, out var existing))
+                {
+                    if (existing.IsDeleted)
+                    {
+                        existing.IsDeleted = false;
+                        existing.IsGranted = source.IsGranted;
+                        changed++;
+                    }
+                    continue;
+                }
+
+                var row = new UserPermission { UserId = source.UserId, PermissionId = newId, IsGranted = source.IsGranted };
+                context.UserPermissions.Add(row);
+                userByKey[key] = row;
+                changed++;
+            }
+        }
+
+        if (changed > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return changed;
     }
 }

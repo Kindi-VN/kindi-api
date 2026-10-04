@@ -15,5 +15,9 @@ public sealed class HasPermissionAttribute : AuthorizeAttribute
     public HasPermissionAttribute(params PermissionCode[] permissions)
         : base(PolicyConstants.PermissionPrefix + string.Join(",", permissions.Select(p => p.ToCode())))
     {
+        PermissionCodes = permissions.Select(p => p.ToCode()).ToList();
     }
+
+    /// <summary>Các mã P### mà endpoint chấp nhận; có một mã là qua.</summary>
+    public IReadOnlyList<string> PermissionCodes { get; }
 }

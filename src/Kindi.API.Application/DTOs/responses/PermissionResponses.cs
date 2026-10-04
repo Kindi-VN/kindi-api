@@ -12,6 +12,12 @@ public class PermissionItemResponse
 
     /// <summary>Mã nhóm quyền (PermissionGroups.Code) dùng để gom nhóm ở màn phân quyền.</summary>
     public string? ParentCode { get; set; }
+
+    /// <summary>Mã màn hình — gom các hành động của cùng màn hình khi render Nhóm → Màn hình → hành động.</summary>
+    public string Screen { get; set; } = string.Empty;
+
+    /// <summary>Tên hiển thị của màn hình.</summary>
+    public string ScreenName { get; set; } = string.Empty;
 }
 
 /// <summary>Nhóm quyền: mã, tên hiển thị và thứ tự (đọc từ bảng PermissionGroups).</summary>

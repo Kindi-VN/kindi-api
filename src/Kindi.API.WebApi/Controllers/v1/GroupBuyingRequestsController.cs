@@ -145,7 +145,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Xóa một người khỏi nhóm mua chung (không xóa được người mở nhóm).
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
+    [HasPermission(PermissionCode.DeleteGroupBuyingRequest, PermissionCode.UpdateGroupBuyingRequest)]
     [HttpDelete("{id:guid}/participants/{participantId:guid}")]
     public async Task<IActionResult> RemoveParticipant(Guid id, Guid participantId)
     {
@@ -157,7 +157,7 @@ public class GroupBuyingRequestsController : ApiControllerBase
     /// Hủy yêu cầu mua chung (xóa mềm).
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
+    [HasPermission(PermissionCode.DeleteGroupBuyingRequest, PermissionCode.UpdateGroupBuyingRequest)]
     [HttpDelete("{id:guid}")]
     public async Task<IActionResult> Delete(Guid id)
     {

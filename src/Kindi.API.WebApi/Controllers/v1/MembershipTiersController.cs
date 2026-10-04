@@ -30,7 +30,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Danh sách hạng thành viên kèm quyền lợi.</summary>
     [HttpGet]
-    [HasPermission(PermissionCode.ViewPayouts)]
+    [HasPermission(PermissionCode.ViewMembershipTiers, PermissionCode.ViewPayouts)]
     public async Task<IActionResult> GetTiers([FromQuery] bool activeOnly = false)
     {
         var result = await _membershipTierService.GetTiersAsync(activeOnly);
@@ -39,7 +39,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Thêm mới hoặc cập nhật một hạng thành viên.</summary>
     [HttpPost]
-    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    [HasPermission(PermissionCode.UpdateMembershipTiers, PermissionCode.ManageMembershipTiers)]
     public async Task<IActionResult> Save([FromBody] SaveMembershipTierRequest request, [FromQuery] Guid? id = null)
     {
         var result = await _membershipTierService.SaveAsync(id, request);
@@ -48,7 +48,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Xoá một hạng thành viên.</summary>
     [HttpDelete("{id:guid}")]
-    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    [HasPermission(PermissionCode.DeleteMembershipTiers, PermissionCode.ManageMembershipTiers)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _membershipTierService.DeleteAsync(id);
@@ -57,7 +57,7 @@ public class MembershipTiersController : ApiControllerBase
 
     /// <summary>Xét lại hạng thành viên theo doanh số tích luỹ.</summary>
     [HttpPost("evaluate")]
-    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    [HasPermission(PermissionCode.UpdateMembershipTiers, PermissionCode.ManageMembershipTiers)]
     public async Task<IActionResult> Evaluate([FromBody] EvaluateMembershipRequest request)
     {
         var count = await _membershipTierService.EvaluateAsync(request);

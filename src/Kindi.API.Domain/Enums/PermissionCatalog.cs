@@ -12,7 +12,13 @@ public sealed record PermissionDefinition(
     PermissionKind Kind,
     string? Route,
     string? Endpoints,
-    string ParentCode);
+    string ParentCode,
+    string Screen,
+    string ScreenName,
+    IReadOnlyList<string> Replaces);
+
+/// <summary>Cặp mã cũ → mã mới dùng khi chuyển quyền đã cấp sang mã mới sau khi tách nhỏ quyền.</summary>
+public sealed record PermissionReplacement(string OldCode, string NewCode);
 
 /// <summary>
 /// Danh mục quyền lấy trực tiếp từ <see cref="PermissionCode"/> (nguồn duy nhất là enum) — dùng để
@@ -50,6 +56,14 @@ public static class PermissionCatalog
 
     public static PermissionDefinition Get(PermissionCode code) => _all.First(x => x.Code == code);
 
+    /// <summary>
+    /// Các cặp mã cũ → mã mới suy ra từ thuộc tính <c>Replaces</c> ở enum — seeder dùng để chuyển
+    /// quyền đã cấp (role và tài khoản) từ mã gộp cũ sang các mã đã tách, tránh mất quyền.
+    /// </summary>
+    public static IReadOnlyList<PermissionReplacement> Replacements =>
+        _all.SelectMany(newCode => newCode.Replaces.Select(oldCode => new PermissionReplacement(oldCode, newCode.PermissionCode)))
+            .ToList();
+
     public static bool TryGet(string permissionCode, out PermissionDefinition definition)
     {
         definition = _all.FirstOrDefault(x => string.Equals(x.PermissionCode, permissionCode, StringComparison.OrdinalIgnoreCase))!;
@@ -78,9 +92,11 @@ public static class PermissionCatalog
             var info = field.GetCustomAttribute<PermissionInfoAttribute>();
             if (info == null) continue;
 
+            var screen = info.Screen ?? string.Empty;
             result.Add(new PermissionDefinition(
                 code, code.ToCode(), info.Name, info.Module, info.Kind, info.Route, info.Endpoints,
-                info.ParentCode ?? DeriveParentCode(info)));
+                info.ParentCode ?? DeriveParentCode(info),
+                screen, PermissionScreenCatalog.ResolveName(screen), info.Replaces));
         }
 
         return result.OrderBy(x => (int)x.Code).ToList();

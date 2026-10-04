@@ -84,7 +84,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Danh sách cộng tác viên đã xóa mềm (Admin)
     /// </summary>
-    [HasPermission(PermissionCode.RestoreCollaborator)]
+    [HasPermission(PermissionCode.ViewRestoreCollaborator, PermissionCode.RestoreCollaborator)]
     [HttpGet("deleted")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> GetDeleted(
@@ -147,7 +147,7 @@ public class CollaboratorsController : ApiControllerBase
     /// <summary>
     /// Khôi phục CTV đã xóa
     /// </summary>
-    [HasPermission(PermissionCode.RestoreCollaborator)]
+    [HasPermission(PermissionCode.ViewRestoreCollaborator, PermissionCode.RestoreCollaborator)]
     [HttpPost("{id}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

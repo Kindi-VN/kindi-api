@@ -58,7 +58,7 @@ public class BankAccountsController : ApiControllerBase
 
     /// <summary>Danh sách thông tin ngân hàng để xác minh.</summary>
     [HttpGet]
-    [HasPermission(PermissionCode.VerifyBankAccounts)]
+    [HasPermission(PermissionCode.ViewBankAccounts, PermissionCode.VerifyBankAccounts)]
     public async Task<IActionResult> GetPaged([FromQuery] BankAccountQueryDto query)
     {
         var result = await _bankAccountService.GetPagedAsync(query);

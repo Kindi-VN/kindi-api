@@ -41,4 +41,17 @@ public sealed class PermissionInfoAttribute : Attribute
     /// không còn đúng (ví dụ quyền hoa hồng, giải ngân nằm trong nhóm COMMISSION).
     /// </summary>
     public string? ParentCode { get; set; }
+
+    /// <summary>
+    /// Mã màn hình (<see cref="Enums.PermissionScreens"/>) mà quyền thuộc về — gom các hành động
+    /// Xem/Sửa/Xoá của cùng một màn hình khi render ma trận quyền.
+    /// </summary>
+    public string? Screen { get; set; }
+
+    /// <summary>
+    /// Các mã quyền cũ bị mã này thay thế khi tách nhỏ quyền (ví dụ mã "Xoá / khôi phục" tách thành
+    /// mã xoá và mã khôi phục). Seeder dựa vào đây để chuyển quyền đã cấp cho role/tài khoản sang mã mới,
+    /// bảo đảm không ai mất quyền đang có.
+    /// </summary>
+    public string[] Replaces { get; set; } = Array.Empty<string>();
 }
