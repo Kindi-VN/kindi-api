@@ -11,4 +11,10 @@ public class CommissionConfigQueryDto : PagedRequest
 
     /// <summary>Tìm theo tên đăng nhập hoặc họ tên của tài khoản được áp riêng.</summary>
     public string? Search { get; set; }
+
+    /// <summary>
+    /// true = chỉ lấy cấu hình đã xoá mềm (bỏ qua global soft-delete filter).
+    /// false/null = danh sách đang hoạt động như bình thường.
+    /// </summary>
+    public bool? IsDeleted { get; set; }
 }

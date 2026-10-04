@@ -21,4 +21,10 @@ public class AdminBusinessGroupQueryDto
 
     /// <summary>Lọc theo trạng thái duyệt mở hội (dùng cho "hội nhóm chờ duyệt").</summary>
     public GroupApprovalStatus? ApprovalStatus { get; set; }
+
+    /// <summary>
+    /// true = chỉ lấy nhóm đã xoá mềm (bỏ qua global soft-delete filter).
+    /// false/null = danh sách đang hoạt động như bình thường.
+    /// </summary>
+    public bool? IsDeleted { get; set; }
 }

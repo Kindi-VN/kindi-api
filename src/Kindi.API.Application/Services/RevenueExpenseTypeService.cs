@@ -119,6 +119,46 @@ public sealed class RevenueExpenseTypeService : IRevenueExpenseTypeService
     }
 
     /// <inheritdoc />
+    public async Task<List<RevenueExpenseTypeResponse>> GetDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        // Bỏ global soft-delete filter để lấy các loại chi phí đã xoá mềm (kèm scope đã xoá).
+        var items = await _typeRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .Include(t => t.Scopes)
+            .Where(t => t.IsDeleted)
+            .ToListAsync(cancellationToken);
+
+        return items
+            .OrderBy(t => t.SortOrder)
+            .ThenBy(t => t.Name, StringComparer.OrdinalIgnoreCase)
+            .Select(Map)
+            .ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<RevenueExpenseTypeResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // Bỏ global filter để tìm loại chi phí đã xoá (kèm scope bị xoá cùng) rồi khôi phục cả cụm.
+        var entity = await _typeRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .Include(t => t.Scopes)
+            .FirstOrDefaultAsync(t => t.Id == id, cancellationToken);
+
+        if (entity == null || !entity.IsDeleted)
+            throw new NotFoundException(_localizer["RevenueExpenseType_NotFound"]);
+
+        entity.IsDeleted = false;
+        foreach (var scope in entity.Scopes.Where(s => s.IsDeleted))
+            scope.IsDeleted = false;
+
+        _typeRepository.Update(entity);
+        await _typeRepository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Đã khôi phục loại chi phí doanh thu {Name}", entity.Name);
+
+        return Map(entity);
+    }
+
+    /// <inheritdoc />
     public async Task AssignAsync(AssignRevenueExpenseTypeScopesRequest request, CancellationToken cancellationToken = default)
     {
         var ids = request.ExpenseTypeIds.Distinct().ToList();

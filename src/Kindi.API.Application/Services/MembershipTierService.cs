@@ -122,6 +122,36 @@ public sealed class MembershipTierService : IMembershipTierService
     }
 
     /// <inheritdoc />
+    public async Task<List<MembershipTierResponse>> GetDeletedAsync(CancellationToken cancellationToken = default)
+    {
+        // Bỏ global soft-delete filter để lấy các hạng đã xoá mềm.
+        var tiers = await _tierRepository.GetQueryable()
+            .IgnoreQueryFilters()
+            .Where(x => x.IsDeleted)
+            .OrderBy(x => x.Level)
+            .ToListAsync(cancellationToken);
+
+        return tiers.Select(Map).ToList();
+    }
+
+    /// <inheritdoc />
+    public async Task<MembershipTierResponse> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        // GetByIdIncludingDeletedAsync bỏ qua global filter → tìm được hạng đã xoá mềm.
+        var entity = await _tierRepository.GetByIdIncludingDeletedAsync(id, cancellationToken)
+            ?? throw new BusinessException(_localizer["Membership_TierNotFound"]);
+
+        if (!entity.IsDeleted)
+            throw new BusinessException(_localizer["Membership_TierNotFound"]);
+
+        _tierRepository.Restore(entity);
+        await _tierRepository.SaveChangesAsync(cancellationToken);
+        _logger.LogInformation("Đã khôi phục hạng thành viên {Level} ({Name})", entity.Level, entity.Name);
+
+        return Map(entity);
+    }
+
+    /// <inheritdoc />
     public async Task<int> EvaluateAsync(EvaluateMembershipRequest request, CancellationToken cancellationToken = default)
     {
         var tiers = await _queryService.GetAllNoTracking<MembershipTier>()

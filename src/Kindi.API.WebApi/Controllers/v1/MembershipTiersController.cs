@@ -55,6 +55,24 @@ public class MembershipTiersController : ApiControllerBase
         return Ok(new { Id = id }, _localizer["Membership_DeleteSuccess"]);
     }
 
+    /// <summary>Danh sách hạng thành viên đã xoá mềm.</summary>
+    [HttpGet("deleted")]
+    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    public async Task<IActionResult> GetDeleted()
+    {
+        var result = await _membershipTierService.GetDeletedAsync();
+        return Ok(result, _localizer["Membership_ListSuccess"]);
+    }
+
+    /// <summary>Khôi phục một hạng thành viên đã xoá mềm.</summary>
+    [HttpPost("{id:guid}/restore")]
+    [HasPermission(PermissionCode.ManageMembershipTiers)]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _membershipTierService.RestoreAsync(id);
+        return Ok(result, _localizer["RestoreSuccess"]);
+    }
+
     /// <summary>Xét lại hạng thành viên theo doanh số tích luỹ.</summary>
     [HttpPost("evaluate")]
     [HasPermission(PermissionCode.ManageMembershipTiers)]

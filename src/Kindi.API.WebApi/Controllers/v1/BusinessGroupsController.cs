@@ -162,6 +162,16 @@ public class BusinessGroupsController : ApiControllerBase
         return Ok(new { message = _localizer["BusinessGroup_PostDeleted"].Value });
     }
 
+    /// <summary>Khôi phục bài trong nhóm đã xoá mềm (admin)</summary>
+    [HasPermission(PermissionCode.UpdateGroupPost)]
+    [HttpPost("{id:guid}/posts/{postId:guid}/restore")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> RestorePost(Guid id, Guid postId)
+    {
+        var result = await _groupService.RestorePostAsync(id, postId);
+        return Ok(result, _localizer["RestoreSuccess"]);
+    }
+
     /// <summary>Bình luận của bài</summary>
     [HttpGet("posts/{postId:guid}/comments")]
     [Authorize]
@@ -241,6 +251,16 @@ public class BusinessGroupsController : ApiControllerBase
     {
         await _groupService.DeleteAsync(id);
         return Ok(new { message = _localizer["BusinessGroup_Deleted"].Value });
+    }
+
+    /// <summary>Khôi phục nhóm đã xoá mềm</summary>
+    [HasPermission(PermissionCode.ManageGroups)]
+    [HttpPost("{id:guid}/restore")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _groupService.RestoreAsync(id);
+        return Ok(result, _localizer["RestoreSuccess"]);
     }
 
     /// <summary>Danh sách thành viên + yêu cầu vào nhóm (admin hoặc chủ hội nhóm)</summary>

@@ -56,6 +56,15 @@ public class CommissionsController : ApiControllerBase
         return Ok(new { Id = id }, _localizer["Commission_DeleteSuccess"]);
     }
 
+    /// <summary>Khôi phục một cấu hình hoa hồng đã xoá mềm.</summary>
+    [HttpPost("{id:guid}/restore")]
+    [HasPermission(PermissionCode.UpdateCommissionConfigs)]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _commissionConfigService.RestoreAsync(id);
+        return Ok(result, _localizer["RestoreSuccess"]);
+    }
+
     /// <summary>Tìm tài khoản để chọn khi cấu hình hoa hồng riêng.</summary>
     [HttpGet("users")]
     [HasPermission(PermissionCode.ViewCommissionConfigs)]

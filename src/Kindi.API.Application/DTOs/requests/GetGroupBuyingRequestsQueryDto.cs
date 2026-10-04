@@ -8,4 +8,10 @@ public class GetGroupBuyingRequestsQueryDto
 	public string? Search { get; set; }
 	public string? SortBy { get; set; }    // VD: "CreatedAt"
 	public string? SortOrder { get; set; } // "asc" | "desc"
+
+	/// <summary>
+	/// true = chỉ lấy yêu cầu đã xoá mềm (bỏ qua global soft-delete filter).
+	/// false/null = danh sách đang hoạt động như bình thường.
+	/// </summary>
+	public bool? IsDeleted { get; set; }
 }

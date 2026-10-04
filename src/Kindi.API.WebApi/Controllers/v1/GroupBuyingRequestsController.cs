@@ -164,4 +164,16 @@ public class GroupBuyingRequestsController : ApiControllerBase
         await _service.DeleteAsync(id);
         return Ok(new { message = _localizer["GroupBuyingRequest_DeletedSuccess"] });
     }
+
+    /// <summary>
+    /// Khôi phục yêu cầu mua chung đã xoá mềm.
+    /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
+    [HttpPost("{id:guid}/restore")]
+    public async Task<IActionResult> Restore(Guid id)
+    {
+        var result = await _service.RestoreAsync(id);
+        return Ok(result, _localizer["RestoreSuccess"]);
+    }
 }
