@@ -106,9 +106,24 @@ public class OfferRequestsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách yêu cầu nhận offer đã xóa mềm (Chỉ Admin).
+    /// </summary>
+    [HasPermission(PermissionCode.ViewRestoreOfferRequest, PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
+    [HttpGet("deleted")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> GetDeleted([FromQuery] OfferRequestQueryDto query)
+    {
+        var request = _mapper.Map<GetOfferRequestsQuery>(query);
+        request.IncludeDeleted = true;
+        request.MineOnly = false;
+        var result = await _mediator.Send(request);
+        return OkPaged(result, _localizer["OfferRequestListRetrievedSuccess"]);
+    }
+
+    /// <summary>
     /// Khôi phục yêu cầu nhận offer đã xóa (Chỉ Admin)
     /// </summary>
-    [HasPermission(PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
+    [HasPermission(PermissionCode.ViewRestoreOfferRequest, PermissionCode.RestoreOfferRequest, PermissionCode.DeleteOfferRequest)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

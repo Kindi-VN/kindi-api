@@ -315,6 +315,76 @@ public enum PermissionCode
         "DELETE /api/v1/RevenueExpenseTypes/{id}", Screen = PermissionScreens.RevenueConfig,
         Replaces = new[] { "P114" })]
     DeleteRevenueConfig = 131,
+
+    // ===== Quyền khôi phục theo cặp ViewRestore<X> + Restore<X> cho mọi màn có xoá mềm =====
+    // Cặp quyền này gác cả endpoint "danh sách đã xoá" lẫn endpoint "khôi phục" của màn hình,
+    // theo đúng mẫu CollaboratorsController ([HasPermission(ViewRestore<X>, Restore<X>)], kèm mã cũ khi cần).
+
+    [PermissionInfo("Xem đối tác đã xoá", PermissionModule.Partner, PermissionKind.View, "/admin/partner",
+        "GET /api/v1/partners/deleted", Screen = PermissionScreens.Partners)]
+    ViewRestorePartner = 132,
+
+    [PermissionInfo("Xem offer đã xoá", PermissionModule.Purchase, PermissionKind.View, "/admin/offers",
+        "GET /api/v1/offerrequests/deleted", Screen = PermissionScreens.Offers)]
+    ViewRestoreOfferRequest = 133,
+
+    [PermissionInfo("Xem bài đăng đã xoá", PermissionModule.Community, PermissionKind.View, "/admin/social-posts",
+        "GET /api/v1/social/posts/deleted", Screen = PermissionScreens.SocialPosts)]
+    ViewRestoreSocialPost = 134,
+
+    [PermissionInfo("Xem yêu cầu mua chung đã xoá", PermissionModule.Purchase, PermissionKind.View, "/admin/group-buying",
+        "GET /api/v1/groupbuyingrequests/deleted", Screen = PermissionScreens.GroupBuying)]
+    ViewRestoreGroupBuyingRequest = 135,
+
+    [PermissionInfo("Khôi phục yêu cầu mua chung", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "POST /api/v1/groupbuyingrequests/{id}/restore", Screen = PermissionScreens.GroupBuying)]
+    RestoreGroupBuyingRequest = 136,
+
+    [PermissionInfo("Xem nhóm đã xoá", PermissionModule.Group, PermissionKind.View, "/admin/groups",
+        "GET /api/v1/businessgroups/deleted", Screen = PermissionScreens.Groups)]
+    ViewRestoreGroup = 137,
+
+    [PermissionInfo("Khôi phục nhóm", PermissionModule.Group, PermissionKind.Delete, null,
+        "POST /api/v1/businessgroups/{id}/restore", Screen = PermissionScreens.Groups)]
+    RestoreGroup = 138,
+
+    [PermissionInfo("Xem cấu hình hoa hồng đã xoá", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/settings",
+        "GET /api/v1/commissions/deleted", Screen = PermissionScreens.CommissionConfig)]
+    ViewRestoreCommissionConfig = 139,
+
+    [PermissionInfo("Khôi phục cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+        "POST /api/v1/commissions/{id}/restore", Screen = PermissionScreens.CommissionConfig)]
+    RestoreCommissionConfig = 140,
+
+    [PermissionInfo("Xem hạng thành viên đã xoá", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/finance",
+        "GET /api/v1/membership-tiers/deleted", Screen = PermissionScreens.MembershipTiers)]
+    ViewRestoreMembershipTier = 141,
+
+    [PermissionInfo("Khôi phục hạng thành viên", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+        "POST /api/v1/membership-tiers/{id}/restore", Screen = PermissionScreens.MembershipTiers)]
+    RestoreMembershipTier = 142,
+
+    [PermissionInfo("Xem cấu hình loại thu/chi đã xoá", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/revenue/settings",
+        "GET /api/v1/RevenueExpenseTypes/deleted", Screen = PermissionScreens.RevenueConfig)]
+    ViewRestoreRevenueConfig = 143,
+
+    [PermissionInfo("Khôi phục cấu hình loại thu/chi", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+        "POST /api/v1/RevenueExpenseTypes/{id}/restore", Screen = PermissionScreens.RevenueConfig)]
+    RestoreRevenueConfig = 144,
+
+    // ===== Yêu cầu mua hàng: đủ bộ xoá mềm / danh sách đã xoá / khôi phục =====
+
+    [PermissionInfo("Xoá yêu cầu mua hàng", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "DELETE /api/v1/purchaserequests/{id}", Screen = PermissionScreens.PurchaseRequests)]
+    DeletePurchaseRequest = 145,
+
+    [PermissionInfo("Xem yêu cầu mua hàng đã xoá", PermissionModule.Purchase, PermissionKind.View, "/admin/purchase-requests",
+        "GET /api/v1/purchaserequests/deleted", Screen = PermissionScreens.PurchaseRequests)]
+    ViewRestorePurchaseRequest = 146,
+
+    [PermissionInfo("Khôi phục yêu cầu mua hàng", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "POST /api/v1/purchaserequests/{id}/restore", Screen = PermissionScreens.PurchaseRequests)]
+    RestorePurchaseRequest = 147,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

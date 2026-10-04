@@ -269,8 +269,19 @@ public class BusinessGroupsController : ApiControllerBase
         return Ok(new { message = _localizer["BusinessGroup_Deleted"].Value });
     }
 
+    /// <summary>Danh sách nhóm đã xoá mềm (admin)</summary>
+    [HasPermission(PermissionCode.ViewRestoreGroup, PermissionCode.RestoreGroup, PermissionCode.ViewGroups)]
+    [HttpGet("deleted")]
+    [Authorize(Roles = RoleConstants.Admin)]
+    public async Task<IActionResult> GetDeleted([FromQuery] AdminBusinessGroupQueryDto query)
+    {
+        query.IsDeleted = true;
+        var result = await _groupService.GetAdminPagedAsync(query);
+        return OkPaged(result, _localizer["BusinessGroup_ListRetrieved"]);
+    }
+
     /// <summary>Khôi phục nhóm đã xoá mềm</summary>
-    [HasPermission(PermissionCode.ManageGroups)]
+    [HasPermission(PermissionCode.ViewRestoreGroup, PermissionCode.RestoreGroup, PermissionCode.ManageGroups)]
     [HttpPost("{id:guid}/restore")]
     [Authorize(Roles = RoleConstants.Admin)]
     public async Task<IActionResult> Restore(Guid id)

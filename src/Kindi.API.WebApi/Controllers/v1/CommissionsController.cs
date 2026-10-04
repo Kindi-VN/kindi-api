@@ -56,9 +56,19 @@ public class CommissionsController : ApiControllerBase
         return Ok(new { Id = id }, _localizer["Commission_DeleteSuccess"]);
     }
 
+    /// <summary>Danh sách cấu hình hoa hồng đã xoá mềm.</summary>
+    [HttpGet("deleted")]
+    [HasPermission(PermissionCode.ViewRestoreCommissionConfig, PermissionCode.RestoreCommissionConfig, PermissionCode.ViewCommissionConfigs)]
+    public async Task<IActionResult> GetDeleted([FromQuery] CommissionConfigQueryDto query)
+    {
+        query.IsDeleted = true;
+        var result = await _commissionConfigService.GetPagedAsync(query);
+        return OkPaged(result, _localizer["Commission_ListSuccess"]);
+    }
+
     /// <summary>Khôi phục một cấu hình hoa hồng đã xoá mềm.</summary>
     [HttpPost("{id:guid}/restore")]
-    [HasPermission(PermissionCode.UpdateCommissionConfigs)]
+    [HasPermission(PermissionCode.ViewRestoreCommissionConfig, PermissionCode.RestoreCommissionConfig, PermissionCode.UpdateCommissionConfigs)]
     public async Task<IActionResult> Restore(Guid id)
     {
         var result = await _commissionConfigService.RestoreAsync(id);

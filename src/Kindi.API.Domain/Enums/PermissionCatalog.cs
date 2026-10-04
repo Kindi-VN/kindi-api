@@ -12,10 +12,20 @@ public sealed record PermissionDefinition(
     PermissionKind Kind,
     string? Route,
     string? Endpoints,
-    string ParentCode,
+    string Group,
     string Screen,
     string ScreenName,
-    IReadOnlyList<string> Replaces);
+    IReadOnlyList<string> Replaces)
+{
+    /// <summary>Quyền dạng hành động — luôn là lá của cây quyền.</summary>
+    public PermissionNodeKind NodeKind => PermissionNodeKind.Action;
+
+    /// <summary>Khoá dịch để UI hiển thị tên quyền.</summary>
+    public string NameKey => PermissionNameKeys.Action(PermissionCode);
+
+    /// <summary>Mã cha trong cây (màn hình chứa hành động này).</summary>
+    public string ParentCode => Screen;
+}
 
 /// <summary>Cặp mã cũ → mã mới dùng khi chuyển quyền đã cấp sang mã mới sau khi tách nhỏ quyền.</summary>
 public sealed record PermissionReplacement(string OldCode, string NewCode);
@@ -75,7 +85,7 @@ public static class PermissionCatalog
     /// còn lại — trang /admin/** và thao tác nghiệp vụ không gắn trang riêng — thuộc hệ thống quản trị.
     /// Quyền mà cả hai khu vực cùng dùng thì khai <see cref="PermissionInfoAttribute.ParentCode"/> = SHARED tại enum.
     /// </summary>
-    private static string DeriveParentCode(PermissionInfoAttribute info)
+    private static string DeriveGroup(PermissionInfoAttribute info)
     {
         if (info.Route is not null && info.Route.StartsWith("/user/", StringComparison.OrdinalIgnoreCase))
             return PermissionGroupCodes.Member;
@@ -95,7 +105,7 @@ public static class PermissionCatalog
             var screen = info.Screen ?? string.Empty;
             result.Add(new PermissionDefinition(
                 code, code.ToCode(), info.Name, info.Module, info.Kind, info.Route, info.Endpoints,
-                info.ParentCode ?? DeriveParentCode(info),
+                info.ParentCode ?? DeriveGroup(info),
                 screen, PermissionScreenCatalog.ResolveName(screen), info.Replaces));
         }
 

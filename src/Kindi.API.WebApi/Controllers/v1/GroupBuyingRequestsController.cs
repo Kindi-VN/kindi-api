@@ -173,10 +173,23 @@ public class GroupBuyingRequestsController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách yêu cầu mua chung đã xoá mềm (admin).
+    /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewRestoreGroupBuyingRequest, PermissionCode.RestoreGroupBuyingRequest, PermissionCode.ViewGroupBuyingRequests)]
+    [HttpGet("deleted")]
+    public async Task<IActionResult> GetDeleted([FromQuery] GetGroupBuyingRequestsQueryDto query)
+    {
+        query.IsDeleted = true;
+        var result = await _service.GetPagedAsync(query);
+        return OkPaged(result, _localizer["GroupBuyingRequest_ListRetrievedSuccess"]);
+    }
+
+    /// <summary>
     /// Khôi phục yêu cầu mua chung đã xoá mềm.
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.UpdateGroupBuyingRequest)]
+    [HasPermission(PermissionCode.ViewRestoreGroupBuyingRequest, PermissionCode.RestoreGroupBuyingRequest, PermissionCode.UpdateGroupBuyingRequest)]
     [HttpPost("{id:guid}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {

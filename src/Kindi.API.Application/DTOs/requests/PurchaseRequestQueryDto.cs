@@ -24,4 +24,7 @@ public class PurchaseRequestQueryDto
 	/// Chỉ lấy yêu cầu của chính người gọi (khu vực thành viên). Người dùng không phải admin luôn bị giới hạn như vậy.
 	/// </summary>
 	public bool MineOnly { get; set; }
+
+	/// <summary>Lọc danh sách đã xoá mềm (soft-delete, admin xem tab "Đã xoá").</summary>
+	public bool? IsDeleted { get; set; }
 }

@@ -45,15 +45,87 @@ public static class PermissionSeeder
         var existing = await context.Permissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
         var byCode = existing.ToDictionary(x => x.Code, x => x, StringComparer.OrdinalIgnoreCase);
 
+        // Tầng 1 — node NHÓM (gốc cây, ParentCode = null). Seed trước để FK tự tham chiếu của màn hình thoả.
+        var addedNodes = 0;
+        foreach (var group in PermissionGroupCatalog.All)
+        {
+            if (byCode.TryGetValue(group.Code, out var currentGroup))
+            {
+                currentGroup.Name = group.Name;
+                currentGroup.NameKey = PermissionNameKeys.Group(group.Code);
+                currentGroup.NodeKind = PermissionNodeKind.Group;
+                currentGroup.ParentCode = null;
+                currentGroup.SortOrder = group.SortOrder;
+                currentGroup.IsDeleted = false;
+                continue;
+            }
+
+            var groupNode = new Permission
+            {
+                Code = group.Code,
+                Name = group.Name,
+                NameKey = PermissionNameKeys.Group(group.Code),
+                NodeKind = PermissionNodeKind.Group,
+                Module = PermissionModule.System,
+                ParentCode = null,
+                SortOrder = group.SortOrder
+            };
+            context.Permissions.Add(groupNode);
+            byCode[group.Code] = groupNode;
+            addedNodes++;
+        }
+
+        if (addedNodes > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        // Tầng 2 — node MÀN HÌNH (cha là nhóm). Seed trước hành động để ParentCode của hành động thoả FK.
+        addedNodes = 0;
+        foreach (var screen in PermissionScreenCatalog.All)
+        {
+            if (byCode.TryGetValue(screen.Code, out var currentScreen))
+            {
+                currentScreen.Name = screen.Name;
+                currentScreen.NameKey = PermissionNameKeys.Screen(screen.Code);
+                currentScreen.NodeKind = PermissionNodeKind.Screen;
+                currentScreen.ParentCode = screen.Group;
+                currentScreen.SortOrder = screen.SortOrder;
+                currentScreen.IsDeleted = false;
+                continue;
+            }
+
+            var screenNode = new Permission
+            {
+                Code = screen.Code,
+                Name = screen.Name,
+                NameKey = PermissionNameKeys.Screen(screen.Code),
+                NodeKind = PermissionNodeKind.Screen,
+                Module = PermissionModule.System,
+                ParentCode = screen.Group,
+                SortOrder = screen.SortOrder
+            };
+            context.Permissions.Add(screenNode);
+            byCode[screen.Code] = screenNode;
+            addedNodes++;
+        }
+
+        if (addedNodes > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        // Tầng 3 — node HÀNH ĐỘNG (cha là màn hình). Sửa phần mô tả theo enum — nguồn duy nhất là code.
         var added = 0;
         foreach (var definition in PermissionCatalog.All)
         {
             if (byCode.TryGetValue(definition.PermissionCode, out var current))
             {
-                // Cập nhật lại phần mô tả (tên/nhóm/route/endpoint) theo enum — nguồn duy nhất là code.
                 current.Name = definition.Name;
+                current.NameKey = definition.NameKey;
+                current.NodeKind = PermissionNodeKind.Action;
                 current.Module = definition.Module;
-                current.ParentCode = definition.ParentCode;
+                current.ParentCode = definition.Screen;
                 current.Kind = definition.Kind;
                 current.Route = definition.Route;
                 current.Endpoints = definition.Endpoints;
@@ -66,8 +138,10 @@ public static class PermissionSeeder
             {
                 Code = definition.PermissionCode,
                 Name = definition.Name,
+                NameKey = definition.NameKey,
+                NodeKind = PermissionNodeKind.Action,
                 Module = definition.Module,
-                ParentCode = definition.ParentCode,
+                ParentCode = definition.Screen,
                 Kind = definition.Kind,
                 Route = definition.Route,
                 Endpoints = definition.Endpoints,
@@ -138,12 +212,64 @@ public static class PermissionSeeder
             await context.SaveChangesAsync(cancellationToken);
         }
 
+        // Kế thừa: cấp luôn các node cha (màn hình, nhóm) cho role đang có quyền con — nếu không, kiểm quyền
+        // "hiệu lực = bản thân + mọi tổ tiên" sẽ chặn hết. Chỉ thêm dòng còn thiếu, giữ nguyên cấu hình đã sửa.
+        var addedStructural = await EnsureStructuralGrantsAsync(context, byCode, cancellationToken);
+
         // Chuyển quyền đã cấp (role + cấu hình riêng của tài khoản) từ mã gộp cũ sang các mã mới tách ra,
         // theo khai báo "Replaces" ở enum — bảo đảm không ai mất quyền đang có khi tách Xem/Sửa/Xoá.
         var copiedGrants = await CopyReplacedGrantsAsync(context, byCode, cancellationToken);
 
-        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới, {Copied} quyền chuyển tiếp đã sao chép",
-            added, addedGroups, hiddenGroups, addedGrants, copiedGrants);
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới, {Structural} gán node cha, {Copied} quyền chuyển tiếp đã sao chép",
+            added, addedGroups, hiddenGroups, addedGrants, addedStructural, copiedGrants);
+    }
+
+    /// <summary>
+    /// Cấp các node cha (màn hình, nhóm) cho mọi role đang có ít nhất một node con được cấp.
+    /// Idempotent: chỉ thêm dòng còn thiếu, không ghi đè và không tạo dòng cho node chưa từng được bật.
+    /// </summary>
+    private static async Task<int> EnsureStructuralGrantsAsync(
+        ApplicationDbContext context,
+        IReadOnlyDictionary<string, Permission> byCode,
+        CancellationToken cancellationToken)
+    {
+        var roleRows = await context.RolePermissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
+        var idToCode = byCode.Values
+            .GroupBy(x => x.Id)
+            .ToDictionary(x => x.Key, x => x.First().Code);
+
+        var existing = roleRows
+            .GroupBy(x => (x.Role, x.PermissionId))
+            .ToDictionary(x => x.Key, x => x.First());
+
+        var added = 0;
+        foreach (var roleGroup in roleRows.Where(x => !x.IsDeleted && x.IsGranted).GroupBy(x => x.Role))
+        {
+            var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var row in roleGroup)
+            {
+                if (!idToCode.TryGetValue(row.PermissionId, out var code)) continue;
+                foreach (var ancestor in PermissionTreeCatalog.AncestorsOf(code)) needed.Add(ancestor);
+            }
+
+            foreach (var ancestorCode in needed)
+            {
+                if (!byCode.TryGetValue(ancestorCode, out var node)) continue;
+                if (existing.ContainsKey((roleGroup.Key, node.Id))) continue;
+
+                var row = new RolePermission { Role = roleGroup.Key, PermissionId = node.Id, IsGranted = true };
+                context.RolePermissions.Add(row);
+                existing[(roleGroup.Key, node.Id)] = row;
+                added++;
+            }
+        }
+
+        if (added > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return added;
     }
 
     /// <summary>

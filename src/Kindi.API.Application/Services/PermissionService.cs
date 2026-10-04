@@ -1,6 +1,7 @@
 namespace Kindi.API.Application.Services;
 
 using Kindi.API.Application.Common.Interfaces;
+using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
@@ -56,10 +57,11 @@ public class PermissionService : IPermissionService
     {
         var snapshot = await GetSnapshotAsync(cancellationToken);
 
-        // SuperAdmin luôn toàn quyền (handler cũng bypass) — trả về cả danh mục để UI hiện đủ menu.
+        // SuperAdmin luôn toàn quyền (handler cũng bypass) — trả về cả cây node để UI hiện đủ menu.
         if (role == UserRole.SuperAdmin)
-            return new RolePermissions(PermissionCatalog.All.Select(x => x.PermissionCode).ToHashSet(), snapshot.Version);
+            return new RolePermissions(PermissionTreeCatalog.AllCodes, snapshot.Version);
 
+        // Trả về tập ĐÃ LƯU thô (kể cả node cha bị tắt) để UI còn thấy tick cũ; hiệu lực tính riêng khi kiểm.
         return new RolePermissions(snapshot.ByRole.TryGetValue(role, out var codes) ? codes : Empty, snapshot.Version);
     }
 
@@ -69,16 +71,20 @@ public class PermissionService : IPermissionService
 
         // SuperAdmin luôn toàn quyền, không cấu hình riêng.
         if (role == UserRole.SuperAdmin)
-            return new UserPermissions(PermissionCatalog.All.Select(x => x.PermissionCode).ToHashSet(), Empty, Empty, snapshot.Version);
+            return new UserPermissions(PermissionTreeCatalog.AllCodes, Empty, Empty, snapshot.Version);
 
         var roleCodes = snapshot.ByRole.TryGetValue(role, out var codes) ? codes : Empty;
 
         if (!snapshot.UserOverrides.TryGetValue(userId, out var overrides) || overrides.Count == 0)
-            return new UserPermissions(roleCodes, Empty, Empty, snapshot.Version);
+            return new UserPermissions(PermissionTreeCatalog.ApplyInheritance(roleCodes), Empty, Empty, snapshot.Version);
 
         var granted = overrides.Where(x => x.Value).Select(x => x.Key).ToHashSet(Comparer);
         var denied = overrides.Where(x => !x.Value).Select(x => x.Key).ToHashSet(Comparer);
-        var effective = roleCodes.Except(denied, Comparer).Union(granted, Comparer).ToHashSet(Comparer);
+
+        // Ghép phần khác biệt của tài khoản lên quyền role, RỒI áp kế thừa: node nào có tổ tiên không được cấp
+        // (do role không cấp hoặc bị tắt riêng) sẽ bị loại khỏi tập hiệu lực dù chính nó vẫn còn tick.
+        var merged = roleCodes.Except(denied, Comparer).Union(granted, Comparer);
+        var effective = PermissionTreeCatalog.ApplyInheritance(merged);
 
         return new UserPermissions(effective, granted, denied, snapshot.Version);
     }
@@ -281,13 +287,110 @@ public class PermissionService : IPermissionService
 
     public void InvalidateCache() => _cache.Remove(CacheKey);
 
-    /// <summary>Chuẩn hoá danh sách mã quyền gửi lên về dạng chuẩn P### (bỏ mã không hợp lệ, bỏ trùng).</summary>
+    /// <summary>
+    /// Cây quyền đệ quy (Nhóm → Màn hình → Hành động) kèm trạng thái cấp của một vai trò:
+    /// <c>isGranted</c> = node đang được tick trực tiếp, <c>isEffective</c> = hiệu lực sau kế thừa
+    /// (bản thân + mọi tổ tiên đều được cấp). UI dùng để tô mờ phần con khi cha bị tắt.
+    /// </summary>
+    public async Task<IReadOnlyList<PermissionTreeNodeResponse>> GetTreeAsync(int? role, CancellationToken cancellationToken = default)
+    {
+        var subjectRole = role is int value && Enum.IsDefined(typeof(UserRole), value)
+            ? (UserRole)value
+            : UserRole.Admin;
+
+        var raw = await GetRawRoleCodesAsync(subjectRole, cancellationToken);
+        var effective = subjectRole == UserRole.SuperAdmin ? raw : PermissionTreeCatalog.ApplyInheritance(raw);
+
+        var screensByGroup = PermissionScreenCatalog.All
+            .GroupBy(x => x.Group, Comparer)
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => x.SortOrder).ThenBy(x => x.Code).ToList(), Comparer);
+
+        var actionsByScreen = PermissionCatalog.All
+            .GroupBy(x => x.Screen, Comparer)
+            .ToDictionary(g => g.Key, g => g.OrderBy(x => (int)x.Code).ToList(), Comparer);
+
+        var tree = new List<PermissionTreeNodeResponse>();
+        foreach (var group in PermissionGroupCatalog.All.OrderBy(x => x.SortOrder))
+        {
+            var groupNode = BuildTreeNode(group.Code, PermissionNameKeys.Group(group.Code), PermissionNodeKind.Group, null, raw, effective);
+
+            if (screensByGroup.TryGetValue(group.Code, out var screens))
+            {
+                foreach (var screen in screens)
+                {
+                    var screenNode = BuildTreeNode(screen.Code, PermissionNameKeys.Screen(screen.Code), PermissionNodeKind.Screen, group.Code, raw, effective);
+
+                    if (actionsByScreen.TryGetValue(screen.Code, out var actions))
+                    {
+                        foreach (var action in actions)
+                            screenNode.Children.Add(BuildTreeNode(action.PermissionCode, action.NameKey, PermissionNodeKind.Action, screen.Code, raw, effective));
+                    }
+
+                    groupNode.Children.Add(screenNode);
+                }
+            }
+
+            tree.Add(groupNode);
+        }
+
+        return tree;
+    }
+
+    private static PermissionTreeNodeResponse BuildTreeNode(
+        string code,
+        string nameKey,
+        PermissionNodeKind kind,
+        string? parentCode,
+        IReadOnlySet<string> raw,
+        IReadOnlySet<string> effective)
+        => new()
+        {
+            Code = code,
+            NameKey = nameKey,
+            Kind = kind switch
+            {
+                PermissionNodeKind.Group => "group",
+                PermissionNodeKind.Screen => "screen",
+                _ => "action"
+            },
+            ParentCode = parentCode,
+            IsGranted = raw.Contains(code),
+            IsEffective = effective.Contains(code)
+        };
+
+    private async Task<IReadOnlySet<string>> GetRawRoleCodesAsync(UserRole role, CancellationToken cancellationToken)
+    {
+        if (role == UserRole.SuperAdmin) return PermissionTreeCatalog.AllCodes;
+
+        var snapshot = await GetSnapshotAsync(cancellationToken);
+        return snapshot.ByRole.TryGetValue(role, out var codes) ? codes : Empty;
+    }
+
+    /// <summary>Chuẩn hoá danh sách mã node gửi lên (bỏ mã không hợp lệ, bỏ trùng).</summary>
     private static HashSet<string> Normalize(IEnumerable<string> permissionCodes)
         => permissionCodes
-            .Select(PermissionCodeExtensions.FromCode)
-            .Where(x => x.HasValue)
-            .Select(x => x!.Value.ToCode())
+            .Select(NormalizeCode)
+            .Where(x => x is not null)
+            .Select(x => x!)
             .ToHashSet(Comparer);
+
+    /// <summary>
+    /// Chuẩn hoá một mã node: hành động P### về dạng chuẩn, node nhóm/màn hình giữ nguyên nếu có trong cây.
+    /// Mã lạ bị loại để cấu hình quyền không lưu rác.
+    /// </summary>
+    private static string? NormalizeCode(string? code)
+    {
+        if (string.IsNullOrWhiteSpace(code)) return null;
+
+        var parsed = PermissionCodeExtensions.FromCode(code);
+        if (parsed.HasValue) return parsed.Value.ToCode();
+
+        var trimmed = code.Trim();
+        if (PermissionTreeCatalog.IsGroup(trimmed) || PermissionTreeCatalog.IsScreen(trimmed))
+            return trimmed.ToUpperInvariant();
+
+        return null;
+    }
 
     private async Task<Snapshot> GetSnapshotAsync(CancellationToken cancellationToken)
     {

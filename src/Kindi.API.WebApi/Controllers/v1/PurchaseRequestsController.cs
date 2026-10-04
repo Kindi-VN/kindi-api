@@ -90,4 +90,35 @@ public class PurchaseRequestsController : ApiControllerBase
 		var fileName = $"purchase_requests_{DateTime.Now:yyyyMMdd_HHmmss}.xlsx";
 		return File(bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", fileName);
 	}
+
+	/// <summary>Xoá mềm một yêu cầu mua hàng (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.DeletePurchaseRequest)]
+	[HttpDelete("{id:guid}")]
+	public async Task<IActionResult> Delete(Guid id)
+	{
+		await _service.DeleteAsync(id);
+		return Ok(new { Id = id }, _localizer["PurchaseRequest_DeleteSuccess"]);
+	}
+
+	/// <summary>Danh sách yêu cầu mua hàng đã xoá mềm (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ViewRestorePurchaseRequest, PermissionCode.RestorePurchaseRequest)]
+	[HttpGet("deleted")]
+	public async Task<IActionResult> GetDeleted([FromQuery] PurchaseRequestQueryDto query)
+	{
+		query.IsDeleted = true;
+		var result = await _service.GetPagedAsync(query);
+		return OkPaged(result, _localizer["PurchaseRequestsRetrievedSuccess"]);
+	}
+
+	/// <summary>Khôi phục một yêu cầu mua hàng đã xoá mềm (Chỉ Admin).</summary>
+	[Authorize(Roles = RoleConstants.Admin)]
+	[HasPermission(PermissionCode.ViewRestorePurchaseRequest, PermissionCode.RestorePurchaseRequest)]
+	[HttpPost("{id:guid}/restore")]
+	public async Task<IActionResult> Restore(Guid id)
+	{
+		var result = await _service.RestoreAsync(id);
+		return Ok(result, _localizer["RestoreSuccess"]);
+	}
 }

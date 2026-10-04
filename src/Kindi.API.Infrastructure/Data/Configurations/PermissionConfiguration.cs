@@ -14,7 +14,7 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 
         builder.Property(x => x.Code)
             .IsRequired()
-            .HasMaxLength(8);
+            .HasMaxLength(50);
 
         builder.HasIndex(x => x.Code)
             .IsUnique();
@@ -22,6 +22,9 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
         builder.Property(x => x.Name)
             .IsRequired()
             .HasMaxLength(200);
+
+        builder.Property(x => x.NameKey)
+            .HasMaxLength(100);
 
         builder.Property(x => x.Route)
             .HasMaxLength(200);
@@ -34,9 +37,10 @@ public class PermissionConfiguration : IEntityTypeConfiguration<Permission>
 
         builder.HasIndex(x => x.ParentCode);
 
-        // Xoá nhóm không xoá quyền — quyền chỉ mất liên kết nhóm.
-        builder.HasOne(x => x.ParentGroup)
-            .WithMany()
+        // Cây quyền tự tham chiếu: cha là một node khác trong chính bảng Permissions (ParentCode → Code).
+        // Xoá node cha không xoá con (Restrict) — tránh mất dữ liệu gán quyền.
+        builder.HasOne(x => x.Parent)
+            .WithMany(x => x.Children)
             .HasForeignKey(x => x.ParentCode)
             .HasPrincipalKey(x => x.Code)
             .OnDelete(DeleteBehavior.Restrict);

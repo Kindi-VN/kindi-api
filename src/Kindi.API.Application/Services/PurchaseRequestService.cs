@@ -112,7 +112,8 @@ public class PurchaseRequestService : IPurchaseRequestService
         var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
 
 		// Quyền xem: admin thấy tất cả (hoặc chỉ của mình khi truyền mineOnly), người dùng thường chỉ thấy yêu cầu của chính mình.
-		var onlyMine = query.MineOnly || !_currentUserService.IsInRole(UserRole.Admin);
+		var isAdmin = _currentUserService.IsInRole(UserRole.Admin);
+		var onlyMine = query.MineOnly || !isAdmin;
 		var meId = GetCurrentUserId();
 
 		if (onlyMine && meId == null)
@@ -120,11 +121,18 @@ public class PurchaseRequestService : IPurchaseRequestService
 
 		var mineId = meId ?? Guid.Empty;
 
+		// Tab "Đã xoá" (chỉ admin): bỏ global soft-delete filter để lấy các yêu cầu đã xoá mềm.
+		var onlyDeleted = query.IsDeleted == true && isAdmin;
+
+		var source = onlyDeleted
+			? _queryService.GetQueryable<PurchaseRequest>().IgnoreQueryFilters().AsNoTracking().Where(x => x.IsDeleted)
+			: _queryService.GetAllNoTracking<PurchaseRequest>();
+
 		// Thông tin cá nhân nằm ở bảng Users — kèm User để tìm kiếm và map DTO.
-		var q = _queryService.GetAllNoTracking<PurchaseRequest>()
+		var q = source
 			.Include(x => x.User)
 			.WhereIf(onlyMine, x => x.UserId == mineId)
-			.WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
+			.WhereIf(query.Status.HasValue && !onlyDeleted, x => x.Status == query.Status!.Value)
 			.WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
 			.WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
 
@@ -165,5 +173,33 @@ public class PurchaseRequestService : IPurchaseRequestService
 		await _repository.SaveChangesAsync();
 
 		return _mapper.Map<PurchaseRequestStatusResponseDto>(entity);
+	}
+
+	/// <summary>Admin xoá mềm một yêu cầu mua hàng (global filter tự ẩn khỏi mọi truy vấn đọc).</summary>
+	public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+	{
+		var entity = await _repository.GetByIdAsync(id, cancellationToken);
+		if (entity == null || entity.IsDeleted)
+			throw new AppException(PurchaseRequestError.NotFound);
+
+		_repository.Delete(entity);
+		await _repository.SaveChangesAsync(cancellationToken);
+	}
+
+	/// <summary>Admin khôi phục một yêu cầu mua hàng đã xoá mềm.</summary>
+	public async Task<PurchaseRequestResponseDto> RestoreAsync(Guid id, CancellationToken cancellationToken = default)
+	{
+		// GetByIdIncludingDeletedAsync bỏ qua global soft-delete filter → lấy được record đã xoá mềm.
+		var entity = await _repository.GetByIdIncludingDeletedAsync(id, cancellationToken);
+		if (entity == null || !entity.IsDeleted)
+			throw new AppException(PurchaseRequestError.NotFound);
+
+		entity.IsDeleted = false;
+		entity.UpdatedAt = DateTime.UtcNow;
+
+		_repository.Update(entity);
+		await _repository.SaveChangesAsync(cancellationToken);
+
+		return _mapper.Map<PurchaseRequestResponseDto>(entity);
 	}
 }

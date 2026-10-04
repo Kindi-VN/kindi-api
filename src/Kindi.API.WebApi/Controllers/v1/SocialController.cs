@@ -156,10 +156,25 @@ public class SocialController : ApiControllerBase
     }
 
     /// <summary>
+    /// Admin: Danh sách bài viết đã xóa (tab "Đã xóa").
+    /// </summary>
+    [Authorize(Roles = RoleConstants.Admin)]
+    [HasPermission(PermissionCode.ViewRestoreSocialPost, PermissionCode.RestoreSocialPost, PermissionCode.ViewSocialPosts)]
+    [HttpGet("posts/deleted")]
+    public async Task<IActionResult> GetDeletedPosts(
+        [FromQuery] string? search = null,
+        [FromQuery] int pageNumber = 1,
+        [FromQuery] int pageSize = 10)
+    {
+        var result = await _socialService.GetAdminPostsAsync("deleted", search, null, null, pageNumber, pageSize);
+        return OkPaged(result, _stringLocalizer["Social_GetPostsSuccess"]);
+    }
+
+    /// <summary>
     /// Admin: Khôi phục bài viết đã xóa
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.RestoreSocialPost)]
+    [HasPermission(PermissionCode.ViewRestoreSocialPost, PermissionCode.RestoreSocialPost)]
     [HttpPost("posts/{id}/restore")]
     public async Task<IActionResult> RestorePost(Guid id)
     {
