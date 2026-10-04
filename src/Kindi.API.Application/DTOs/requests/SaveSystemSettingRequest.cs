@@ -43,6 +43,12 @@ public class SaveSystemSettingRequest
     public int ReferralCodeLength { get; set; }
     public int CommissionAttributionDays { get; set; }
 
+    /// <summary>Tỷ lệ thuế doanh thu (%) áp cho mọi bản khai; khai riêng ở từng bản thì ghi đè giá trị này.</summary>
+    public decimal RevenueTaxPercent { get; set; }
+
+    /// <summary>Số doanh thu nhập vào đã gồm thuế hay chưa, áp cho mọi bản khai.</summary>
+    public bool RevenueTaxIncluded { get; set; }
+
     public int MaxUploadSizeMb { get; set; }
     public string? AllowedImageExtensions { get; set; }
     public string? AllowedDocumentExtensions { get; set; }
