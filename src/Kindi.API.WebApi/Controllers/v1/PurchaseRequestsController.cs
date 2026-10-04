@@ -62,7 +62,7 @@ public class PurchaseRequestsController : ApiControllerBase
 	/// </summary>
 	/// <remarks>
 	/// Tham số <c>query.searchField</c> (tuỳ chọn) giới hạn tìm kiếm vào ĐÚNG một trường; bỏ trống thì tìm mọi trường.
-	/// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
+	/// Các giá trị hợp lệ: <c>productName</c>, <c>code</c>, <c>recordReferrerCode</c>, <c>recordReferrerName</c>, <c>accountReferrerName</c>, <c>customerName</c>, <c>customerPhone</c>, <c>customerEmail</c>.
 	/// </remarks>
 	[Authorize]
 	[HttpGet]

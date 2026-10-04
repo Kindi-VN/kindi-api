@@ -70,7 +70,16 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			.WhereIf(request.ToDate.HasValue, x => x.CreatedAt < request.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
 
 		// searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
-		q = RequestSearchFilters.ApplyOffer(q, search, request.SearchField);
+		// Tên người giới thiệu không nằm trong bảng yêu cầu (chỉ có MÃ) — quy tên về tập mã trước khi lọc.
+		var needsOfferReferrerCodes = !string.IsNullOrEmpty(search)
+			&& (request.SearchField is null
+				or RequestSearchField.RecordReferrerName
+				or RequestSearchField.AccountReferrerName);
+		var offerReferrerCodes = needsOfferReferrerCodes
+			? await _referralService.FindReferrerCodesByNameAsync(search!, unaccentAndCaseInsensitive: false)
+			: null;
+
+		q = RequestSearchFilters.ApplyOffer(q, search, request.SearchField, offerReferrerCodes);
 
 		var pagedEntities = await q.ToPagedListAsync(
 			request.Page,

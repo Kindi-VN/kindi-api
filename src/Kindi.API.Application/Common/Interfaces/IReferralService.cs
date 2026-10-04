@@ -59,6 +59,15 @@ public interface IReferralService
     /// <summary>Tên chủ thể theo mã (CTV hoặc tài khoản) — dùng để hiển thị ở màn quản trị.</summary>
     Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes);
 
+    /// <summary>
+    /// Ngược lại <see cref="LoadNamesAsync"/>: mã chia sẻ của những chủ thể (tài khoản / CTV) có TÊN khớp
+    /// từ khoá — dùng để tìm bản ghi theo TÊN người giới thiệu (bản ghi chỉ lưu MÃ, không lưu tên).
+    /// <paramref name="searchTerm"/> phải cùng dạng với tham số truyền cho bộ lọc:
+    /// <paramref name="unaccentAndCaseInsensitive"/> = <c>true</c> thì bỏ dấu + không phân biệt hoa/thường (ILIKE),
+    /// <c>false</c> thì khớp chứa phân biệt hoa/thường (đúng như luồng offer). Không khớp thì trả danh sách rỗng.
+    /// </summary>
+    Task<IReadOnlyCollection<string>> FindReferrerCodesByNameAsync(string searchTerm, bool unaccentAndCaseInsensitive);
+
     /// <summary>Gắn tên chủ thể vào từng bản ghi theo mã chia sẻ đã ghi nhận (màn quản trị).</summary>
     Task FillNamesAsync<T>(
         IEnumerable<T> items,

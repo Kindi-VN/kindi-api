@@ -11,7 +11,7 @@ public class PurchaseRequestQueryDto
 
 	/// <summary>
 	/// Chỉ tìm theo đúng một trường (không OR lan sang trường khác); bỏ trống = tìm mọi trường như trước.
-	/// Giá trị hợp lệ: productName, code, recordReferrerCode, customerName, customerPhone, customerEmail.
+	/// Giá trị hợp lệ: productName, code, recordReferrerCode, recordReferrerName, accountReferrerName, customerName, customerPhone, customerEmail.
 	/// </summary>
 	public RequestSearchField? SearchField { get; set; }
 

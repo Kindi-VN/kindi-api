@@ -137,7 +137,16 @@ public class PurchaseRequestService : IPurchaseRequestService
 			.WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
 
 		// searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
-		q = RequestSearchFilters.ApplyPurchase(q, searchTerm, query.SearchField);
+		// Tên người giới thiệu không nằm trong bảng yêu cầu (chỉ có MÃ) — quy tên về tập mã trước khi lọc.
+		var needsReferrerCodes = !string.IsNullOrEmpty(searchTerm)
+			&& (query.SearchField is null
+				or RequestSearchField.RecordReferrerName
+				or RequestSearchField.AccountReferrerName);
+		var referrerCodes = needsReferrerCodes
+			? await _referralService.FindReferrerCodesByNameAsync(searchTerm!, unaccentAndCaseInsensitive: true)
+			: null;
+
+		q = RequestSearchFilters.ApplyPurchase(q, searchTerm, query.SearchField, referrerCodes);
 
 		var pagedEntities = await q.ToPagedListAsync(
 			query.Page,

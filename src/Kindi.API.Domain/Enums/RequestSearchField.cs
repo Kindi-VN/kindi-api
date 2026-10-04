@@ -22,5 +22,17 @@ public enum RequestSearchField
     CustomerPhone,
 
     /// <summary>Email người tạo yêu cầu (lấy từ bảng Users).</summary>
-    CustomerEmail
+    CustomerEmail,
+
+    /// <summary>
+    /// Tên người giới thiệu BẢN GHI (người mang khách tới yêu cầu này). Bản ghi chỉ lưu
+    /// <c>RecordReferrerCode</c>, tên tra từ tài khoản/CTV sở hữu mã đó.
+    /// </summary>
+    RecordReferrerName,
+
+    /// <summary>
+    /// Tên người giới thiệu TÀI KHOẢN (người đã mang chủ tài khoản của yêu cầu tới hệ thống),
+    /// tra theo <c>Users.AccountReferrerCode</c>.
+    /// </summary>
+    AccountReferrerName
 }

@@ -237,6 +237,54 @@ public class ReferralService : IReferralService
         return names;
     }
 
+    public async Task<IReadOnlyCollection<string>> FindReferrerCodesByNameAsync(
+        string searchTerm, bool unaccentAndCaseInsensitive)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return Array.Empty<string>();
+
+        var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Mã sinh trên tài khoản (Users.ReferralCode) và trên hồ sơ CTV (Collaborators.ReferralCode / CollaboratorCode);
+        // tên của cả hai đều nằm ở bảng Users.
+        var userQuery = _queryService.GetQueryableNoTracking<User>()
+            .Where(u => u.ReferralCode != null);
+        var collaboratorQuery = _queryService.GetQueryableNoTracking<Collaborator>()
+            .Where(c => c.ReferralCode != null || c.CollaboratorCode != null);
+
+        if (unaccentAndCaseInsensitive)
+        {
+            var pattern = "%" + searchTerm + "%";
+            userQuery = userQuery.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\"));
+            collaboratorQuery = collaboratorQuery.Where(c => EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), pattern, "\\"));
+        }
+        else
+        {
+            userQuery = userQuery.Where(u => u.FullName.Contains(searchTerm));
+            collaboratorQuery = collaboratorQuery.Where(c => c.User.FullName.Contains(searchTerm));
+        }
+
+        foreach (var code in await userQuery.Select(u => u.ReferralCode!).ToListAsync())
+        {
+            if (!string.IsNullOrWhiteSpace(code))
+                codes.Add(code);
+        }
+
+        var collaboratorCodes = await collaboratorQuery
+            .Select(c => new { c.ReferralCode, c.CollaboratorCode })
+            .ToListAsync();
+
+        foreach (var pair in collaboratorCodes)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.ReferralCode))
+                codes.Add(pair.ReferralCode!);
+            if (!string.IsNullOrWhiteSpace(pair.CollaboratorCode))
+                codes.Add(pair.CollaboratorCode!);
+        }
+
+        return codes.ToList();
+    }
+
     public async Task FillNamesAsync<T>(
         IEnumerable<T> items,
         Func<T, string?> getReferralCode,
