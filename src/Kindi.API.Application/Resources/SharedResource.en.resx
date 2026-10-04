@@ -959,13 +959,6 @@
   <data name="Collaborator_LevelExceeded">
     <value>Collaborator level exceeds the maximum allowed</value>
   </data>
-  
-  <data name="User_PhoneRequired">
-    <value>Phone number is required</value>
-  </data>
-  <data name="User_PhoneAlreadyExists">
-    <value>Phone number already exists in the system</value>
-  </data>
   <!-- Social - Get Pending Posts -->
   <data name="Social_GetPendingSuccess">
     <value>Get pending posts successfully</value>
@@ -982,6 +975,9 @@
   <!-- Social - Reject Post -->
   <data name="Social_RejectSuccess">
     <value>Post rejected successfully</value>
+  </data>
+  <data name="Social_PendingApproval">
+    <value>Your post has been submitted and is pending approval. You will be notified once it is approved!</value>
   </data>
   <!-- Social - Pin Post -->
   <data name="Social_PinSuccess">
