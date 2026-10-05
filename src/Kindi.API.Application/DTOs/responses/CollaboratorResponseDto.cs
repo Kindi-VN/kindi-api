@@ -16,6 +16,9 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
     public AccountCredentialsDto? Account { get; set; }
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+
+    /// <summary>Mã tài khoản (USR-…) của người gửi/lập hồ sơ.</summary>
+    public string? UserCode { get; set; }
     public string FullName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
     public string? Zalo { get; set; }
@@ -89,5 +92,7 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : src.BusinessFieldName)
             } : null))
             .ForMember(dest => dest.AccountReferrerCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
 }

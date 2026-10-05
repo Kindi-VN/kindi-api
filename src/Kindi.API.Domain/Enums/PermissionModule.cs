@@ -10,6 +10,10 @@ public enum PermissionModule
     Group = 5,
     Community = 6,
     Referral = 7,
+
+    /// <summary>Khai doanh thu, cấu hình loại thu/chi — tách khỏi SuperAdmin để cấp được cho quản trị viên.</summary>
+    Revenue = 9,
+
     SuperAdmin = 8
 }
 

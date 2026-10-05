@@ -5,6 +5,12 @@ public class UserInfoResponse
 {
 	public Guid Id { get; set; }
 	public string? UserCode { get; set; }
+
+	/// <summary>Mã chia sẻ của chính tài khoản.</summary>
+	public string? ReferralCode { get; set; }
+
+	/// <summary>Mã chia sẻ của tài khoản đã mang người này vào hệ thống.</summary>
+	public string? AccountReferrerCode { get; set; }
 	public string Username { get; set; } = string.Empty;
 	public string FullName { get; set; } = string.Empty;
 	public string Email { get; set; } = string.Empty;

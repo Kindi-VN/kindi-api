@@ -10,6 +10,9 @@ public class PartnerResponseDto : IMapFrom<Partner>
 {
     public Guid Id { get; set; }
     public Guid UserId { get; set; }
+
+    /// <summary>Mã tài khoản (USR-…) của người gửi/lập hồ sơ.</summary>
+    public string? UserCode { get; set; }
     public string PartnerCode { get; set; } = string.Empty;
     public string FullName { get; set; } = string.Empty;
     public string Phone { get; set; } = string.Empty;
@@ -57,6 +60,8 @@ public class PartnerResponseDto : IMapFrom<Partner>
             .ForMember(dest => dest.CompanyAddress, opt => opt.MapFrom(src => src.Company != null ? src.Company.Address : src.CompanyAddress))
             .ForMember(dest => dest.CompanyWebsite, opt => opt.MapFrom(src => src.Company != null ? src.Company.Website : src.CompanyWebsite))
             .ForMember(dest => dest.AccountReferrerCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
     }
 }

@@ -345,6 +345,8 @@ public class AuthService : IAuthService
 		{
 			Id = user.Id,
 			UserCode = user.UserCode,
+			ReferralCode = user.ReferralCode,
+			AccountReferrerCode = user.AccountReferrerCode,
 			Username = user.Username,
 			FullName = user.FullName,
 			Email = user.Email,

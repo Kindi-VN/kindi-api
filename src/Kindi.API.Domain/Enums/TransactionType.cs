@@ -7,5 +7,8 @@ public enum TransactionType
     PurchaseRequest = 1,
 
     /// <summary>Yêu cầu mua chung.</summary>
-    GroupBuyingRequest = 2
+    GroupBuyingRequest = 2,
+
+    /// <summary>Offer đối tác gửi cho yêu cầu mua hàng.</summary>
+    OfferRequest = 3
 }

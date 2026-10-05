@@ -282,6 +282,8 @@ public class UserService : IUserService
     private static UserInfoResponse ToInfoResponse(User user) => new()
     {
         Id = user.Id,
+        ReferralCode = user.ReferralCode,
+        AccountReferrerCode = user.AccountReferrerCode,
         UserCode = user.UserCode,
         Username = user.Username,
         FullName = user.FullName,
