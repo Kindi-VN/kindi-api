@@ -139,7 +139,9 @@ public class PermissionService : IPermissionService
         if (!RoleRules.IsAssignable(role))
             throw new InvalidOperationException("Không thể cấu hình quyền cho role này.");
 
-        var wanted = Normalize(permissionCodes);
+        // Bổ sung chuỗi tổ tiên (màn hình, nhóm) cho mọi mã được cấp: quyền chỉ có hiệu lực khi bản thân
+        // VÀ mọi tổ tiên đều được cấp, nên lưu con mà thiếu cha là quyền bị vô hiệu ngay sau khi lưu.
+        var wanted = WithAncestors(Normalize(permissionCodes));
 
         var permissions = (await _queryService.GetAll<Permission>().ToListAsync(cancellationToken))
             .GroupBy(x => x.Id)
@@ -204,7 +206,7 @@ public class PermissionService : IPermissionService
         if (ids.Count == 0)
             throw new InvalidOperationException("Chưa chọn tài khoản nào để cấu hình quyền.");
 
-        var wanted = Normalize(permissionCodes);
+        var wanted = WithAncestors(Normalize(permissionCodes));
 
         var permissions = (await _queryService.GetAll<Permission>().ToListAsync(cancellationToken))
             .GroupBy(x => x.Id)
@@ -373,6 +375,24 @@ public class PermissionService : IPermissionService
             .Where(x => x is not null)
             .Select(x => x!)
             .ToHashSet(Comparer);
+
+    /// <summary>
+    /// Bổ sung toàn bộ chuỗi tổ tiên (màn hình → nhóm) cho các mã được cấp. Quyền hiệu lực = bản thân
+    /// VÀ mọi tổ tiên đều được cấp, nên khi lưu chỉ có mã hành động (thiếu mã màn hình/nhóm) thì quyền
+    /// vừa bật sẽ bị kế thừa vô hiệu ngay (isGranted=true nhưng isEffective=false). Chỉ THÊM tổ tiên,
+    /// không xoá con: tắt cha trong giao diện vẫn không lan/xoá các mã con đã lưu.
+    /// </summary>
+    private static HashSet<string> WithAncestors(IEnumerable<string> permissionCodes)
+    {
+        var result = new HashSet<string>(permissionCodes, Comparer);
+        foreach (var code in result.ToList())
+        {
+            foreach (var ancestor in PermissionTreeCatalog.AncestorsOf(code))
+                result.Add(ancestor);
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Chuẩn hoá một mã node: hành động P### về dạng chuẩn, node nhóm/màn hình giữ nguyên nếu có trong cây.
