@@ -84,6 +84,7 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
             {
                 Id = src.Company.Id,
                 CompanyName = src.Company.Name,
+CompanyCode = src.Company != null ? src.Company.CompanyCode : null,
                 CompanyTax = src.Company.TaxCode,
                 CompanyAddress = src.Company.Address ?? src.Address,
                 CompanyWebsite = src.Company.Website ?? src.Website,

@@ -735,6 +735,7 @@ public sealed class PayoutService : IPayoutService
         UserId = statement.UserId,
         Username = user?.Username,
         FullName = user?.FullName,
+            UserCode = user?.UserCode,
         Type = statement.Type,
         AccruedAmount = statement.AccruedAmount,
         FeeRate = statement.FeeRate,

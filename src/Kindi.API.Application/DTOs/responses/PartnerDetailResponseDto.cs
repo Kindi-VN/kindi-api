@@ -54,6 +54,7 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
             .ForMember(dest => dest.BusinessInfo, opt => opt.MapFrom(src => new BusinessInfoDto
             {
                 CompanyName = src.CompanyName,
+                CompanyCode = src.Company != null ? src.Company.CompanyCode : null,
                 CompanyTax = src.CompanyTax,
                 CompanyAddress = src.CompanyAddress,
                 CompanyWebsite = src.CompanyWebsite,

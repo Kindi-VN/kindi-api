@@ -8,6 +8,8 @@ namespace Kindi.API.Application.DTOs.Responses;
 /// </summary>
 public class BusinessInfoDto
 {
+    /// <summary>Mã công ty (CMP-…).</summary>
+    public string? CompanyCode { get; set; }
     public string? CompanyName { get; set; }
     public string? CompanyTax { get; set; } = string.Empty;
     public string? CompanyAddress { get; set; }

@@ -256,6 +256,7 @@ public sealed class BankAccountService : IBankAccountService
         UserId = account.UserId,
         Username = account.User?.Username,
         FullName = account.User?.FullName,
+        UserCode = account.User?.UserCode,
         BankName = account.BankName,
         Branch = account.Branch,
         AccountNumber = account.AccountNumber,
