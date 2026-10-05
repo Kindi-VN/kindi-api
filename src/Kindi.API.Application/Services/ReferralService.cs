@@ -9,30 +9,29 @@ using Microsoft.EntityFrameworkCore;
 namespace Kindi.API.Application.Services;
 
 /// <summary>
-/// Mã chia sẻ riêng (refcode) — nguồn duy nhất là <c>Users.ReferralCode</c> cho MỌI loại tài khoản
-/// (khách hàng, CTV, đối tác). Mã CTV trên hồ sơ (<c>Collaborators.CollaboratorCode</c>) là mã nghiệp vụ
-/// riêng của hồ sơ, không dùng để chia sẻ — xem <see cref="IReferralService"/>.
+/// Mã chia sẻ riêng (refcode) của từng chủ thể — xem <see cref="IReferralService"/>.
+/// CTV dùng mã riêng trên hồ sơ CTV; các tài khoản khác sinh mã riêng ở bảng Users.
 /// </summary>
 public class ReferralService : IReferralService
 {
+    private readonly IRepository<Collaborator> _collaboratorRepository;
     private readonly IRepository<User> _userRepository;
-    private readonly ISystemSettingService _systemSettingService;
     private readonly IRepository<ReferralEvent> _referralEventRepository;
     private readonly ICurrentUserService _currentUserService;
     private readonly IQueryService _queryService;
 
     public ReferralService(
+        IRepository<Collaborator> collaboratorRepository,
         IRepository<User> userRepository,
         IRepository<ReferralEvent> referralEventRepository,
         ICurrentUserService currentUserService,
-        IQueryService queryService,
-        ISystemSettingService systemSettingService)
+        IQueryService queryService)
     {
+        _collaboratorRepository = collaboratorRepository;
         _userRepository = userRepository;
         _referralEventRepository = referralEventRepository;
         _currentUserService = currentUserService;
         _queryService = queryService;
-        _systemSettingService = systemSettingService;
     }
 
     public async Task<string?> GetSharerReferralCodeAsync()
@@ -40,17 +39,20 @@ public class ReferralService : IReferralService
         if (!Guid.TryParse(_currentUserService.UserId, out var userId))
             return null;
 
-        return await EnsureUserReferralCodeAsync(userId);
-    }
+        // Đọc qua repository (context ghi, tracking) vì bên dưới Update chính entity này.
+        var collaborator = await _collaboratorRepository.GetFirstAsync(c => c.UserId == userId);
+        if (collaborator != null)
+        {
+            // Hồ sơ CTV cũ chưa có mã chia sẻ riêng → lấy theo mã CTV đã in trên hồ sơ.
+            if (!string.IsNullOrWhiteSpace(collaborator.ReferralCode))
+                return collaborator.ReferralCode;
 
-    /// <summary>
-    /// Mã chia sẻ của một tài khoản — nguồn DUY NHẤT là <c>Users.ReferralCode</c>: mọi loại tài khoản
-    /// (khách hàng, CTV, đối tác, quản trị) dùng chung một loại mã, sinh ngay lần đầu cần tới.
-    /// </summary>
-    public async Task<string?> EnsureUserReferralCodeAsync(Guid userId)
-    {
-        if (userId == Guid.Empty)
-            return null;
+            collaborator.ReferralCode = collaborator.CollaboratorCode ?? await GenerateUniqueCodeAsync();
+            _collaboratorRepository.Update(collaborator);
+            await _collaboratorRepository.SaveChangesAsync();
+
+            return collaborator.ReferralCode;
+        }
 
         // Đọc qua repository (context ghi, tracking) vì bên dưới Update chính entity này.
         var user = await _userRepository.GetByIdAsync(userId);
@@ -74,7 +76,9 @@ public class ReferralService : IReferralService
 
         var code = referralCode.Trim().ToUpperInvariant();
 
-        var exists = await _queryService.AnyAsync<User>(u => u.ReferralCode == code);
+        var exists =
+            await _queryService.AnyAsync<User>(u => u.ReferralCode == code) ||
+            await _queryService.AnyAsync<Collaborator>(c => c.ReferralCode == code || c.CollaboratorCode == code);
 
         return exists ? code : null;
     }
@@ -89,15 +93,15 @@ public class ReferralService : IReferralService
             return await ResolveAsync(referralCode);
 
         // Đã ghi nhận người giới thiệu → giữ nguyên, không đổi dù sau này mở link của CTV khác.
-        if (!string.IsNullOrWhiteSpace(user.ReferredByCode))
-            return user.ReferredByCode;
+        if (!string.IsNullOrWhiteSpace(user.AccountReferrerCode))
+            return user.AccountReferrerCode;
 
         var resolved = await ResolveAsync(referralCode);
         if (resolved == null)
             return null;
 
-        user.ReferredByCode = resolved;
-        user.ReferredAt = DateTime.UtcNow;
+        user.AccountReferrerCode = resolved;
+        user.AccountReferrerAt = DateTime.UtcNow;
         _userRepository.Update(user);
         await _userRepository.SaveChangesAsync();
 
@@ -146,8 +150,11 @@ public class ReferralService : IReferralService
             }
         }
 
-        // Chủ mã: mã chia sẻ chỉ nằm ở bảng Users (nguồn duy nhất).
-        var referrerUserId = (await _queryService.GetFirstOrDefaultAsync<User>(u => u.ReferralCode == code))?.Id;
+        // Chủ mã: ưu tiên hồ sơ CTV (mã chia sẻ hoặc mã CTV in trên hồ sơ), sau đó tới tài khoản.
+        var collaborator = await _queryService.GetFirstOrDefaultAsync<Collaborator>(
+            c => c.ReferralCode == code || c.CollaboratorCode == code);
+        var referrerUserId = collaborator?.UserId
+            ?? (await _queryService.GetFirstOrDefaultAsync<User>(u => u.ReferralCode == code))?.Id;
 
         // Mã của chính người phát sinh thì không ghi nhận.
         if (referrerUserId == referredUserId)
@@ -156,7 +163,7 @@ public class ReferralService : IReferralService
         await _referralEventRepository.AddAsync(new ReferralEvent
         {
             ReferralEventCode = CodeGenerator.Generate("RFE"),
-            ReferralCode = code,
+            RecordReferrerCode = code,
             ReferrerUserId = referrerUserId,
             ReferredUserId = referredUserId,
             EventType = eventType,
@@ -211,10 +218,71 @@ public class ReferralService : IReferralService
         var users = await _queryService.GetListAsync<User>(
             u => u.ReferralCode != null && codes.Contains(u.ReferralCode));
 
-        return users
+        // Tên CTV nằm ở bảng Users — kèm User để lấy FullName.
+        var collaborators = await _queryService.GetQueryableNoTracking<Collaborator>()
+            .Include(c => c.User)
+            .Where(c => (c.ReferralCode != null && codes.Contains(c.ReferralCode))
+                        || (c.CollaboratorCode != null && codes.Contains(c.CollaboratorCode)))
+            .ToListAsync();
+
+        var names = users
             .Where(u => u.ReferralCode != null)
             .GroupBy(u => u.ReferralCode!)
             .ToDictionary(g => g.Key, g => g.First().FullName);
+
+        // Mã của CTV ưu tiên tên trên hồ sơ CTV — họ tên lấy từ bảng Users.
+        foreach (var group in collaborators.GroupBy(c => c.ReferralCode ?? c.CollaboratorCode!))
+            names[group.Key] = group.First().User?.FullName ?? string.Empty;
+
+        return names;
+    }
+
+    public async Task<IReadOnlyCollection<string>> FindReferrerCodesByNameAsync(
+        string searchTerm, bool unaccentAndCaseInsensitive)
+    {
+        if (string.IsNullOrWhiteSpace(searchTerm))
+            return Array.Empty<string>();
+
+        var codes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // Mã sinh trên tài khoản (Users.ReferralCode) và trên hồ sơ CTV (Collaborators.ReferralCode / CollaboratorCode);
+        // tên của cả hai đều nằm ở bảng Users.
+        var userQuery = _queryService.GetQueryableNoTracking<User>()
+            .Where(u => u.ReferralCode != null);
+        var collaboratorQuery = _queryService.GetQueryableNoTracking<Collaborator>()
+            .Where(c => c.ReferralCode != null || c.CollaboratorCode != null);
+
+        if (unaccentAndCaseInsensitive)
+        {
+            var pattern = "%" + searchTerm + "%";
+            userQuery = userQuery.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\"));
+            collaboratorQuery = collaboratorQuery.Where(c => EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), pattern, "\\"));
+        }
+        else
+        {
+            userQuery = userQuery.Where(u => u.FullName.Contains(searchTerm));
+            collaboratorQuery = collaboratorQuery.Where(c => c.User.FullName.Contains(searchTerm));
+        }
+
+        foreach (var code in await userQuery.Select(u => u.ReferralCode!).ToListAsync())
+        {
+            if (!string.IsNullOrWhiteSpace(code))
+                codes.Add(code);
+        }
+
+        var collaboratorCodes = await collaboratorQuery
+            .Select(c => new { c.ReferralCode, c.CollaboratorCode })
+            .ToListAsync();
+
+        foreach (var pair in collaboratorCodes)
+        {
+            if (!string.IsNullOrWhiteSpace(pair.ReferralCode))
+                codes.Add(pair.ReferralCode!);
+            if (!string.IsNullOrWhiteSpace(pair.CollaboratorCode))
+                codes.Add(pair.CollaboratorCode!);
+        }
+
+        return codes.ToList();
     }
 
     public async Task FillNamesAsync<T>(
@@ -238,22 +306,17 @@ public class ReferralService : IReferralService
         }
     }
 
-    /// <summary>
-    /// Mã chia sẻ sinh theo Cài đặt chung (tiền tố + độ dài, mặc định KND + 8 ký tự), không dấu phân cách,
-    /// và không trùng mã chia sẻ của tài khoản nào khác.
-    /// </summary>
+    /// <summary>Mã chia sẻ riêng dạng "CTV-XXXXXX" (như mã CTV) và không trùng ở bảng nào.</summary>
     private async Task<string> GenerateUniqueCodeAsync()
     {
-        var setting = await _systemSettingService.GetAsync();
-        var prefix = string.IsNullOrWhiteSpace(setting.ReferralCodePrefix) ? "KND" : setting.ReferralCodePrefix;
-        var length = setting.ReferralCodeLength > 0 ? setting.ReferralCodeLength : 8;
-
         string code;
         bool exists;
         do
         {
-            code = CodeGenerator.GenerateCompact(prefix, length);
-            exists = await _queryService.AnyAsync<User>(u => u.ReferralCode == code);
+            code = CodeGenerator.Generate("CTV");
+            exists =
+                await _queryService.AnyAsync<User>(u => u.ReferralCode == code) ||
+                await _queryService.AnyAsync<Collaborator>(c => c.ReferralCode == code || c.CollaboratorCode == code);
         } while (exists);
 
         return code;

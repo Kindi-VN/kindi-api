@@ -16,6 +16,7 @@ public class Partner : BaseEntity
     // Link to shared company table (new centralized company info)
     public Guid? CompanyId { get; set; }
     public virtual Company? Company { get; set; }
+    public string? ReferralCode { get; set; }
     public string? Note { get; set; }
     public PartnerStatus Status { get; set; } = PartnerStatus.Pending;
     public DateTime? ApprovedAt { get; set; }

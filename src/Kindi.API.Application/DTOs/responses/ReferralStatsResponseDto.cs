@@ -3,7 +3,7 @@ namespace Kindi.API.Application.DTOs.responses;
 /// <summary>Một dòng thống kê giới thiệu theo mã chia sẻ (màn quản trị).</summary>
 public class ReferralStatsItemDto
 {
-    public string ReferralCode { get; set; } = string.Empty;
+    public string RecordReferrerCode { get; set; } = string.Empty;
 
     /// <summary>Tên chủ mã (CTV hoặc tài khoản chia sẻ) — tra theo mã.</summary>
     public string? ReferrerName { get; set; }
@@ -87,7 +87,7 @@ public class ReferralEventResponseDto
 {
     public Guid Id { get; set; }
     public string? ReferralEventCode { get; set; }
-    public string ReferralCode { get; set; } = string.Empty;
+    public string RecordReferrerCode { get; set; } = string.Empty;
     public string? ReferrerName { get; set; }
     public Guid ReferredUserId { get; set; }
     public string? ReferredUserName { get; set; }

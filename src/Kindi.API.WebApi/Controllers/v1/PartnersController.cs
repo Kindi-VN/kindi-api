@@ -152,7 +152,7 @@ public class PartnersController : ApiControllerBase
     /// Danh sách đối tác đã xóa mềm
     /// </summary>
     //[Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.ViewPartners)]
+    [HasPermission(PermissionCode.ViewRestorePartner, PermissionCode.RestorePartner, PermissionCode.DeletePartner, PermissionCode.ViewPartners)]
     [HttpGet("deleted")]
     public async Task<IActionResult> GetDeleted(
         [FromQuery] int pageNumber = 1,
@@ -181,7 +181,7 @@ public class PartnersController : ApiControllerBase
     /// Khôi phục đối tác đã xóa
     /// </summary>
     [Authorize(Roles = RoleConstants.Admin)]
-    [HasPermission(PermissionCode.RestorePartner, PermissionCode.DeletePartner)]
+    [HasPermission(PermissionCode.ViewRestorePartner, PermissionCode.RestorePartner, PermissionCode.DeletePartner)]
     [HttpPost("{id}/restore")]
     public async Task<IActionResult> Restore(Guid id)
     {

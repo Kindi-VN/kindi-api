@@ -200,9 +200,7 @@ public sealed class PayoutService : IPayoutService
         var keyword = query.Search?.Trim().ToLower();
         if (!string.IsNullOrEmpty(keyword))
             statements = statements.Where(x => x.User != null &&
-                (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword) ||
-                    (x.User.UserCode != null && x.User.UserCode.ToLower().Contains(keyword)) ||
-                    (x.User.ReferralCode != null && x.User.ReferralCode.ToLower().Contains(keyword))));
+                (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword)));
 
         // Yêu cầu chờ duyệt lên trước để quản trị viên xử lý theo thứ tự ưu tiên.
         statements = statements
@@ -735,7 +733,6 @@ public sealed class PayoutService : IPayoutService
         UserId = statement.UserId,
         Username = user?.Username,
         FullName = user?.FullName,
-            UserCode = user?.UserCode,
         Type = statement.Type,
         AccruedAmount = statement.AccruedAmount,
         FeeRate = statement.FeeRate,

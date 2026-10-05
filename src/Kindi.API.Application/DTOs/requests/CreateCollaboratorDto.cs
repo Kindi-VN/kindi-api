@@ -2,6 +2,7 @@
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
+using System.Text.Json.Serialization;
 
 namespace Kindi.API.Application.DTOs.Requests;
 
@@ -40,7 +41,22 @@ public class CreateCollaboratorDto : IMapFrom<Collaborator>
     /// Mã chia sẻ trên link (?ref=) — mã của người giới thiệu tài khoản đăng ký.
     /// Không phải mã chia sẻ của hồ sơ CTV (mã đó lấy theo CollaboratorCode).
     /// </summary>
-    public string? ReferredByCode { get; set; }
+    public string? AccountReferrerCode { get; set; }
+
+    /// <summary>
+    /// Nhịp chuyển tiếp: tên cũ "referredByCode" của <see cref="AccountReferrerCode"/>.
+    /// Chỉ để đọc dữ liệu client cũ; điền vào trường chính khi trường chính còn trống,
+    /// còn trường chính đã có giá trị thì bỏ qua tên cũ (tên chính luôn được ưu tiên).
+    /// </summary>
+    [JsonPropertyName("referredByCode")]
+    public string? LegacyReferredByCode
+    {
+        set
+        {
+            if (string.IsNullOrWhiteSpace(AccountReferrerCode))
+                AccountReferrerCode = value;
+        }
+    }
 
     public void Mapping(Profile profile)
       => profile.CreateMap<CreateCollaboratorDto, Collaborator>()

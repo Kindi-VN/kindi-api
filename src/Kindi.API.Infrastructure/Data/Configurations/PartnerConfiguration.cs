@@ -29,6 +29,7 @@ public class PartnerConfiguration : IEntityTypeConfiguration<Partner>
             .WithMany()
             .HasForeignKey(x => x.CompanyId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Property(x => x.ReferralCode).HasMaxLength(50);
         builder.Property(x => x.Note).HasMaxLength(500);
 
         builder.Property(x => x.BusinessType).HasConversion<int>();

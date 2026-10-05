@@ -19,9 +19,9 @@ public class BusinessGroupPostResponseDto : IMapFrom<BusinessGroupPost>
     public string? RefCode { get; set; }
 
     /// <summary>Mã CTV của người chuyển tiếp bản ghi vào nhóm.</summary>
-    public string? ReferralCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
-    public string? ReferralName { get; set; }
+    public string? RecordReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="RecordReferrerCode"/>.</summary>
+    public string? RecordReferrerName { get; set; }
     /// <summary>Bài chuyển tiếp kèm link chia sẻ để mời thành viên tham gia bản ghi gốc.</summary>
     public bool WithShareLink { get; set; }
 

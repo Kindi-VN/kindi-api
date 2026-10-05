@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Kindi.API.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20261005144908_ConsolidateReferralCodesIntoUsers")]
-    partial class ConsolidateReferralCodesIntoUsers
+    [Migration("20261004122658_RenameReferralCodeColumns")]
+    partial class RenameReferralCodeColumns
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -407,7 +407,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -492,16 +492,16 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<bool>("IsPrivateToAdmin")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RecordReferrerCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("RefCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
                     b.Property<Guid?>("RefId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
@@ -605,6 +605,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<string>("Position")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp with time zone");
@@ -852,7 +856,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -928,7 +932,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1074,7 +1078,7 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1175,6 +1179,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -1727,7 +1735,7 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1807,17 +1815,17 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("RecordReferrerCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("RefEntityCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
                     b.Property<Guid?>("RefEntityId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("ReferralEventCode")
                         .HasMaxLength(30)
@@ -1844,7 +1852,7 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasIndex("EventType");
 
-                    b.HasIndex("ReferralCode");
+                    b.HasIndex("RecordReferrerCode");
 
                     b.HasIndex("ReferralEventCode")
                         .IsUnique();
@@ -2641,6 +2649,13 @@ namespace Kindi.API.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("AccountReferrerAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AccountReferrerCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2685,13 +2700,6 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<DateTime?>("ReferredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReferredByCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.Property<int>("Role")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -2718,14 +2726,14 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AccountReferrerCode");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("Phone")
                         .IsUnique()
                         .HasDatabaseName("IX_Users_Phone_Unique");
-
-                    b.HasIndex("ReferredByCode");
 
                     b.HasIndex("Role")
                         .IsUnique()

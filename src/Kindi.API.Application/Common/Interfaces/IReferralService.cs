@@ -16,12 +16,6 @@ public interface IReferralService
     Task<string?> GetSharerReferralCodeAsync();
 
     /// <summary>
-    /// Bảo đảm tài khoản có mã chia sẻ (sinh nếu chưa có). Dùng cho luồng tạo tài khoản
-    /// để hồ sơ mới luôn có mã ngay, không phải chờ người dùng mở trang chia sẻ.
-    /// </summary>
-    Task<string?> EnsureUserReferralCodeAsync(Guid userId);
-
-    /// <summary>
     /// Chuẩn hoá mã nhận từ link chia sẻ: mã không tồn tại ở bảng nào thì trả <c>null</c>
     /// (bỏ qua, không chặn người dùng).
     /// </summary>
@@ -29,7 +23,7 @@ public interface IReferralService
 
     /// <summary>
     /// Mã chia sẻ dùng cho một bản ghi của <paramref name="userId"/>: lần đầu thì ghi nhận mã
-    /// vào tài khoản (<c>Users.ReferredByCode</c>), các lần sau luôn trả mã đã ghi nhận —
+    /// vào tài khoản (<c>Users.AccountReferrerCode</c>), các lần sau luôn trả mã đã ghi nhận —
     /// mở link của CTV khác cũng không ghi đè. Chưa ghi nhận và mã không hợp lệ thì trả <c>null</c>.
     /// </summary>
     Task<string?> ResolveForUserAsync(Guid userId, string? referralCode);
@@ -64,6 +58,15 @@ public interface IReferralService
 
     /// <summary>Tên chủ thể theo mã (CTV hoặc tài khoản) — dùng để hiển thị ở màn quản trị.</summary>
     Task<Dictionary<string, string>> LoadNamesAsync(IEnumerable<string?> referralCodes);
+
+    /// <summary>
+    /// Ngược lại <see cref="LoadNamesAsync"/>: mã chia sẻ của những chủ thể (tài khoản / CTV) có TÊN khớp
+    /// từ khoá — dùng để tìm bản ghi theo TÊN người giới thiệu (bản ghi chỉ lưu MÃ, không lưu tên).
+    /// <paramref name="searchTerm"/> phải cùng dạng với tham số truyền cho bộ lọc:
+    /// <paramref name="unaccentAndCaseInsensitive"/> = <c>true</c> thì bỏ dấu + không phân biệt hoa/thường (ILIKE),
+    /// <c>false</c> thì khớp chứa phân biệt hoa/thường. Không khớp thì trả danh sách rỗng.
+    /// </summary>
+    Task<IReadOnlyCollection<string>> FindReferrerCodesByNameAsync(string searchTerm, bool unaccentAndCaseInsensitive);
 
     /// <summary>Gắn tên chủ thể vào từng bản ghi theo mã chia sẻ đã ghi nhận (màn quản trị).</summary>
     Task FillNamesAsync<T>(

@@ -404,7 +404,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -489,16 +489,16 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<bool>("IsPrivateToAdmin")
                         .HasColumnType("boolean");
 
+                    b.Property<string>("RecordReferrerCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("RefCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
                     b.Property<Guid?>("RefId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("Title")
                         .HasMaxLength(200)
@@ -602,6 +602,10 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<string>("Position")
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
 
                     b.Property<DateTime?>("RejectedAt")
                         .HasColumnType("timestamp with time zone");
@@ -849,7 +853,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(1000)
                         .HasColumnType("character varying(1000)");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -925,7 +929,7 @@ namespace Kindi.API.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1071,7 +1075,7 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1172,6 +1176,10 @@ namespace Kindi.API.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
+
+                    b.Property<string>("ReferralCode")
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<int>("Status")
                         .ValueGeneratedOnAdd()
@@ -1533,8 +1541,8 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.Property<string>("Code")
                         .IsRequired()
-                        .HasMaxLength(8)
-                        .HasColumnType("character varying(8)");
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -1559,6 +1567,13 @@ namespace Kindi.API.Infrastructure.Migrations
                         .IsRequired()
                         .HasMaxLength(200)
                         .HasColumnType("character varying(200)");
+
+                    b.Property<string>("NameKey")
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<int>("NodeKind")
+                        .HasColumnType("integer");
 
                     b.Property<string>("ParentCode")
                         .HasMaxLength(50)
@@ -1724,7 +1739,7 @@ namespace Kindi.API.Infrastructure.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
-                    b.Property<string>("ReferralCode")
+                    b.Property<string>("RecordReferrerCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
@@ -1804,17 +1819,17 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("character varying(500)");
 
+                    b.Property<string>("RecordReferrerCode")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<string>("RefEntityCode")
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
                     b.Property<Guid?>("RefEntityId")
                         .HasColumnType("uuid");
-
-                    b.Property<string>("ReferralCode")
-                        .IsRequired()
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
 
                     b.Property<string>("ReferralEventCode")
                         .HasMaxLength(30)
@@ -1841,7 +1856,7 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasIndex("EventType");
 
-                    b.HasIndex("ReferralCode");
+                    b.HasIndex("RecordReferrerCode");
 
                     b.HasIndex("ReferralEventCode")
                         .IsUnique();
@@ -2638,6 +2653,13 @@ namespace Kindi.API.Infrastructure.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uuid");
 
+                    b.Property<DateTime?>("AccountReferrerAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("AccountReferrerCode")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
 
@@ -2682,13 +2704,6 @@ namespace Kindi.API.Infrastructure.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
-                    b.Property<DateTime?>("ReferredAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ReferredByCode")
-                        .HasMaxLength(30)
-                        .HasColumnType("character varying(30)");
-
                     b.Property<int>("Role")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer")
@@ -2715,14 +2730,14 @@ namespace Kindi.API.Infrastructure.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("AccountReferrerCode");
+
                     b.HasIndex("Email")
                         .IsUnique();
 
                     b.HasIndex("Phone")
                         .IsUnique()
                         .HasDatabaseName("IX_Users_Phone_Unique");
-
-                    b.HasIndex("ReferredByCode");
 
                     b.HasIndex("Role")
                         .IsUnique()
@@ -3165,13 +3180,13 @@ namespace Kindi.API.Infrastructure.Migrations
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.Permission", b =>
                 {
-                    b.HasOne("Kindi.API.Domain.Entities.PermissionGroup", "ParentGroup")
-                        .WithMany()
+                    b.HasOne("Kindi.API.Domain.Entities.Permission", "Parent")
+                        .WithMany("Children")
                         .HasForeignKey("ParentCode")
                         .HasPrincipalKey("Code")
                         .OnDelete(DeleteBehavior.Restrict);
 
-                    b.Navigation("ParentGroup");
+                    b.Navigation("Parent");
                 });
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.PostTag", b =>
@@ -3439,6 +3454,11 @@ namespace Kindi.API.Infrastructure.Migrations
             modelBuilder.Entity("Kindi.API.Domain.Entities.PayoutPeriod", b =>
                 {
                     b.Navigation("Statements");
+                });
+
+            modelBuilder.Entity("Kindi.API.Domain.Entities.Permission", b =>
+                {
+                    b.Navigation("Children");
                 });
 
             modelBuilder.Entity("Kindi.API.Domain.Entities.RevenueExpenseType", b =>

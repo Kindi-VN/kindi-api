@@ -119,3 +119,113 @@ Bằng chứng tự động:
   mỗi lần khởi động) vì migration chạy trước seeder không thể tham chiếu Guid quyền mới.
 - Không kết nối/migrate DB production trong quá trình này; test seeder chạy trên EF InMemory.
 - UI (`kindi-web`) cần cập nhật mã mới ở route/menu/guard trong đợt deploy kế tiếp (repo này không bao gồm).
+
+---
+
+# Đợt bổ sung — Cây quyền đệ quy, kế thừa, phân quyền khôi phục & endpoint còn thiếu
+
+Nhánh: `feat/api-batch-2026-10-04` (commit chồng lên, **chưa push**).
+
+## 9. Cây quyền đệ quy bằng self-reference
+
+- `Permissions.ParentCode` **đổi từ FK trỏ `PermissionGroups.Code` sang TỰ THAM CHIẾU `Permissions.Code`** (cây 3 tầng,
+  sẵn sàng sâu hơn): `quản trị (group)` → `Màn hình người dùng (screen)` → `hành động (P###)`.
+- `Permission` thêm `NodeKind` (`1 group | 2 screen | 3 action`) và `NameKey` (khoá dịch để UI tra resource).
+- **Tái dùng `PermissionScreens.cs`/`PermissionScreenCatalog`** làm tầng màn hình — không tạo danh mục màn hình mới.
+  Mỗi màn hình là một node `Permissions` có mã riêng (ví dụ `OFFERS`, `PARTNERS`), hành động trỏ `ParentCode` = mã màn hình.
+- `GET /api/v1/permissions/tree?role=<int>` trả **cây đệ quy**; mỗi node:
+  `{ code, nameKey, kind (group|screen|action), parentCode, isGranted, isEffective, children: [] }`.
+  - `nameKey` dùng khoá đã seed (`PermissionGroup_<MÃ>`, `PermissionScreen_<MÃ>`, `Permission_<P###>`), bản dịch nằm ở
+    `SharedResource.vi/en.resx`.
+  - `isGranted` = node đang được tick trực tiếp; `isEffective` = còn hiệu lực sau kế thừa.
+  - Tổng số node thật trả về: **132** = 3 nhóm + 29 màn hình + 100 hành động. `role` bỏ trống = Admin (3).
+
+### Kế thừa quyền (mới — chốt bởi chủ dự án)
+
+- **Hiệu lực = bản thân được cấp VÀ mọi tổ tiên đều được cấp.** Tắt màn hình ⇒ mọi hành động trong màn hình mất hiệu lực
+  (dù dữ liệu gán vẫn còn tick); tắt nhóm ⇒ toàn bộ màn hình con tắt theo (đệ quy nhiều tầng).
+- Enforce **ở server**, không phụ thuộc UI:
+  - `PermissionTreeCatalog.ApplyInheritance(granted)` — phép tính **thuần trên danh mục tĩnh** (cha–con khai trong code)
+    nên không query DB khi kiểm.
+  - `PermissionAuthorizationHandler` (chỗ `[HasPermission]` resolve) áp `ApplyInheritance` lên claim `perm` trước khi so khớp.
+  - `PermissionService.GetUserPermissionsAsync` cũng trả tập **hiệu lực** để token mang đúng quyền (AuthService/JwtService).
+- **Tương thích token cũ:** token phát hành trước khi có cây quyền không mang mã node cha (màn hình/nhóm); handler chỉ áp
+  kế thừa khi token **có** mã cấu trúc, nếu không thì giữ nguyên hành vi cũ → phiên đang đăng nhập không bị đá ra khi deploy.
+
+### Quyết định khi LƯU gán quyền (giữ nguyên tập đã lưu)
+
+- `SetRolePermissionsAsync`/`SetUserPermissionsAsync` **lưu đúng tập client gửi lên** — **không tự xoá con khi cha tắt**
+  và **không tự bật cha khi con bật**. Kế thừa **chỉ áp khi KIỂM tra**, không áp khi ghi.
+- Hệ quả mong muốn: tắt một màn hình rồi bật lại ⇒ các hành động con **trở về đúng trạng thái tick cũ** (không bị mất).
+- Bù lại, **seeder** khi thấy role/tài khoản có quyền con mà thiếu node cha sẽ **cấp thêm node cha còn thiếu** (idempotent):
+  nếu không, quy tắc “hiệu lực = bản thân + tổ tiên” sẽ chặn hết quyền cũ sau khi nâng cấp.
+
+## 10. Phân quyền khôi phục (ViewRestore / Restore)
+
+Thêm cặp quyền theo đúng pattern có sẵn ở `CollaboratorsController` (`ViewRestoreCollaborator` + `RestoreCollaborator`):
+mọi màn có xoá mềm giờ có **`ViewRestore<X>`** (xem tab đã xoá) + **`Restore<X>`** (khôi phục), endpoint dùng
+`[HasPermission(mới, cũ)]` một nhịp nên **token cũ vẫn gọi được**.
+
+| Màn | Mã xem đã xoá | Mã khôi phục | Endpoint gác |
+|---|---|---|---|
+| Partners | **P132** ViewRestorePartner | (dùng lại P116 RestorePartner) | `GET /partners/deleted`, `POST /partners/{id}/restore` |
+| Offer (yêu cầu nhận offer) | **P133** ViewRestoreOfferRequest | (P119) | `GET /offerrequests/deleted`, `POST /offerrequests/{id}/restore` |
+| Bài đăng (admin) | **P134** ViewRestoreSocialPost | (P097 RestoreSocialPost) | `GET /social/posts/deleted`, `POST /social/posts/{id}/restore` |
+| Mua chung | **P135** ViewRestoreGroupBuyingRequest | **P136** RestoreGroupBuyingRequest | `GET /groupbuyingrequests/deleted`, `POST /groupbuyingrequests/{id}/restore` |
+| Nhóm | **P137** ViewRestoreGroup | **P138** RestoreGroup | `GET /businessgroups/deleted`, `POST /businessgroups/{id}/restore` |
+| Cấu hình hoa hồng | **P139** ViewRestoreCommissionConfig | **P140** RestoreCommissionConfig | `GET /commissions/deleted`, `POST /commissions/{id}/restore` |
+| Hạng thành viên | **P141** ViewRestoreMembershipTier | **P142** RestoreMembershipTier | `GET /membership-tiers/deleted`, `POST /membership-tiers/{id}/restore` |
+| Loại thu/chi | **P143** ViewRestoreRevenueConfig | **P144** RestoreRevenueConfig | `GET /RevenueExpenseTypes/deleted`, `POST /RevenueExpenseTypes/{id}/restore` |
+| Yêu cầu mua hàng | **P146** ViewRestorePurchaseRequest | **P147** RestorePurchaseRequest | `GET /purchaserequests/deleted`, `POST /purchaserequests/{id}/restore` |
+
+Các mã mới thuộc `Module != SuperAdmin` nên **Admin tự nhận mặc định**; SuperAdmin bypass toàn bộ (không cần seed dòng riêng,
+giữ nguyên quy ước cũ — `kindi_super` đi qua handler và `GetRolePermissionsAsync(SuperAdmin)` trả toàn bộ mã).
+
+## 11. Endpoint xoá/khôi phục còn thiếu
+
+- **Offer requests** (`OfferRequestsController`): thêm `GET /offerrequests/deleted` (lọc `IncludeDeleted` cho admin) —
+  đã có sẵn `DELETE` và `POST /{id}/restore`.
+- **Mua chung** (`GroupBuyingRequestsController`): đã có `DELETE` + restore; **bổ sung `GET /groupbuyingrequests/deleted`**.
+- **Yêu cầu mua hàng** (`PurchaseRequestsController`) — trước đây **không có** bộ xoá/khôi phục, nay thêm đủ:
+  `DELETE /purchaserequests/{id}` (P145), `GET /purchaserequests/deleted` (P146), `POST /purchaserequests/{id}/restore` (P147).
+  Service thêm `DeleteAsync`/`RestoreAsync` + `PurchaseRequestQueryDto.IsDeleted` (xem tab đã xoá, `IgnoreQueryFilters`).
+- **Nhóm / hoa hồng / hạng thành viên / loại thu-chi / đối tác**: bổ sung `GET .../deleted` (trước đó chỉ có restore).
+- Chuẩn tìm kiếm giữ nguyên **ILike + Unaccent**; soft-delete dùng đúng global filter + `IgnoreQueryFilters` toàn hệ.
+
+## 12. Migration (data-preserving)
+
+`src/Kindi.API.Infrastructure/Migrations/20261004131552_RecursivePermissionTreeAndRestorePermissions.cs`
+
+- Bỏ FK `FK_Permissions_PermissionGroups_ParentCode`, bỏ `AK_PermissionGroups_Code`; `Code` nới `varchar(8) → varchar(50)`.
+- Thêm cột `NameKey` (nullable) + `NodeKind` (default 3 = action).
+- **Backfill dữ liệu TRƯỚC khi thêm FK tự tham chiếu**: insert node nhóm (ADMIN/MEMBER/SHARED) + 29 node màn hình
+  (idempotent `ON CONFLICT DO NOTHING`), rồi `UPDATE` `ParentCode` của 100 hành động về mã màn hình tương ứng
+  (`USERS`, `OFFERS`, …) + đặt `NodeKind=3`, `NameKey='Permission_<P###>'`. **Giữ nguyên mọi mã quyền cũ và mọi gán
+  quyền role/user** (không xoá/không đổi Id dòng quyền hành động).
+- Sau đó mới thêm `AK_Permissions_Code` + FK `FK_Permissions_Permissions_ParentCode` (self-FK, `Restrict`).
+- `Down` xoá node group/screen đã seed và trả FK về `PermissionGroups`.
+
+Seeder chạy sau migration tiếp tục đồng bộ `Name`/`NameKey`/`NodeKind`/`ParentCode` theo danh mục trong code (idempotent).
+
+## 13. Bằng chứng build/test
+
+- `dotnet build Kindi.API.slnx` → **exit 0**.
+- `dotnet test tests/Kindi.API.UnitTests` → **47/47 pass** (0 fail, 0 skip); không test nào cũ bị đỏ.
+- Shape JSON `/permissions/tree` (chụp từ code thật qua harness InMemory, đã camelCase như cấu hình Web):
+  xem mẫu ở mục 9 / phần báo cáo kèm theo — minh hoạ kế thừa: node `P040` (`isGranted: true`) nằm dưới màn hình
+  `PARTNERS` (`isGranted: false`) nên có `isEffective: false`.
+
+## 14. File thay đổi (đợt bổ sung)
+
+- `Domain/Entities/Permission.cs`, `Infrastructure/Data/Configurations/PermissionConfiguration.cs` — self-reference + NodeKind/NameKey.
+- `Domain/Enums/PermissionModule.cs` — `PermissionNodeKind`; `PermissionScreens.cs` — mã màn hình; `PermissionTreeCatalog.cs` — **mới** (cây tĩnh + kế thừa).
+- `Domain/Enums/PermissionCatalog.cs`, `PermissionCode.cs` — mã mới P132–P147 + nameKey.
+- `Infrastructure/Data/PermissionSeeder.cs` — seed 3 tầng + cấp node cha (kế thừa) + chuyển tiếp.
+- `Infrastructure/Migrations/20261004131552_RecursivePermissionTreeAndRestorePermissions.*` — **mới** (data-preserving).
+- `Application/Services/PermissionService.cs`, `Common/Interfaces/IPermissionService.cs` — `GetTreeAsync`, raw-vs-effective, Normalize node nhóm/màn hình.
+- `Application/DTOs/responses/PermissionResponses.cs` — `PermissionTreeNodeResponse` (+`isGranted`/`isEffective`).
+- `WebApi/Authorization/PermissionAuthorizationHandler.cs` — enforce kế thừa.
+- `WebApi/Controllers/Admin/PermissionsController.cs` — endpoint `tree`, ma trận `parentCode` = nhóm.
+- `WebApi/Controllers/v1/*` — Partners, OfferRequests, GroupBuyingRequests, BusinessGroups, Commissions, MembershipTiers, RevenueExpenseTypes, Social, PurchaseRequests.
+- `Application/Services/PurchaseRequestService.cs`, `Common/Interfaces/IPurchaseRequestService.cs`, `DTOs/requests/PurchaseRequestQueryDto.cs` — delete/restore/paged-deleted.
+- `Application/Resources/SharedResource.vi.resx`, `SharedResource.en.resx` — 132 khoá `nameKey` + `PurchaseRequest_DeleteSuccess`.

@@ -38,9 +38,9 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
     public string? ReferralCode { get; set; }
 
     /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
-    public string? ReferredByCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
-    public string? ReferredByName { get; set; }
+    public string? AccountReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="AccountReferrerCode"/>.</summary>
+    public string? AccountReferrerName { get; set; }
     public CollaboratorStatus Status { get; set; }
     public bool IsApproved { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -54,9 +54,6 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
     public string? CompanyAddress { get; set; }
     public string? CompanyWebsite { get; set; }
     public CompanyInfoDto? CompanyInfo { get; set; }
-
-    /// <summary>Mã tài khoản (USR-…) của CTV.</summary>
-    public string? UserCode { get; set; }
 
     public void Mapping(Profile profile)
         => profile.CreateMap<Collaborator, CollaboratorResponseDto>()
@@ -84,7 +81,6 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
             {
                 Id = src.Company.Id,
                 CompanyName = src.Company.Name,
-CompanyCode = src.Company != null ? src.Company.CompanyCode : null,
                 CompanyTax = src.Company.TaxCode,
                 CompanyAddress = src.Company.Address ?? src.Address,
                 CompanyWebsite = src.Company.Website ?? src.Website,
@@ -92,8 +88,6 @@ CompanyCode = src.Company != null ? src.Company.CompanyCode : null,
                 CompanySize = src.Company.CompanySize ?? (src.BusinessSize.HasValue ? (CompanySize?)src.BusinessSize.Value : null),
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : src.BusinessFieldName)
             } : null))
-            .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
-            .ForMember(dest => dest.UserCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
+            .ForMember(dest => dest.AccountReferrerCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
 }

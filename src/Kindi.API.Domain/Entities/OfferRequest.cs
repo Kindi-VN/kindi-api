@@ -19,7 +19,7 @@ public class OfferRequest : BaseEntity
     public string? Note { get; set; }
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
-    public string? ReferralCode { get; set; }
+    public string? RecordReferrerCode { get; set; }
 
     // Status
     public OfferStatus Status { get; set; } = OfferStatus.Pending;

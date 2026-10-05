@@ -462,8 +462,6 @@ public class SocialService : ISocialService
                 p.Author.FullName.Contains(keyword) ||
                 p.Author.Username.Contains(keyword) ||
                 (p.Author.UserCode != null && p.Author.UserCode.Contains(keyword)) ||
-                    (p.Author.ReferralCode != null && p.Author.ReferralCode.Contains(keyword)) ||
-                    (p.Author.ReferredByCode != null && p.Author.ReferredByCode.Contains(keyword)) ||
                 (p.Title != null && p.Title.Contains(keyword)));
         }
 

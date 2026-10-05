@@ -29,6 +29,8 @@ public class Collaborator : BaseEntity
     public int Level { get; set; } = 1;
     public string? CollaboratorCode { get; set; }
 
+    /// <summary>Mã CTV đã giới thiệu CTV này (lấy từ link chia sẻ, ghi nhận 1 cấp).</summary>
+    public string? ReferralCode { get; set; }
 
     public bool IsApproved { get; set; } = false;
     private CollaboratorStatus _status = CollaboratorStatus.Pending;

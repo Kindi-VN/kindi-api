@@ -24,9 +24,9 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
     public string? ReferralCode { get; set; }
 
     /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
-    public string? ReferredByCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
-    public string? ReferredByName { get; set; }
+    public string? AccountReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="AccountReferrerCode"/>.</summary>
+    public string? AccountReferrerName { get; set; }
     public string? Note { get; set; }
     public PartnerStatus Status { get; set; }
     public DateTime? ApprovedAt { get; set; }
@@ -54,7 +54,6 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
             .ForMember(dest => dest.BusinessInfo, opt => opt.MapFrom(src => new BusinessInfoDto
             {
                 CompanyName = src.CompanyName,
-                CompanyCode = src.Company != null ? src.Company.CompanyCode : null,
                 CompanyTax = src.CompanyTax,
                 CompanyAddress = src.CompanyAddress,
                 CompanyWebsite = src.CompanyWebsite,
@@ -73,11 +72,8 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
                 CompanySize = src.Company.CompanySize ?? src.CompanySize,
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : null)
             } : null))
-            .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
-            // Mã chia sẻ của chính đối tác nằm ở tài khoản (nguồn duy nhất, không còn trên hồ sơ đối tác).
-            .ForMember(dest => dest.ReferralCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferralCode : null));
+            .ForMember(dest => dest.AccountReferrerCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
 
         // ✅ Mapping cho các DTO con
         profile.CreateMap<User, UserBriefDto>();

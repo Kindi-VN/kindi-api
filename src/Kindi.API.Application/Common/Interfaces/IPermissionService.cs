@@ -1,5 +1,6 @@
 namespace Kindi.API.Application.Common.Interfaces;
 
+using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 
@@ -14,6 +15,13 @@ public interface IPermissionService
 
     /// <summary>Danh sách nhóm quyền (đọc từ bảng PermissionGroups) kèm tên hiển thị và thứ tự.</summary>
     Task<IReadOnlyList<PermissionGroup>> GetGroupsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Cây quyền đệ quy (Nhóm → Màn hình → Hành động) kèm trạng thái cấp của một vai trò
+    /// (<paramref name="role"/> null = mặc định Admin; SuperAdmin = toàn bộ). Mỗi node trả <c>isGranted</c>
+    /// (tick trực tiếp) và <c>isEffective</c> (hiệu lực sau kế thừa) để UI tô mờ phần con khi cha bị tắt.
+    /// </summary>
+    Task<IReadOnlyList<PermissionTreeNodeResponse>> GetTreeAsync(int? role, CancellationToken cancellationToken = default);
 
     /// <summary>Quyền đang bật của một role kèm phiên bản quyền (SuperAdmin: toàn bộ danh mục).</summary>
     Task<RolePermissions> GetRolePermissionsAsync(UserRole role, CancellationToken cancellationToken = default);

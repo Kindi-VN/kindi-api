@@ -13,9 +13,6 @@ public class BankAccountResponse
     /// <summary>Họ tên của chủ thông tin ngân hàng.</summary>
     public string? FullName { get; set; }
 
-    /// <summary>Mã tài khoản (USR-…) của chủ tài khoản.</summary>
-    public string? UserCode { get; set; }
-
     /// <summary>Tên ngân hàng.</summary>
     public string BankName { get; set; } = string.Empty;
 

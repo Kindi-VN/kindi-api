@@ -25,14 +25,14 @@ public class GroupBuyingDetailDto
     public string? ClosedReason { get; set; }
 
     /// <summary>Mã CTV đã mang khách tới yêu cầu này (lấy từ link chia sẻ).</summary>
-    public string? ReferralCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferralCode"/>.</summary>
-    public string? ReferralName { get; set; }
+    public string? RecordReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="RecordReferrerCode"/>.</summary>
+    public string? RecordReferrerName { get; set; }
 
     /// <summary>Mã chia sẻ của người đã giới thiệu người tạo bản ghi (ghi nhận trên tài khoản).</summary>
-    public string? ReferredByCode { get; set; }
-    /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
-    public string? ReferredByName { get; set; }
+    public string? AccountReferrerCode { get; set; }
+    /// <summary>Tên CTV của <see cref="AccountReferrerCode"/>.</summary>
+    public string? AccountReferrerName { get; set; }
 
     // Người mở nhóm (đầu mối liên hệ)
     public string CreatorName { get; set; } = string.Empty;

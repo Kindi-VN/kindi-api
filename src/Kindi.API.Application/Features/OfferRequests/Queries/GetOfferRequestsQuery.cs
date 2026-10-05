@@ -13,6 +13,13 @@ public class GetOfferRequestsQuery : IRequest<PagedList<OfferRequestResponseDto>
 	public bool? IsOfferSent { get; set; }
 	public OfferStatus? Status { get; set; }
 	public string? Search { get; set; }
+
+	/// <summary>
+	/// Chỉ tìm theo đúng một trường (không OR lan sang trường khác); bỏ trống = tìm mọi trường như trước.
+	/// Giá trị hợp lệ: productName, code, recordReferrerCode, customerName, customerPhone, customerEmail.
+	/// </summary>
+	public RequestSearchField? SearchField { get; set; }
+
 	public string? SortBy { get; set; }
 	public string? SortOrder { get; set; }
 

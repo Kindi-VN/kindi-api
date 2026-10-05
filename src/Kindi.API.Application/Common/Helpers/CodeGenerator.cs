@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using System.Linq;
 using System.Linq.Expressions;
 using Kindi.API.Application.Common.Interfaces;
 
@@ -14,7 +13,6 @@ public static class CodeGenerator
 {
     private const string Chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
     private const int MaxLength = 30;
-    private const string DefaultPrefix = "KND";
 
     /// <summary>
     /// Sinh code dạng "{prefix}-XXXXXX" (in hoa).
@@ -26,23 +24,6 @@ public static class CodeGenerator
         var cleanPrefix = prefix.Trim().ToUpperInvariant().Replace(" ", "", StringComparison.Ordinal);
         var randomPart = GenerateRandom(randomLength);
         var code = $"{cleanPrefix}-{randomPart}";
-
-        return code.Length <= MaxLength ? code : code[..MaxLength];
-    }
-
-    /// <summary>
-    /// Sinh mã chia sẻ dạng "{prefix}{random}" — KHÔNG dấu phân cách, chỉ chữ và số.
-    /// Mã này người dùng phải gõ/đọc lại nên bỏ hết ký tự đặc biệt (kể cả tiền tố cấu hình có sẵn dấu).
-    /// </summary>
-    public static string GenerateCompact(string prefix, int randomLength)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(prefix);
-
-        var cleaned = new string(prefix.Trim().ToUpperInvariant().Where(char.IsLetterOrDigit).ToArray());
-        if (cleaned.Length == 0)
-            cleaned = DefaultPrefix;
-
-        var code = cleaned + GenerateRandom(Math.Clamp(randomLength, 4, 20));
 
         return code.Length <= MaxLength ? code : code[..MaxLength];
     }

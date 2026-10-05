@@ -8,6 +8,13 @@ public class BusinessGroupQueryDto
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 12;
     public string? Search { get; set; }
+
+    /// <summary>
+    /// Chỉ tìm theo đúng một trường (không OR lan sang trường khác); bỏ trống = tìm tập trường mặc định của danh sách.
+    /// Giá trị hợp lệ: name, description, topic, businessFieldName, code.
+    /// </summary>
+    public BusinessGroupSearchField? SearchField { get; set; }
+
     public Guid? BusinessFieldId { get; set; }
 
     /// <summary>true = chỉ nhóm mà người đang đăng nhập đã là thành viên.</summary>

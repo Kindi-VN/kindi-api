@@ -12,7 +12,7 @@ public class ReferralEvent : BaseEntity
     public string? ReferralEventCode { get; set; }
 
     /// <summary>Mã chia sẻ ghi nhận (mã của CTV hoặc mã riêng của tài khoản).</summary>
-    public string ReferralCode { get; set; } = string.Empty;
+    public string RecordReferrerCode { get; set; } = string.Empty;
 
     /// <summary>UserId của chủ mã (null khi không xác định được chủ mã).</summary>
     public Guid? ReferrerUserId { get; set; }

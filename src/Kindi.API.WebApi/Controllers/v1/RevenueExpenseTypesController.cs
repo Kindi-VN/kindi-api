@@ -68,7 +68,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Danh sách loại chi phí đã xoá mềm.</summary>
     [HttpGet("deleted")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.ViewRestoreRevenueConfig, PermissionCode.RestoreRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> GetDeleted()
     {
         var result = await _expenseTypeService.GetDeletedAsync();
@@ -77,7 +77,7 @@ public class RevenueExpenseTypesController : ApiControllerBase
 
     /// <summary>Khôi phục một loại chi phí đã xoá mềm (kèm scope của nó).</summary>
     [HttpPost("{id:guid}/restore")]
-    [HasPermission(PermissionCode.ManageRevenueConfig)]
+    [HasPermission(PermissionCode.ViewRestoreRevenueConfig, PermissionCode.RestoreRevenueConfig, PermissionCode.ManageRevenueConfig)]
     public async Task<IActionResult> Restore(Guid id)
     {
         var result = await _expenseTypeService.RestoreAsync(id);

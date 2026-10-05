@@ -1,6 +1,7 @@
 // GetOfferRequestsHandler.cs
 using AutoMapper;
 using Kindi.API.Application.Common.Extensions;
+using Kindi.API.Application.Common.Helpers;
 using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Application.DTOs.responses;
@@ -61,21 +62,27 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			? _queryService.GetQueryableNoTracking<OfferRequest>().IgnoreQueryFilters().Where(x => x.IsDeleted).Include(x => x.User)
 			: _queryService.GetAllNoTracking<OfferRequest>().Include(x => x.User);
 
-		var q = source
+		IQueryable<OfferRequest> q = source
 			.WhereIf(onlyMine, x => x.UserId == mineId)
 			.WhereIf(request.IsOfferSent.HasValue && !includeDeleted, x => x.IsOfferSent == request.IsOfferSent!.Value)
 			.WhereIf(request.Status.HasValue && !includeDeleted, x => x.Status == request.Status!.Value)
-			.WhereIf(!string.IsNullOrEmpty(search), x =>
-				x.ProductName.Contains(search!) ||
-				(x.User != null && x.User.FullName.Contains(search!)) ||
-				(x.User != null && x.User.Phone != null && x.User.Phone.Contains(search!)) ||
-				(x.User != null && x.User.Email != null && x.User.Email.Contains(search!)) ||
-				(x.OfferRequestCode != null && x.OfferRequestCode.Contains(search!)) ||
-				(x.User != null && x.User.UserCode != null && x.User.UserCode.Contains(search!)) ||
-				(x.ReferralCode != null && x.ReferralCode.Contains(search!)) ||
-				(x.User != null && x.User.ReferredByCode != null && x.User.ReferredByCode.Contains(search!)))
 			.WhereIf(request.FromDate.HasValue, x => x.CreatedAt >= request.FromDate!.Value.Date.ToUniversalTime())
 			.WhereIf(request.ToDate.HasValue, x => x.CreatedAt < request.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
+
+		// searchField chỉ định thì chỉ dò đúng một trường; bỏ trống thì dò mọi trường như trước.
+		// Tên người giới thiệu không nằm trong bảng yêu cầu (chỉ có MÃ) — quy tên về tập mã trước khi lọc.
+		var needsOfferReferrerCodes = !string.IsNullOrEmpty(search)
+			&& (request.SearchField is null
+				or RequestSearchField.RecordReferrerName
+				or RequestSearchField.AccountReferrerName);
+		// Tên người giới thiệu phải khớp KHÔNG PHÂN BIỆT hoa/thường và KHÔNG DẤU như các danh sách khác:
+		// tra mã theo từ khoá đã bỏ dấu + escape (ILIKE + Unaccent), không dùng Contains thô.
+		var offerReferrerCodes = needsOfferReferrerCodes
+			? await _referralService.FindReferrerCodesByNameAsync(
+				search!.RemoveVietnameseSign().ToLikeEscaped(), unaccentAndCaseInsensitive: true)
+			: null;
+
+		q = RequestSearchFilters.ApplyOffer(q, search, request.SearchField, offerReferrerCodes);
 
 		var pagedEntities = await q.ToPagedListAsync(
 			request.Page,
@@ -86,8 +93,8 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 			cancellationToken);
 
 		var result = _mapper.MapPagedList<OfferRequest, OfferRequestResponseDto>(pagedEntities);
-		await _referralService.FillNamesAsync(result.Items, x => x.ReferralCode, (x, name) => x.ReferralName = name);
-		await _referralService.FillNamesAsync(result.Items, x => x.ReferredByCode, (x, name) => x.ReferredByName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.RecordReferrerCode, (x, name) => x.RecordReferrerName = name);
+		await _referralService.FillNamesAsync(result.Items, x => x.AccountReferrerCode, (x, name) => x.AccountReferrerName = name);
 		return result;
 	}
 
