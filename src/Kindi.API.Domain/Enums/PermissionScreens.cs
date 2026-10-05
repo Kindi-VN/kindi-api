@@ -27,6 +27,9 @@ public static class PermissionScreens
     public const string PartnerProducts = "PARTNER_PRODUCTS";
     public const string Companies = "COMPANIES";
 
+    /// <summary>Danh mục lĩnh vực hoạt động (dùng chung cho công ty và hồ sơ CTV/đối tác).</summary>
+    public const string BusinessFields = "BUSINESS_FIELDS";
+
     public const string PurchaseRequests = "PURCHASE_REQUESTS";
     public const string Offers = "OFFERS";
     public const string GroupBuying = "GROUP_BUYING";

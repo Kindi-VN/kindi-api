@@ -35,7 +35,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Danh sách lĩnh vực cho màn quản trị (gồm cả lĩnh vực đang tắt) kèm số công ty/tài khoản.
     /// </summary>
     [HttpGet]
-    [HasPermission(PermissionCode.ViewCompanies)]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
     public async Task<IActionResult> GetAllForAdmin()
     {
         var fields = await _businessFieldService.GetAllForAdminAsync();
@@ -46,7 +46,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Công ty và tài khoản thuộc một lĩnh vực.
     /// </summary>
     [HttpGet("{id}/related")]
-    [HasPermission(PermissionCode.ViewCompanies)]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
     public async Task<IActionResult> GetRelated(Guid id)
     {
         var related = await _businessFieldService.GetRelatedAsync(id);
@@ -57,7 +57,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Thêm lĩnh vực hoạt động.
     /// </summary>
     [HttpPost]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.CreateBusinessField)]
     public async Task<IActionResult> Create([FromBody] CreateBusinessFieldRequest request)
     {
         var field = await _businessFieldService.CreateAsync(request);
@@ -68,7 +68,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Sửa lĩnh vực hoạt động (đổi tên, tên gọi khác, bật/tắt).
     /// </summary>
     [HttpPut("{id}")]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.UpdateBusinessField)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBusinessFieldRequest request)
     {
         var field = await _businessFieldService.UpdateAsync(id, request);
@@ -79,7 +79,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Xoá lĩnh vực hoạt động (chặn nếu đang được công ty/hồ sơ sử dụng).
     /// </summary>
     [HttpDelete("{id}")]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.DeleteBusinessField)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _businessFieldService.DeleteAsync(id);

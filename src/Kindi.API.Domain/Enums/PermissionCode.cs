@@ -315,6 +315,24 @@ public enum PermissionCode
         "DELETE /api/v1/RevenueExpenseTypes/{id}", Screen = PermissionScreens.RevenueConfig,
         Replaces = new[] { "P114" })]
     DeleteRevenueConfig = 131,
+    // ===== Quyền riêng cho danh mục lĩnh vực hoạt động =====
+
+    [PermissionInfo("Xem danh mục lĩnh vực hoạt động", PermissionModule.System, PermissionKind.View, "/admin/business-fields",
+        "GET /api/v1/business-fields, GET /api/v1/business-fields/{id}/related", Screen = PermissionScreens.BusinessFields)]
+    ViewBusinessFields = 132,
+
+    [PermissionInfo("Thêm lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Update, null,
+        "POST /api/v1/business-fields", Screen = PermissionScreens.BusinessFields)]
+    CreateBusinessField = 133,
+
+    [PermissionInfo("Sửa lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Update, null,
+        "PUT /api/v1/business-fields/{id}", Screen = PermissionScreens.BusinessFields)]
+    UpdateBusinessField = 134,
+
+    [PermissionInfo("Xoá lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Delete, null,
+        "DELETE /api/v1/business-fields/{id}", Screen = PermissionScreens.BusinessFields)]
+    DeleteBusinessField = 135,
+
 
     // ===== Quyền khôi phục theo cặp ViewRestore<X> + Restore<X> cho mọi màn có xoá mềm =====
     // Cặp quyền này gác cả endpoint "danh sách đã xoá" lẫn endpoint "khôi phục" của màn hình,
