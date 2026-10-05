@@ -39,6 +39,9 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
     /// <summary>Tên CTV của <see cref="ReferredByCode"/>.</summary>
     public string? ReferredByName { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của người tạo đơn.</summary>
+    public string? UserCode { get; set; }
+
     public void Mapping(Profile profile)
         => profile.CreateMap<GroupBuyingRequest, GroupBuyingRequestResponseDto>()
             .ForMember(dest => dest.NeededPeopleCount,
@@ -52,5 +55,7 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
             .ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? src.User.Email : string.Empty))
             .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
 }

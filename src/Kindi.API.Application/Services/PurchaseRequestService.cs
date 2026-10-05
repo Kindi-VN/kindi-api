@@ -129,6 +129,8 @@ public class PurchaseRequestService : IPurchaseRequestService
 				(x.PurchaseRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PurchaseRequestCode), "%" + searchTerm + "%", "\\")) ||
 				EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
 				(x.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ReferralCode), "%" + searchTerm + "%", "\\")) ||
+				(x.User != null && x.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.UserCode), "%" + searchTerm + "%", "\\")) ||
+				(x.User != null && x.User.ReferredByCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.ReferredByCode), "%" + searchTerm + "%", "\\")) ||
 				(x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
 				(x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
 				(x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))

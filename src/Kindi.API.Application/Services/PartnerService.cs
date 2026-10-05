@@ -217,6 +217,7 @@ public class PartnerService : IPartnerService
                 x.CompanyName.Contains(filter.Search!) ||
                 x.CompanyTax.Contains(filter.Search!) ||
                 x.PartnerCode.Contains(filter.Search!) ||
+                (x.User != null && x.User.UserCode != null && x.User.UserCode.Contains(filter.Search!)) ||
                 (x.User != null && x.User.ReferralCode != null && x.User.ReferralCode.Contains(filter.Search!)) ||
                 (x.User != null && x.User.ReferredByCode != null && x.User.ReferredByCode.Contains(filter.Search!)) ||
                 // Tìm theo lĩnh vực kinh doanh — Partner không có cột tên denormalized

@@ -176,7 +176,10 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
                 (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")))
+                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
+                (x.User != null && x.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.UserCode), "%" + searchTerm + "%", "\\")) ||
+                (x.User != null && x.User.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.ReferralCode), "%" + searchTerm + "%", "\\")) ||
+                (x.User != null && x.User.ReferredByCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.ReferredByCode), "%" + searchTerm + "%", "\\")))
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);

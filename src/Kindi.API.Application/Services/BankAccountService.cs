@@ -141,7 +141,9 @@ public sealed class BankAccountService : IBankAccountService
             accounts = accounts.Where(x =>
                 x.AccountNumber.ToLower().Contains(keyword) ||
                 x.AccountHolder.ToLower().Contains(keyword) ||
-                (x.User != null && (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword))));
+                (x.User != null && (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword) ||
+                    (x.User.UserCode != null && x.User.UserCode.ToLower().Contains(keyword)) ||
+                    (x.User.ReferralCode != null && x.User.ReferralCode.ToLower().Contains(keyword)))));
 
         // Thông tin chờ xác minh lên trước để quản trị viên xử lý nhanh.
         accounts = accounts

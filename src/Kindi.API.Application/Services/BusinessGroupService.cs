@@ -89,7 +89,8 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
             .Include(x => x.BusinessField);
@@ -773,7 +774,8 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(!string.IsNullOrEmpty(search), x =>
                 EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
                 (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")))
+                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
+                (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")))
             .WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
             .WhereIf(query.HasPrivateRequests,

@@ -454,6 +454,9 @@ public class CollaboratorService : ICollaboratorService
                 (c.User != null && c.User.Phone != null && c.User.Phone.Contains(s)) ||
                 (c.User != null && c.User.Email != null && c.User.Email.Contains(s)) ||
                 (c.CollaboratorCode != null && c.CollaboratorCode.Contains(s)) ||
+                (c.User != null && c.User.UserCode != null && c.User.UserCode.Contains(s)) ||
+                (c.User != null && c.User.ReferralCode != null && c.User.ReferralCode.Contains(s)) ||
+                (c.User != null && c.User.ReferredByCode != null && c.User.ReferredByCode.Contains(s)) ||
                 (c.BusinessFieldName != null && c.BusinessFieldName.Contains(s)) ||
                 (c.BusinessField != null && c.BusinessField.Name.Contains(s)));
         }

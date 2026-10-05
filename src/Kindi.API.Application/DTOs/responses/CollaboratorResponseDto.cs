@@ -55,6 +55,9 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
     public string? CompanyWebsite { get; set; }
     public CompanyInfoDto? CompanyInfo { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của CTV.</summary>
+    public string? UserCode { get; set; }
+
     public void Mapping(Profile profile)
         => profile.CreateMap<Collaborator, CollaboratorResponseDto>()
             // Thông tin cá nhân nằm ở bảng Users: lấy qua navigation User (null-safe cho query không Include).
@@ -89,5 +92,7 @@ public class CollaboratorResponseDto : IMapFrom<Collaborator>
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : src.BusinessFieldName)
             } : null))
             .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
 }

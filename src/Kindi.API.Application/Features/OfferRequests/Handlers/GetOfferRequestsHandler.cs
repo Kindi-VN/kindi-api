@@ -70,7 +70,10 @@ public class GetOfferRequestsHandler : IRequestHandler<GetOfferRequestsQuery, Pa
 				(x.User != null && x.User.FullName.Contains(search!)) ||
 				(x.User != null && x.User.Phone != null && x.User.Phone.Contains(search!)) ||
 				(x.User != null && x.User.Email != null && x.User.Email.Contains(search!)) ||
-				(x.OfferRequestCode != null && x.OfferRequestCode.Contains(search!)))
+				(x.OfferRequestCode != null && x.OfferRequestCode.Contains(search!)) ||
+				(x.User != null && x.User.UserCode != null && x.User.UserCode.Contains(search!)) ||
+				(x.ReferralCode != null && x.ReferralCode.Contains(search!)) ||
+				(x.User != null && x.User.ReferredByCode != null && x.User.ReferredByCode.Contains(search!)))
 			.WhereIf(request.FromDate.HasValue, x => x.CreatedAt >= request.FromDate!.Value.Date.ToUniversalTime())
 			.WhereIf(request.ToDate.HasValue, x => x.CreatedAt < request.ToDate!.Value.Date.AddDays(1).ToUniversalTime());
 

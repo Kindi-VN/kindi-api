@@ -37,6 +37,9 @@ public class PartnerResponseDto : IMapFrom<Partner>
     public DateTime? ApprovedAt { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của đối tác.</summary>
+    public string? UserCode { get; set; }
+
     public void Mapping(Profile profile)
     {
         profile.CreateMap<Partner, PartnerResponseDto>()
@@ -60,6 +63,8 @@ public class PartnerResponseDto : IMapFrom<Partner>
                 opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
             // Mã chia sẻ của chính đối tác nằm ở tài khoản (nguồn duy nhất, không còn trên hồ sơ đối tác).
             .ForMember(dest => dest.ReferralCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferralCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferralCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
     }
 }

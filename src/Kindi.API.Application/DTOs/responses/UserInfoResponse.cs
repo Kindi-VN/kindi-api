@@ -20,4 +20,12 @@ public class UserInfoResponse
 
 	/// <summary>Phiên bản quyền hiện tại — UI so để quyết định gọi refresh token.</summary>
 	public long PermissionsVersion { get; set; }
+
+
+    /// <summary>Mã chia sẻ của tài khoản.</summary>
+    public string? ReferralCode { get; set; }
+
+
+    /// <summary>Mã chia sẻ của người đã mang tài khoản này tới.</summary>
+    public string? ReferredByCode { get; set; }
 }

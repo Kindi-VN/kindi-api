@@ -39,6 +39,9 @@ public class OfferRequestResponseDto : IMapFrom<OfferRequest>
 	public DateTime CreatedAt { get; set; }
 	public DateTime? UpdatedAt { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của người gửi.</summary>
+    public string? UserCode { get; set; }
+
 	public void Mapping(Profile profile)
 	{
 		// Thông tin cá nhân nằm ở bảng Users — lấy qua navigation User khi map DTO.
@@ -48,6 +51,8 @@ public class OfferRequestResponseDto : IMapFrom<OfferRequest>
 			.ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? (src.User.Zalo ?? string.Empty) : string.Empty))
 			.ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null))
 			.ForMember(dest => dest.ReferredByCode,
-			    opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+			    opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
 	}
 }

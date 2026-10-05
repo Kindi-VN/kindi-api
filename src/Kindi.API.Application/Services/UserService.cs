@@ -242,7 +242,9 @@ public class UserService : IUserService
                                      (u.Username != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), "%" + searchTerm + "%", "\\")) ||
                                      (u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), "%" + searchTerm + "%", "\\")) ||
                                      (u.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), "%" + searchTerm + "%", "\\")) ||
-                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), "%" + searchTerm + "%", "\\")));
+                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), "%" + searchTerm + "%", "\\")) ||
+                    (u.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.ReferralCode), "%" + searchTerm + "%", "\\")) ||
+                    (u.ReferredByCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.ReferredByCode), "%" + searchTerm + "%", "\\")));
         }
 
         var ordered = users.OrderByDescending(u => u.CreatedAt);

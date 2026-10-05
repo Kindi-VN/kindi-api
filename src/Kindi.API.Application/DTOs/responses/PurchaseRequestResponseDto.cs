@@ -35,6 +35,9 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
     public PurchaseRequestStatus Status { get; set; }
     public DateTime CreatedAt { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của người gửi.</summary>
+    public string? UserCode { get; set; }
+
     public void Mapping(Profile profile)
     {
         // Thông tin cá nhân nằm ở bảng Users — lấy qua navigation User khi map DTO.
@@ -44,6 +47,8 @@ public class PurchaseRequestResponseDto : IMapFrom<PurchaseRequest>
             .ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? UserInfo.DisplayEmail(src.User.Email, src.User.Phone) : null))
             .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
     }
 }

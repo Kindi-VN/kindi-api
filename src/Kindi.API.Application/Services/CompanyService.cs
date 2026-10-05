@@ -170,7 +170,9 @@ public class CompanyService : ICompanyService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            queryable = queryable.Where(c => c.Name.Contains(s) || (c.TaxCode != null && c.TaxCode.Contains(s)));
+            queryable = queryable.Where(c => c.Name.Contains(s)
+                || (c.TaxCode != null && c.TaxCode.Contains(s))
+                || (c.CompanyCode != null && c.CompanyCode.Contains(s)));
         }
 
         // Mặc định mới nhất trước để bản ghi vừa tạo nằm đầu danh sách.
