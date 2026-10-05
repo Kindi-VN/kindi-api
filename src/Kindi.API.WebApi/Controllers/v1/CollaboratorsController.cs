@@ -75,9 +75,10 @@ public class CollaboratorsController : ApiControllerBase
         [FromQuery] string? search = null,
         [FromQuery] CollaboratorStatus? status = null,
         [FromQuery] DateTime? fromDate = null,
-        [FromQuery] DateTime? toDate = null)
+        [FromQuery] DateTime? toDate = null,
+        [FromQuery] CollaboratorSearchField? searchField = null)
     {
-        var result = await _collaboratorService.GetPagedAsync(page, size, search, status, fromDate, toDate);
+        var result = await _collaboratorService.GetPagedAsync(page, size, search, status, fromDate, toDate, searchField);
         return OkPaged(result);
     }
 

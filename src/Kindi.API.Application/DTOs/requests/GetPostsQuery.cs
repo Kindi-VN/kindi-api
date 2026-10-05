@@ -10,6 +10,15 @@ public class GetPostsQuery
     public PrivacyType? Privacy { get; set; }
     public string? Tag { get; set; }
 
+    /// <summary>Từ khoá tìm theo nội dung bài viết, họ tên tác giả hoặc mã tài khoản tác giả.</summary>
+    public string? Search { get; set; }
+
+    /// <summary>
+    /// Chỉ tìm theo đúng một trường (không OR lan sang cột khác); bỏ trống = tìm cả nội dung lẫn tác giả.
+    /// Giá trị hợp lệ: content, authorFullName, authorUserCode.
+    /// </summary>
+    public SocialPostSearchField? SearchField { get; set; }
+
     /// <summary>
     /// Chỉ lấy bài viết của chính người gọi (khu vực thành viên) — mọi trạng thái duyệt.
     /// </summary>

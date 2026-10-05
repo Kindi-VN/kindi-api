@@ -25,7 +25,8 @@ public interface ICollaboratorService
         string? search = null,
         CollaboratorStatus? status = null,
         DateTime? fromDate = null,
-        DateTime? toDate = null);
+        DateTime? toDate = null,
+        CollaboratorSearchField? searchField = null);
 
     /// <summary>
     /// Danh sách cộng tác viên đã xóa mềm (Admin).

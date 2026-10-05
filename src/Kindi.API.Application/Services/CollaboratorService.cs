@@ -377,15 +377,35 @@ public class CollaboratorService : ICollaboratorService
         string? search = null,
         CollaboratorStatus? status = null,
         DateTime? fromDate = null,
-        DateTime? toDate = null)
+        DateTime? toDate = null,
+        CollaboratorSearchField? searchField = null)
     {
-        Expression<Func<Collaborator, bool>> predicate = c => true;
+        // Điều kiện trạng thái + khoảng ngày tạo — áp dụng cho mọi nhánh truy vấn.
+        Expression<Func<Collaborator, bool>> predicate = c =>
+            (!status.HasValue || c.Status == status.Value)
+            && (!fromDate.HasValue || c.CreatedAt >= fromDate.Value.Date.ToUniversalTime())
+            && (!toDate.HasValue || c.CreatedAt < toDate.Value.Date.AddDays(1).ToUniversalTime());
+
         if (!string.IsNullOrEmpty(search))
         {
             // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
             // ILIKE nên tìm không phân biệt hoa/thường.
             var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
-            predicate = c => (c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\") ||
+
+            // searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
+            Expression<Func<Collaborator, bool>> searchPredicate = searchField switch
+            {
+                CollaboratorSearchField.FullName => c => c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.CollaboratorCode => c => c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.UserCode => c => c.User != null && c.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.UserCode), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.ReferralCode => c => c.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.ReferralCode), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.AccountReferrerCode => c => c.User != null && c.User.AccountReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.AccountReferrerCode), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.Phone => c => c.User != null && c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.Email => c => c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Email), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.BusinessFieldName => c =>
+                    (c.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
+                    (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.Name), "%" + searchTerm + "%", "\\")),
+                _ => c => (c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\") ||
                              (c.User != null && c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), "%" + searchTerm + "%", "\\")) ||
                              (c.User != null && c.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Email), "%" + searchTerm + "%", "\\")) ||
                              (c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\")) ||
@@ -394,15 +414,9 @@ public class CollaboratorService : ICollaboratorService
                              (c.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
                              (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.Name), "%" + searchTerm + "%", "\\")) ||
                              (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.NormalizedName), "%" + searchTerm + "%", "\\")))
-                             && (!status.HasValue || c.Status == status.Value)
-                             && (!fromDate.HasValue || c.CreatedAt >= fromDate.Value.Date.ToUniversalTime())
-                             && (!toDate.HasValue || c.CreatedAt < toDate.Value.Date.AddDays(1).ToUniversalTime());
-        }
-        else
-        {
-            predicate = c => (!status.HasValue || c.Status == status.Value)
-                        && (!fromDate.HasValue || c.CreatedAt >= fromDate.Value.Date.ToUniversalTime())
-                        && (!toDate.HasValue || c.CreatedAt < toDate.Value.Date.AddDays(1).ToUniversalTime());
+            };
+
+            predicate = predicate.And(searchPredicate);
         }
 
         var paged = await _repository.GetPagedWithIncludesAsync(

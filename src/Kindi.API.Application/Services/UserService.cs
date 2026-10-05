@@ -238,11 +238,24 @@ public class UserService : IUserService
         {
             // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn, ILIKE nên tìm không phân biệt hoa/thường.
             var searchTerm = query.Search.RemoveVietnameseSign().ToLikeEscaped();
-            users = users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), "%" + searchTerm + "%", "\\") ||
-                                     (u.Username != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), "%" + searchTerm + "%", "\\")) ||
-                                     (u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), "%" + searchTerm + "%", "\\")) ||
-                                     (u.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), "%" + searchTerm + "%", "\\")) ||
-                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), "%" + searchTerm + "%", "\\")));
+            var pattern = "%" + searchTerm + "%";
+
+            // searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
+            users = query.SearchField switch
+            {
+                UserSearchField.Username => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), pattern, "\\")),
+                UserSearchField.FullName => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\")),
+                UserSearchField.UserCode => users.Where(u => u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), pattern, "\\")),
+                UserSearchField.ReferralCode => users.Where(u => u.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.ReferralCode), pattern, "\\")),
+                UserSearchField.AccountReferrerCode => users.Where(u => u.AccountReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.AccountReferrerCode), pattern, "\\")),
+                UserSearchField.Phone => users.Where(u => u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), pattern, "\\")),
+                UserSearchField.Email => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), pattern, "\\")),
+                _ => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\") ||
+                                     (u.Username != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), pattern, "\\")) ||
+                                     (u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), pattern, "\\")) ||
+                                     (u.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), pattern, "\\")) ||
+                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), pattern, "\\")))
+            };
         }
 
         var ordered = users.OrderByDescending(u => u.CreatedAt);
