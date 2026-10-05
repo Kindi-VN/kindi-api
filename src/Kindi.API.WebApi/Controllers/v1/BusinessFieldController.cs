@@ -54,6 +54,39 @@ public class BusinessFieldController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách công ty thuộc một lĩnh vực, phân trang phía server (màn chi tiết lĩnh vực).
+    /// search lọc theo mã công ty, tên, mã số thuế.
+    /// </summary>
+    [HttpGet("{id}/companies")]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
+    public async Task<IActionResult> GetCompanies(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
+    {
+        var result = await _businessFieldService.GetCompaniesPagedAsync(id, page, pageSize, search);
+        return OkPaged(result);
+    }
+
+    /// <summary>
+    /// Danh sách tài khoản thuộc một lĩnh vực, phân trang phía server (màn chi tiết lĩnh vực).
+    /// role nhận "Collaborator"/"Partner" để lọc theo loại hồ sơ.
+    /// </summary>
+    [HttpGet("{id}/users")]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
+    public async Task<IActionResult> GetUsers(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null)
+    {
+        var result = await _businessFieldService.GetUsersPagedAsync(id, page, pageSize, search, role);
+        return OkPaged(result);
+    }
+
+    /// <summary>
     /// Thêm lĩnh vực hoạt động.
     /// </summary>
     [HttpPost]
