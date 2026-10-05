@@ -16,6 +16,12 @@ public interface IReferralService
     Task<string?> GetSharerReferralCodeAsync();
 
     /// <summary>
+    /// Bảo đảm tài khoản có mã chia sẻ (sinh nếu chưa có). Dùng cho luồng tạo tài khoản
+    /// để hồ sơ mới luôn có mã ngay, không phải chờ người dùng mở trang chia sẻ.
+    /// </summary>
+    Task<string?> EnsureUserReferralCodeAsync(Guid userId);
+
+    /// <summary>
     /// Chuẩn hoá mã nhận từ link chia sẻ: mã không tồn tại ở bảng nào thì trả <c>null</c>
     /// (bỏ qua, không chặn người dùng).
     /// </summary>

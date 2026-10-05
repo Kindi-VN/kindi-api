@@ -88,10 +88,10 @@ public class SystemSetting : BaseEntity
     public int LockoutMinutes { get; set; } = 15;
 
     /// <summary>Tiền tố của mã giới thiệu.</summary>
-    public string ReferralCodePrefix { get; set; } = "CTV-";
+    public string ReferralCodePrefix { get; set; } = "KND";
 
     /// <summary>Số ký tự ngẫu nhiên của mã giới thiệu.</summary>
-    public int ReferralCodeLength { get; set; } = 6;
+    public int ReferralCodeLength { get; set; } = 8;
 
     /// <summary>Số ngày ghi nhận hoa hồng tính từ lúc phát sinh sự kiện.</summary>
     public int CommissionAttributionDays { get; set; } = 30;

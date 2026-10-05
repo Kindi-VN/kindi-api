@@ -124,8 +124,6 @@ public class CollaboratorService : ICollaboratorService
         if (string.IsNullOrWhiteSpace(collaborator.CollaboratorCode))
             collaborator.CollaboratorCode = await GenerateUniqueCollaboratorCodeAsync();
         // Mã chia sẻ riêng của CTV = mã CTV trên hồ sơ (dùng để gắn vào link chia sẻ).
-        if (string.IsNullOrWhiteSpace(collaborator.ReferralCode))
-            collaborator.ReferralCode = collaborator.CollaboratorCode;
 
         //  Xử lý BusinessField — ưu tiên Id (chọn từ danh sách quản lý tập trung),
         //  fallback sang find-or-create theo tên cho client chưa gửi Id.
@@ -198,6 +196,10 @@ public class CollaboratorService : ICollaboratorService
         //  mã không nhận diện được thì bỏ qua, không chặn đăng ký). Mã chia sẻ của chính CTV vẫn là mã CTV.
         await _referralService.ResolveForUserAsync(collaborator.UserId, request.ReferredByCode);
 
+        // Mọi tài khoản (kể cả CTV) dùng mã chia sẻ ở bảng Users — sinh ngay khi tạo hồ sơ
+        // để hồ sơ mới luôn có mã, không phải chờ người dùng mở trang chia sẻ.
+        await _referralService.EnsureUserReferralCodeAsync(collaborator.UserId);
+
         // Nạp tài khoản vào navigation để response trả họ tên/SĐT/email/Zalo (dữ liệu ở bảng Users).
         collaborator.User = await _userService.FindByIdAsync(collaborator.UserId) ?? collaborator.User;
 
@@ -234,8 +236,6 @@ public class CollaboratorService : ICollaboratorService
             existing.IsDeleted = false;
             existing.Status = CollaboratorStatus.Pending;
             existing.IsApproved = false;
-            if (string.IsNullOrWhiteSpace(existing.ReferralCode))
-                existing.ReferralCode = existing.CollaboratorCode;
 
             _repository.Update(existing);
             await _repository.SaveChangesAsync();
@@ -250,8 +250,6 @@ public class CollaboratorService : ICollaboratorService
             IsApproved = false,
             Level = 1
         };
-        // Mã chia sẻ riêng của CTV = mã CTV trên hồ sơ (dùng để gắn vào link chia sẻ).
-        collaborator.ReferralCode = collaborator.CollaboratorCode;
 
         await _repository.AddAsync(collaborator);
         await _repository.SaveChangesAsync();

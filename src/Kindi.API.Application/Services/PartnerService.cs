@@ -85,13 +85,12 @@ public class PartnerService : IPartnerService
 
         // Mã chia sẻ của link (?ref=) → ghi nhận vào tài khoản đăng ký (chỉ lần đầu, không ghi đè).
         // Mã không nhận diện được (link cũ/sai) thì bỏ qua, không chặn đăng ký.
-        // Mã đã chuẩn hoá (nếu nhận diện được) là mã DUY NHẤT được lưu vào hồ sơ đối tác và dùng
+        // Mã đã chuẩn hoá (nếu nhận diện được) được ghi vào tài khoản (Users.ReferredByCode) và dùng
         // cho phát sinh giới thiệu — mã lạ không được ghi lại ở đâu cả.
         string? resolvedReferralCode = await _referralService.ResolveForUserAsync(Guid.Parse(userId!), request.ReferralCode);
 
         // 2. Map request -> Partner entity
         var partner = _mapper.Map<Partner>(request);
-        partner.ReferralCode = resolvedReferralCode;
         // userId luôn có giá trị: người dùng đang đăng nhập, hoặc tài khoản vừa tạo ở nhánh đăng ký công khai
         partner.UserId = Guid.Parse(userId!);
 
@@ -132,8 +131,11 @@ public class PartnerService : IPartnerService
         await _partnerRepo.AddAsync(partner);
         await _partnerRepo.SaveChangesAsync();
 
+        // Đối tác cũng dùng mã chia sẻ ở bảng Users — sinh ngay khi đăng ký để hồ sơ có mã.
+        await _referralService.EnsureUserReferralCodeAsync(partner.UserId);
+
         // Ghi nhận phát sinh giới thiệu khi đăng ký đối tác (mã lạ đã bị loại ở trên nên không phát sinh).
-        await _referralService.RecordEventAsync(partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
+        await _referralService.RecordEventAsync(resolvedReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
             partner.Id, partner.PartnerCode, null);
 
         // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
@@ -215,7 +217,8 @@ public class PartnerService : IPartnerService
                 x.CompanyName.Contains(filter.Search!) ||
                 x.CompanyTax.Contains(filter.Search!) ||
                 x.PartnerCode.Contains(filter.Search!) ||
-                (x.ReferralCode != null && x.ReferralCode.Contains(filter.Search!)) ||
+                (x.User != null && x.User.ReferralCode != null && x.User.ReferralCode.Contains(filter.Search!)) ||
+                (x.User != null && x.User.ReferredByCode != null && x.User.ReferredByCode.Contains(filter.Search!)) ||
                 // Tìm theo lĩnh vực kinh doanh — Partner không có cột tên denormalized
                 // nên phải qua nav (EF dịch thành LEFT JOIN).
                 (x.BusinessField != null && x.BusinessField.Name.Contains(filter.Search!)) ||

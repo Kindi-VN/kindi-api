@@ -73,7 +73,10 @@ public class PartnerDetailResponseDto : IMapFrom<Partner>
                 BusinessField = src.Company.BusinessField != null ? src.Company.BusinessField.Name : (src.BusinessField != null ? src.BusinessField.Name : null)
             } : null))
             .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            // Mã chia sẻ của chính đối tác nằm ở tài khoản (nguồn duy nhất, không còn trên hồ sơ đối tác).
+            .ForMember(dest => dest.ReferralCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferralCode : null));
 
         // ✅ Mapping cho các DTO con
         profile.CreateMap<User, UserBriefDto>();

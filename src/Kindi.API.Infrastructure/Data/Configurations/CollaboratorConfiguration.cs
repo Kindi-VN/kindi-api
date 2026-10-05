@@ -34,9 +34,6 @@ public class CollaboratorConfiguration : IEntityTypeConfiguration<Collaborator>
         builder.Property(c => c.CollaboratorCode)
             .HasMaxLength(30);
 
-        builder.Property(c => c.ReferralCode)
-            .HasMaxLength(30);
-
         builder.Property(c => c.RejectionReason)
             .HasMaxLength(500);
 

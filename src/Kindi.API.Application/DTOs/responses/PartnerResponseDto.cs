@@ -57,6 +57,9 @@ public class PartnerResponseDto : IMapFrom<Partner>
             .ForMember(dest => dest.CompanyAddress, opt => opt.MapFrom(src => src.Company != null ? src.Company.Address : src.CompanyAddress))
             .ForMember(dest => dest.CompanyWebsite, opt => opt.MapFrom(src => src.Company != null ? src.Company.Website : src.CompanyWebsite))
             .ForMember(dest => dest.ReferredByCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferredByCode : null))
+            // Mã chia sẻ của chính đối tác nằm ở tài khoản (nguồn duy nhất, không còn trên hồ sơ đối tác).
+            .ForMember(dest => dest.ReferralCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.ReferralCode : null));
     }
 }
