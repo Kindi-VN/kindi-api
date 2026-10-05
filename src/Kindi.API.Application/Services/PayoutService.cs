@@ -178,7 +178,21 @@ public sealed class PayoutService : IPayoutService
     }
 
     /// <inheritdoc />
-    public async Task<PagedList<PayoutStatementResponse>> GetPagedAsync(PayoutQueryDto query, CancellationToken cancellationToken = default)
+    public Task<PagedList<PayoutStatementResponse>> GetPagedAsync(PayoutQueryDto query, CancellationToken cancellationToken = default)
+        => GetPagedCoreAsync(query, null, cancellationToken);
+
+    /// <inheritdoc />
+    public Task<PagedList<PayoutStatementResponse>> GetMyPagedAsync(PayoutQueryDto query, CancellationToken cancellationToken = default)
+    {
+        // Danh sách chi trả của CHÍNH người gọi: luôn ép UserId theo tài khoản đang đăng nhập,
+        // bỏ qua UserId client truyền để không xem được dữ liệu chi trả của người khác.
+        var userId = CurrentUserId();
+        return GetPagedCoreAsync(query, userId, cancellationToken);
+    }
+
+    /// <summary>Dựng truy vấn phân trang chi trả; <paramref name="forcedUserId"/> có giá trị thì luôn ép theo tài khoản đó.</summary>
+    private async Task<PagedList<PayoutStatementResponse>> GetPagedCoreAsync(
+        PayoutQueryDto query, Guid? forcedUserId, CancellationToken cancellationToken)
     {
         var statements = _queryService.GetAllNoTracking<PayoutStatement>()
             .Include(x => x.User)
@@ -191,7 +205,10 @@ public sealed class PayoutService : IPayoutService
         if (query.Status.HasValue)
             statements = statements.Where(x => x.Status == query.Status.Value);
 
-        if (query.UserId.HasValue)
+        // Bản của chính mình thì ép UserId; danh sách quản trị mới nhận UserId từ client.
+        if (forcedUserId.HasValue)
+            statements = statements.Where(x => x.UserId == forcedUserId.Value);
+        else if (query.UserId.HasValue)
             statements = statements.Where(x => x.UserId == query.UserId.Value);
 
         if (query.PayoutPeriodId.HasValue)
@@ -201,6 +218,12 @@ public sealed class PayoutService : IPayoutService
         if (!string.IsNullOrEmpty(keyword))
             statements = statements.Where(x => x.User != null &&
                 (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword)));
+
+        // Lọc theo ngày tạo; bỏ trống thì không giới hạn (giữ nguyên hành vi cũ).
+        if (query.FromDate.HasValue)
+            statements = statements.Where(x => x.CreatedAt >= query.FromDate.Value.Date.ToUniversalTime());
+        if (query.ToDate.HasValue)
+            statements = statements.Where(x => x.CreatedAt < query.ToDate.Value.Date.AddDays(1).ToUniversalTime());
 
         // Yêu cầu chờ duyệt lên trước để quản trị viên xử lý theo thứ tự ưu tiên.
         statements = statements
@@ -733,6 +756,7 @@ public sealed class PayoutService : IPayoutService
         UserId = statement.UserId,
         Username = user?.Username,
         FullName = user?.FullName,
+        UserCode = user?.UserCode,
         Type = statement.Type,
         AccruedAmount = statement.AccruedAmount,
         FeeRate = statement.FeeRate,

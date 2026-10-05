@@ -19,6 +19,9 @@ public interface IPayoutService
     /// <summary>Danh sách chi trả hoa hồng.</summary>
     Task<PagedList<PayoutStatementResponse>> GetPagedAsync(PayoutQueryDto query, CancellationToken cancellationToken = default);
 
+    /// <summary>Danh sách chi trả hoa hồng của chính người gọi (luôn ép UserId theo tài khoản đang đăng nhập).</summary>
+    Task<PagedList<PayoutStatementResponse>> GetMyPagedAsync(PayoutQueryDto query, CancellationToken cancellationToken = default);
+
     /// <summary>Gửi yêu cầu rút hoa hồng sớm; phí rút sớm được tính theo hạng và cấu hình chung.</summary>
     Task<PayoutStatementResponse> CreateWithdrawalAsync(CreateWithdrawalRequest request, CancellationToken cancellationToken = default);
 

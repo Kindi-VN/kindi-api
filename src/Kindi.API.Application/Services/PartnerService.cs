@@ -174,15 +174,34 @@ public class PartnerService : IPartnerService
 
         var q = _queryService.GetAllNoTracking<Partner>()
             .Where(x => x.Status == PartnerStatus.Approved || x.Status == PartnerStatus.Active)
-            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyName), "%" + searchTerm + "%", "\\") ||
-                // Tên người liên hệ nằm ở bảng Users → tìm qua nav (guard null vì tài khoản có thể đã xoá mềm).
-                (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
-                (x.CompanyAddress != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyAddress), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessField.Name), "%" + searchTerm + "%", "\\")) ||
-                x.Products.Any(p => !p.IsDeleted && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.Name), "%" + searchTerm + "%", "\\")))
-            .Include(x => x.User)
+            .WhereIf(query.BusinessFieldId.HasValue, x => x.BusinessFieldId == query.BusinessFieldId!.Value);
+
+        // searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
+        if (!string.IsNullOrEmpty(search))
+        {
+            var pattern = "%" + searchTerm + "%";
+            q = query.SearchField switch
+            {
+                PartnerSearchField.FullName => q.Where(x => x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), pattern, "\\")),
+                PartnerSearchField.PartnerCode => q.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PartnerCode), pattern, "\\")),
+                PartnerSearchField.UserCode => q.Where(x => x.User != null && x.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.UserCode), pattern, "\\")),
+                PartnerSearchField.ReferralCode => q.Where(x => x.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ReferralCode), pattern, "\\")),
+                PartnerSearchField.AccountReferrerCode => q.Where(x => x.User != null && x.User.AccountReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.AccountReferrerCode), pattern, "\\")),
+                PartnerSearchField.Phone => q.Where(x => x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), pattern, "\\")),
+                PartnerSearchField.Email => q.Where(x => x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), pattern, "\\")),
+                PartnerSearchField.CompanyName => q.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyName), pattern, "\\")),
+                PartnerSearchField.CompanyTaxCode => q.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyTax), pattern, "\\")),
+                _ => q.Where(x =>
+                    EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyName), pattern, "\\") ||
+                    // Tên người liên hệ nằm ở bảng Users → tìm qua nav (guard null vì tài khoản có thể đã xoá mềm).
+                    (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), pattern, "\\")) ||
+                    (x.CompanyAddress != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.CompanyAddress), pattern, "\\")) ||
+                    (x.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessField.Name), pattern, "\\")) ||
+                    x.Products.Any(p => !p.IsDeleted && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.Name), pattern, "\\")))
+            };
+        }
+
+        q = q.Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Products);
 
@@ -205,21 +224,38 @@ public class PartnerService : IPartnerService
             ? _queryService.GetQueryableNoTracking<Partner>().IgnoreQueryFilters().Where(x => x.IsDeleted)
             : _queryService.GetAllNoTracking<Partner>();
 
-        var searchUpper = filter.Search?.ToUpperInvariant();
+        // Tìm kiếm: searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
+        if (!string.IsNullOrEmpty(filter.Search))
+        {
+            var s = filter.Search!;
+            var sUpper = s.ToUpperInvariant();
+            q = filter.SearchField switch
+            {
+                PartnerSearchField.FullName => q.Where(x => x.User != null && x.User.FullName.Contains(s)),
+                PartnerSearchField.PartnerCode => q.Where(x => x.PartnerCode.Contains(s)),
+                PartnerSearchField.UserCode => q.Where(x => x.User != null && x.User.UserCode != null && x.User.UserCode.Contains(s)),
+                PartnerSearchField.ReferralCode => q.Where(x => x.ReferralCode != null && x.ReferralCode.Contains(s)),
+                PartnerSearchField.AccountReferrerCode => q.Where(x => x.User != null && x.User.AccountReferrerCode != null && x.User.AccountReferrerCode.Contains(s)),
+                PartnerSearchField.Phone => q.Where(x => x.User != null && x.User.Phone != null && x.User.Phone.Contains(s)),
+                PartnerSearchField.Email => q.Where(x => x.User != null && x.User.Email.Contains(s)),
+                PartnerSearchField.CompanyName => q.Where(x => x.CompanyName.Contains(s)),
+                PartnerSearchField.CompanyTaxCode => q.Where(x => x.CompanyTax.Contains(s)),
+                _ => q.Where(x =>
+                    (x.User != null && x.User.FullName.Contains(s)) ||
+                    (x.User != null && x.User.Email.Contains(s)) ||
+                    (x.User != null && x.User.Phone != null && x.User.Phone.Contains(s)) ||
+                    x.CompanyName.Contains(s) ||
+                    x.CompanyTax.Contains(s) ||
+                    x.PartnerCode.Contains(s) ||
+                    (x.ReferralCode != null && x.ReferralCode.Contains(s)) ||
+                    // Tìm theo lĩnh vực kinh doanh — Partner không có cột tên denormalized
+                    // nên phải qua nav (EF dịch thành LEFT JOIN).
+                    (x.BusinessField != null && x.BusinessField.Name.Contains(s)) ||
+                    (x.BusinessField != null && x.BusinessField.NormalizedName.Contains(sUpper)))
+            };
+        }
+
         q = q
-            // Search filter
-            .WhereIf(!string.IsNullOrEmpty(filter.Search), x =>
-                (x.User != null && x.User.FullName.Contains(filter.Search!)) ||
-                (x.User != null && x.User.Email.Contains(filter.Search!)) ||
-                (x.User != null && x.User.Phone != null && x.User.Phone.Contains(filter.Search!)) ||
-                x.CompanyName.Contains(filter.Search!) ||
-                x.CompanyTax.Contains(filter.Search!) ||
-                x.PartnerCode.Contains(filter.Search!) ||
-                (x.ReferralCode != null && x.ReferralCode.Contains(filter.Search!)) ||
-                // Tìm theo lĩnh vực kinh doanh — Partner không có cột tên denormalized
-                // nên phải qua nav (EF dịch thành LEFT JOIN).
-                (x.BusinessField != null && x.BusinessField.Name.Contains(filter.Search!)) ||
-                (x.BusinessField != null && x.BusinessField.NormalizedName.Contains(searchUpper!)))
             // Status filter
             .WhereIfNotNull(filter.Status, x => x.Status == filter.Status!.Value)
             // Date range filter

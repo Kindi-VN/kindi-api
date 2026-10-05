@@ -37,7 +37,9 @@ public class SocialController : ApiControllerBase
         [FromQuery] string? privacy = null,
         [FromQuery] string? tag = null,
         [FromQuery] bool mineOnly = false,
-        [FromQuery] bool? isApproved = null)
+        [FromQuery] bool? isApproved = null,
+        [FromQuery] string? search = null,
+        [FromQuery] SocialPostSearchField? searchField = null)
     {
         var query = new GetPostsQuery
         {
@@ -47,7 +49,9 @@ public class SocialController : ApiControllerBase
             Privacy = !string.IsNullOrEmpty(privacy) ? Enum.Parse<PrivacyType>(privacy, true) : null,
             Tag = tag,
             MineOnly = mineOnly,
-            IsApproved = isApproved
+            IsApproved = isApproved,
+            Search = search,
+            SearchField = searchField
         };
 
         var result = await _socialService.GetPostsAsync(query);

@@ -38,6 +38,18 @@ public class PayoutsController : ApiControllerBase
         return OkPaged(result, _localizer["Payout_ListSuccess"]);
     }
 
+    /// <summary>
+    /// Danh sách chi trả hoa hồng của CHÍNH người gọi (màn hoa hồng của tôi).
+    /// Luôn ép UserId theo tài khoản đang đăng nhập nên không cần quyền xem chi trả toàn hệ thống.
+    /// </summary>
+    [HttpGet("my")]
+    [HasPermission(PermissionCode.ViewMyCommission)]
+    public async Task<IActionResult> GetMyPaged([FromQuery] PayoutQueryDto query)
+    {
+        var result = await _payoutService.GetMyPagedAsync(query);
+        return OkPaged(result, _localizer["Payout_ListSuccess"]);
+    }
+
     /// <summary>Ví hoa hồng của chính người gọi: số dư có thể rút, phí rút sớm và hạn mức còn lại.</summary>
     [HttpGet("me")]
     [HasPermission(PermissionCode.ViewMyCommission)]

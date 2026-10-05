@@ -18,4 +18,21 @@ public class GetPublicGroupBuyingRequestsQueryDto
 
     /// <summary>Lọc theo trạng thái (dùng cho tab trong khu vực thành viên); bỏ trống = tất cả trạng thái được phép xem.</summary>
     public GroupBuyingStatus? Status { get; set; }
+
+    /// <summary>
+    /// Chỉ tìm theo đúng một trường (không OR lan sang cột khác); bỏ trống = tìm ProductName/Note/mã nhóm như trước.
+    /// Dùng chung <see cref="RequestSearchField"/> với danh sách yêu cầu ở màn quản trị.
+    /// </summary>
+    public RequestSearchField? SearchField { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm mua chung tạo từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn
+    /// (giữ nguyên hành vi cũ).
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm mua chung tạo đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.
+    /// </summary>
+    public DateTime? ToDate { get; set; }
 }

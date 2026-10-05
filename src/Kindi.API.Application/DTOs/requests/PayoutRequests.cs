@@ -72,6 +72,12 @@ public class PayoutQueryDto : PagedRequest
 
     /// <summary>Tìm theo tên đăng nhập hoặc họ tên.</summary>
     public string? Search { get; set; }
+
+    /// <summary>Chỉ lấy chi trả tạo từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn.</summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>Chỉ lấy chi trả tạo đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.</summary>
+    public DateTime? ToDate { get; set; }
 }
 
 /// <summary>Điều kiện lọc danh sách kỳ giải ngân.</summary>

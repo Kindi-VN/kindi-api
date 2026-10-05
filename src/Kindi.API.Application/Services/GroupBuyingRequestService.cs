@@ -167,19 +167,42 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         // Lọc trước rồi mới include: phần join chỉ chạy trên tập bản ghi còn lại.
         // - Tab công khai: chỉ nhóm đã duyệt; riêng nhóm của mình thì thấy cả đang chờ duyệt.
         // - "Của tôi": mọi trạng thái (kể cả hoàn thành/đã hủy) để xem lại lịch sử.
-        var q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
+        IQueryable<GroupBuyingRequest> q = _queryService.GetQueryableNoTracking<GroupBuyingRequest>()
             .WhereIf(mineOnly, x => x.UserId == meId!.Value)
             .WhereIf(!mineOnly, x => x.Status == GroupBuyingStatus.Active
                         || (meId != null && x.UserId == meId.Value
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
             .WhereIf(status.HasValue, x => x.Status == status!.Value)
-            .WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")))
+            // Khoảng ngày tạo: giữ nguyên hành vi cũ khi client không truyền (không giới hạn).
+            .WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
+            .WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime())
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);
+
+        // searchField chỉ định thì dò đúng một cột (dùng chung RequestSearchFilters như danh sách admin);
+        // bỏ trống giữ nguyên hành vi cũ (ProductName/Note/mã nhóm).
+        if (!string.IsNullOrEmpty(search))
+        {
+            if (query.SearchField.HasValue)
+            {
+                // Tên người giới thiệu không nằm trong bảng yêu cầu (chỉ có MÃ) — quy tên về tập mã trước khi lọc.
+                var needsReferrerCodes = query.SearchField is RequestSearchField.RecordReferrerName
+                    or RequestSearchField.AccountReferrerName;
+                var referrerCodes = needsReferrerCodes
+                    ? await _referralService.FindReferrerCodesByNameAsync(searchTerm!, unaccentAndCaseInsensitive: true)
+                    : null;
+
+                q = RequestSearchFilters.ApplyGroupBuying(q, searchTerm, query.SearchField, referrerCodes);
+            }
+            else
+            {
+                q = q.Where(x =>
+                    EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
+                    (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
+                    (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")));
+            }
+        }
 
         var paged = await q.ToPagedListAsync(
             query.Page, query.PageSize,

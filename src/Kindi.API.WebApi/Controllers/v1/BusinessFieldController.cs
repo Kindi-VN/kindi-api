@@ -35,7 +35,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Danh sách lĩnh vực cho màn quản trị (gồm cả lĩnh vực đang tắt) kèm số công ty/tài khoản.
     /// </summary>
     [HttpGet]
-    [HasPermission(PermissionCode.ViewCompanies)]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
     public async Task<IActionResult> GetAllForAdmin()
     {
         var fields = await _businessFieldService.GetAllForAdminAsync();
@@ -46,7 +46,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Công ty và tài khoản thuộc một lĩnh vực.
     /// </summary>
     [HttpGet("{id}/related")]
-    [HasPermission(PermissionCode.ViewCompanies)]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
     public async Task<IActionResult> GetRelated(Guid id)
     {
         var related = await _businessFieldService.GetRelatedAsync(id);
@@ -54,10 +54,43 @@ public class BusinessFieldController : ApiControllerBase
     }
 
     /// <summary>
+    /// Danh sách công ty thuộc một lĩnh vực, phân trang phía server (màn chi tiết lĩnh vực).
+    /// search lọc theo mã công ty, tên, mã số thuế.
+    /// </summary>
+    [HttpGet("{id}/companies")]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
+    public async Task<IActionResult> GetCompanies(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null)
+    {
+        var result = await _businessFieldService.GetCompaniesPagedAsync(id, page, pageSize, search);
+        return OkPaged(result);
+    }
+
+    /// <summary>
+    /// Danh sách tài khoản thuộc một lĩnh vực, phân trang phía server (màn chi tiết lĩnh vực).
+    /// role nhận "Collaborator"/"Partner" để lọc theo loại hồ sơ.
+    /// </summary>
+    [HttpGet("{id}/users")]
+    [HasPermission(PermissionCode.ViewBusinessFields)]
+    public async Task<IActionResult> GetUsers(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 10,
+        [FromQuery] string? search = null,
+        [FromQuery] string? role = null)
+    {
+        var result = await _businessFieldService.GetUsersPagedAsync(id, page, pageSize, search, role);
+        return OkPaged(result);
+    }
+
+    /// <summary>
     /// Thêm lĩnh vực hoạt động.
     /// </summary>
     [HttpPost]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.CreateBusinessField)]
     public async Task<IActionResult> Create([FromBody] CreateBusinessFieldRequest request)
     {
         var field = await _businessFieldService.CreateAsync(request);
@@ -68,7 +101,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Sửa lĩnh vực hoạt động (đổi tên, tên gọi khác, bật/tắt).
     /// </summary>
     [HttpPut("{id}")]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.UpdateBusinessField)]
     public async Task<IActionResult> Update(Guid id, [FromBody] UpdateBusinessFieldRequest request)
     {
         var field = await _businessFieldService.UpdateAsync(id, request);
@@ -79,7 +112,7 @@ public class BusinessFieldController : ApiControllerBase
     /// Xoá lĩnh vực hoạt động (chặn nếu đang được công ty/hồ sơ sử dụng).
     /// </summary>
     [HttpDelete("{id}")]
-    [HasPermission(PermissionCode.ManageCompanies)]
+    [HasPermission(PermissionCode.DeleteBusinessField)]
     public async Task<IActionResult> Delete(Guid id)
     {
         await _businessFieldService.DeleteAsync(id);

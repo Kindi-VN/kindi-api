@@ -6,6 +6,13 @@ namespace Kindi.API.Application.DTOs.Requests;
 public class PartnerFilterRequest : PagedRequest
 {
     public string? Search { get; set; }
+
+    /// <summary>
+    /// Chỉ tìm theo đúng một trường (không OR lan sang cột khác); bỏ trống = tìm nhiều trường như trước.
+    /// Giá trị hợp lệ: fullName, partnerCode, userCode, referralCode, accountReferrerCode, phone, email, companyName, companyTaxCode.
+    /// </summary>
+    public PartnerSearchField? SearchField { get; set; }
+
     public PartnerStatus? Status { get; set; }
 
     /// <summary>

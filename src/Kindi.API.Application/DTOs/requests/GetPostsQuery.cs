@@ -10,6 +10,15 @@ public class GetPostsQuery
     public PrivacyType? Privacy { get; set; }
     public string? Tag { get; set; }
 
+    /// <summary>Từ khoá tìm theo nội dung bài viết, họ tên tác giả hoặc mã tài khoản tác giả.</summary>
+    public string? Search { get; set; }
+
+    /// <summary>
+    /// Chỉ tìm theo đúng một trường (không OR lan sang cột khác); bỏ trống = tìm cả nội dung lẫn tác giả.
+    /// Giá trị hợp lệ: content, authorFullName, authorUserCode.
+    /// </summary>
+    public SocialPostSearchField? SearchField { get; set; }
+
     /// <summary>
     /// Chỉ lấy bài viết của chính người gọi (khu vực thành viên) — mọi trạng thái duyệt.
     /// </summary>
@@ -19,4 +28,14 @@ public class GetPostsQuery
     /// Lọc theo trạng thái duyệt: true = đã duyệt, false = chờ duyệt.
     /// </summary>
     public bool? IsApproved { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy bài đăng từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn (giữ nguyên hành vi cũ).
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy bài đăng đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.
+    /// </summary>
+    public DateTime? ToDate { get; set; }
 }

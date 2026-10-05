@@ -15,6 +15,9 @@ public class PayoutStatementResponse
     /// <summary>Họ tên của thành viên.</summary>
     public string? FullName { get; set; }
 
+    /// <summary>Mã tài khoản (USR-…) của người nhận.</summary>
+    public string? UserCode { get; set; }
+
     /// <summary>Chi trả theo kỳ tháng hay rút sớm.</summary>
     public PayoutType Type { get; set; }
 

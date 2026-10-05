@@ -65,6 +65,31 @@ public class SocialService : ISocialService
         if (query.IsApproved.HasValue)
             predicate = predicate.And(p => p.IsApproved == query.IsApproved.Value);
 
+        // Lọc theo ngày đăng bài: bỏ trống thì không giới hạn (giữ nguyên hành vi cũ).
+        var fromDate = query.FromDate?.Date.ToUniversalTime();
+        var toDate = query.ToDate?.Date.AddDays(1).ToUniversalTime();
+        if (fromDate.HasValue)
+            predicate = predicate.And(p => p.CreatedAt >= fromDate.Value);
+        if (toDate.HasValue)
+            predicate = predicate.And(p => p.CreatedAt < toDate.Value);
+
+        // Tìm kiếm theo từ khoá: searchField chỉ định thì CHỈ dò đúng một trường;
+        // bỏ trống dò trên nội dung bài viết + họ tên/mã tài khoản tác giả.
+        var keyword = query.Search?.Trim();
+        if (!string.IsNullOrEmpty(keyword))
+        {
+            Expression<Func<SocialPost, bool>> searchPredicate = query.SearchField switch
+            {
+                SocialPostSearchField.Content => p => p.Content.Contains(keyword),
+                SocialPostSearchField.AuthorFullName => p => p.Author.FullName.Contains(keyword),
+                SocialPostSearchField.AuthorUserCode => p => p.Author.UserCode != null && p.Author.UserCode.Contains(keyword),
+                _ => p => p.Content.Contains(keyword)
+                    || p.Author.FullName.Contains(keyword)
+                    || (p.Author.UserCode != null && p.Author.UserCode.Contains(keyword))
+            };
+            predicate = predicate.And(searchPredicate);
+        }
+
         // XÂY DỰNG PREDICATE KHÔNG CÓ AWAIT
         // "Bài viết của tôi" phải có tài khoản: không thì truy vấn rơi về danh sách công khai.
         if (query.MineOnly)
