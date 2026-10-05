@@ -1,4 +1,6 @@
-﻿namespace Kindi.API.Application.DTOs.requests;
+﻿using System.Text.Json.Serialization;
+
+namespace Kindi.API.Application.DTOs.requests;
 
 /// <summary>
 /// Xin vào nhóm. Đã đăng nhập thì không cần thông tin liên hệ; khách chưa có tài khoản
@@ -14,4 +16,19 @@ public class JoinBusinessGroupRequest
 
     /// <summary>Mã CTV của link chia sẻ khách dùng để xin vào nhóm (không bắt buộc).</summary>
     public string? RecordReferrerCode { get; set; }
+
+    /// <summary>
+    /// Nhịp chuyển tiếp: tên cũ "referralCode" của <see cref="RecordReferrerCode"/>.
+    /// Chỉ để đọc dữ liệu client cũ; điền vào trường chính khi trường chính còn trống,
+    /// còn trường chính đã có giá trị thì bỏ qua tên cũ (tên chính luôn được ưu tiên).
+    /// </summary>
+    [JsonPropertyName("referralCode")]
+    public string? LegacyReferralCode
+    {
+        set
+        {
+            if (string.IsNullOrWhiteSpace(RecordReferrerCode))
+                RecordReferrerCode = value;
+        }
+    }
 }

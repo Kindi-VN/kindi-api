@@ -3,6 +3,7 @@ using Kindi.API.Application.Common.Mappings;
 using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using AutoMapper;
+using System.Text.Json.Serialization;
 
 namespace Kindi.API.Application.DTOs.Requests;
 
@@ -14,6 +15,21 @@ public class PartnerRegisterRequest : IMapFrom<Partner>
     public string Phone { get; set; } = string.Empty;
     public string Position { get; set; } = string.Empty;
     public string? RecordReferrerCode { get; set; }
+
+    /// <summary>
+    /// Nhịp chuyển tiếp: tên cũ "referralCode" của <see cref="RecordReferrerCode"/>.
+    /// Chỉ để đọc dữ liệu client cũ; điền vào trường chính khi trường chính còn trống,
+    /// còn trường chính đã có giá trị thì bỏ qua tên cũ (tên chính luôn được ưu tiên).
+    /// </summary>
+    [JsonPropertyName("referralCode")]
+    public string? LegacyReferralCode
+    {
+        set
+        {
+            if (string.IsNullOrWhiteSpace(RecordReferrerCode))
+                RecordReferrerCode = value;
+        }
+    }
 
     // Step 2: Business Info (lĩnh vực hoạt động quản lý tập trung qua BusinessField)
     public string CompanyName { get; set; } = string.Empty;
