@@ -28,4 +28,14 @@ public class GetPostsQuery
     /// Lọc theo trạng thái duyệt: true = đã duyệt, false = chờ duyệt.
     /// </summary>
     public bool? IsApproved { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy bài đăng từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn (giữ nguyên hành vi cũ).
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy bài đăng đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.
+    /// </summary>
+    public DateTime? ToDate { get; set; }
 }

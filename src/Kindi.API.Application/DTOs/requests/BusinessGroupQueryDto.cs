@@ -22,4 +22,20 @@ public class BusinessGroupQueryDto
 
     /// <summary>Danh sách "nhóm của tôi": created = nhóm mình tạo, joined = nhóm mình đã tham gia, bỏ trống = cả hai.</summary>
     public GroupMineRole? MineRole { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm tạo từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn (giữ nguyên hành vi cũ).
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm tạo đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.
+    /// </summary>
+    public DateTime? ToDate { get; set; }
+
+    /// <summary>
+    /// Lọc theo trạng thái duyệt của nhóm (Pending/Approved/Rejected); bỏ trống = mọi trạng thái.
+    /// Dùng cho danh sách "nhóm của tôi".
+    /// </summary>
+    public GroupApprovalStatus? ApprovalStatus { get; set; }
 }

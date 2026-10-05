@@ -24,4 +24,15 @@ public class GetPublicGroupBuyingRequestsQueryDto
     /// Dùng chung <see cref="RequestSearchField"/> với danh sách yêu cầu ở màn quản trị.
     /// </summary>
     public RequestSearchField? SearchField { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm mua chung tạo từ ngày này trở đi (theo CreatedAt); bỏ trống = không giới hạn
+    /// (giữ nguyên hành vi cũ).
+    /// </summary>
+    public DateTime? FromDate { get; set; }
+
+    /// <summary>
+    /// Chỉ lấy nhóm mua chung tạo đến hết ngày này (bao gồm cả ngày này, theo CreatedAt); bỏ trống = không giới hạn.
+    /// </summary>
+    public DateTime? ToDate { get; set; }
 }

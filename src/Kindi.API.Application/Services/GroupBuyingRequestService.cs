@@ -173,6 +173,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
                         || (meId != null && x.UserId == meId.Value
                             && (x.Status == GroupBuyingStatus.Pending || x.Status == GroupBuyingStatus.Active)))
             .WhereIf(status.HasValue, x => x.Status == status!.Value)
+            // Khoảng ngày tạo: giữ nguyên hành vi cũ khi client không truyền (không giới hạn).
+            .WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
+            .WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime())
             .Include(x => x.User)
             .Include(x => x.BusinessField)
             .Include(x => x.Participants);

@@ -680,6 +680,12 @@ public class BusinessGroupService : IBusinessGroupService
                 (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
                 (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
 
+        // Khoảng ngày tạo + trạng thái duyệt: bỏ trống thì không lọc (giữ nguyên hành vi cũ).
+        q = q
+            .WhereIf(query.FromDate.HasValue, x => x.CreatedAt >= query.FromDate!.Value.Date.ToUniversalTime())
+            .WhereIf(query.ToDate.HasValue, x => x.CreatedAt < query.ToDate!.Value.Date.AddDays(1).ToUniversalTime())
+            .WhereIf(query.ApprovalStatus.HasValue, x => x.ApprovalStatus == query.ApprovalStatus!.Value);
+
         // Vai trò của mình với nhóm: nhóm mình tạo, nhóm mình đã tham gia, hoặc cả hai
         if (query.MineRole == GroupMineRole.Created)
             q = q.Where(x => x.CreatedByUserId == meId);

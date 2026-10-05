@@ -202,6 +202,12 @@ public sealed class PayoutService : IPayoutService
             statements = statements.Where(x => x.User != null &&
                 (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword)));
 
+        // Lọc theo ngày tạo; bỏ trống thì không giới hạn (giữ nguyên hành vi cũ).
+        if (query.FromDate.HasValue)
+            statements = statements.Where(x => x.CreatedAt >= query.FromDate.Value.Date.ToUniversalTime());
+        if (query.ToDate.HasValue)
+            statements = statements.Where(x => x.CreatedAt < query.ToDate.Value.Date.AddDays(1).ToUniversalTime());
+
         // Yêu cầu chờ duyệt lên trước để quản trị viên xử lý theo thứ tự ưu tiên.
         statements = statements
             .OrderBy(x => x.Status == PayoutStatus.Pending || x.Status == PayoutStatus.Approved ? 0 : 1)
