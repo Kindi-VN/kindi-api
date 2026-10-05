@@ -319,19 +319,19 @@ public enum PermissionCode
 
     [PermissionInfo("Xem danh mục lĩnh vực hoạt động", PermissionModule.System, PermissionKind.View, "/admin/business-fields",
         "GET /api/v1/business-fields, GET /api/v1/business-fields/{id}/related", Screen = PermissionScreens.BusinessFields)]
-    ViewBusinessFields = 132,
+    ViewBusinessFields = 148,
 
     [PermissionInfo("Thêm lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Update, null,
         "POST /api/v1/business-fields", Screen = PermissionScreens.BusinessFields)]
-    CreateBusinessField = 133,
+    CreateBusinessField = 149,
 
     [PermissionInfo("Sửa lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Update, null,
         "PUT /api/v1/business-fields/{id}", Screen = PermissionScreens.BusinessFields)]
-    UpdateBusinessField = 134,
+    UpdateBusinessField = 150,
 
     [PermissionInfo("Xoá lĩnh vực hoạt động", PermissionModule.System, PermissionKind.Delete, null,
         "DELETE /api/v1/business-fields/{id}", Screen = PermissionScreens.BusinessFields)]
-    DeleteBusinessField = 135,
+    DeleteBusinessField = 151,
 
 
     // ===== Quyền khôi phục theo cặp ViewRestore<X> + Restore<X> cho mọi màn có xoá mềm =====
