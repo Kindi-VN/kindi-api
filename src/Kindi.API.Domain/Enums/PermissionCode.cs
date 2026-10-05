@@ -230,17 +230,17 @@ public enum PermissionCode
     [PermissionInfo("Sửa cài đặt chung", PermissionModule.System, PermissionKind.Update, null, "PUT /api/v1/settings", Screen = PermissionScreens.SystemSettings)]
     UpdateSystemSettings = 111,
 
-    [PermissionInfo("Khai và chốt doanh thu giao dịch", PermissionModule.SuperAdmin, PermissionKind.Action, null,
+    [PermissionInfo("Khai và chốt doanh thu giao dịch", PermissionModule.Revenue, PermissionKind.Action, null,
         "POST /api/v1/revenues, PUT /api/v1/revenues/{id}, POST /api/v1/revenues/{id}/confirm", Screen = PermissionScreens.Revenues)]
     ManageTransactionRevenue = 112,
 
-    [PermissionInfo("Xem thống kê doanh thu giao dịch", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/revenue",
+    [PermissionInfo("Xem thống kê doanh thu giao dịch", PermissionModule.Revenue, PermissionKind.View, "/admin/revenue",
         "GET /api/v1/revenues, GET /api/v1/revenues/stats", Screen = PermissionScreens.Revenues)]
     ViewTransactionRevenue = 113,
 
     // Mã gộp cũ (xem/thêm/sửa/xoá cấu hình doanh thu). Giữ trong giai đoạn chuyển tiếp để token cũ không bị chặn;
     // chức năng đã tách sang P129 (xem) / P130 (sửa) / P131 (xoá), sẽ gỡ sau khi token cũ hết hạn.
-    [PermissionInfo("Quản lý cấu hình doanh thu", PermissionModule.SuperAdmin, PermissionKind.Action, "/admin/revenue",
+    [PermissionInfo("Quản lý cấu hình doanh thu", PermissionModule.Revenue, PermissionKind.Action, "/admin/revenue",
         "GET/POST/PUT/DELETE /api/v1/RevenueExpenseTypes, PUT /api/v1/RevenueExpenseTypes/assign, GET/PUT /api/v1/RevenueExpenseTypes/config", Screen = PermissionScreens.RevenueConfig)]
     ManageRevenueConfig = 114,
 
@@ -301,17 +301,17 @@ public enum PermissionCode
         Replaces = new[] { "P110" })]
     ViewBankAccounts = 128,
 
-    [PermissionInfo("Xem cấu hình loại thu/chi", PermissionModule.SuperAdmin, PermissionKind.View, "/admin/revenue/settings",
+    [PermissionInfo("Xem cấu hình loại thu/chi", PermissionModule.Revenue, PermissionKind.View, "/admin/revenue/settings",
         "GET /api/v1/RevenueExpenseTypes, GET /api/v1/RevenueExpenseTypes/config", Screen = PermissionScreens.RevenueConfig,
         Replaces = new[] { "P114" })]
     ViewRevenueConfig = 129,
 
-    [PermissionInfo("Sửa cấu hình loại thu/chi", PermissionModule.SuperAdmin, PermissionKind.Update, null,
+    [PermissionInfo("Sửa cấu hình loại thu/chi", PermissionModule.Revenue, PermissionKind.Update, null,
         "POST /api/v1/RevenueExpenseTypes, PUT /api/v1/RevenueExpenseTypes/{id}, PUT /api/v1/RevenueExpenseTypes/assign, PUT /api/v1/RevenueExpenseTypes/config", Screen = PermissionScreens.RevenueConfig,
         Replaces = new[] { "P114" })]
     UpdateRevenueConfig = 130,
 
-    [PermissionInfo("Xoá cấu hình loại thu/chi", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+    [PermissionInfo("Xoá cấu hình loại thu/chi", PermissionModule.Revenue, PermissionKind.Delete, null,
         "DELETE /api/v1/RevenueExpenseTypes/{id}", Screen = PermissionScreens.RevenueConfig,
         Replaces = new[] { "P114" })]
     DeleteRevenueConfig = 131,
