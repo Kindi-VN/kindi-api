@@ -9,6 +9,9 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
 {
     public Guid Id { get; set; }
     public string? GroupBuyingRequestCode { get; set; }
+
+    /// <summary>Mã tài khoản (USR-…) của người gửi/lập yêu cầu.</summary>
+    public string? UserCode { get; set; }
     public string ProductName { get; set; } = string.Empty;
     public string? ProductLink { get; set; }
     public int TargetPeopleCount { get; set; }
@@ -52,5 +55,7 @@ public class GroupBuyingRequestResponseDto : IMapFrom<GroupBuyingRequest>
             .ForMember(dest => dest.Zalo, opt => opt.MapFrom(src => src.User != null ? src.User.Zalo : null))
             .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.User != null ? src.User.Email : string.Empty))
             .ForMember(dest => dest.AccountReferrerCode,
-                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null));
+                opt => opt.MapFrom(src => src.User != null ? src.User.AccountReferrerCode : null))
+            .ForMember(dest => dest.UserCode,
+                opt => opt.MapFrom(src => src.User != null ? src.User.UserCode : null));
 }
