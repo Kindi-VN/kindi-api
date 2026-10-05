@@ -6,6 +6,7 @@ using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Shared.Exceptions;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 
 namespace Kindi.API.Application.Services;
 
@@ -99,8 +100,13 @@ public class BusinessFieldService : IBusinessFieldService
         var companies = (await _companyRepository.FindAsync(c => !c.IsDeleted && c.BusinessFieldId == id))
             .OrderBy(c => c.Name)
             .ToList();
-        var collaborators = await _collaboratorRepository.FindAsync(c => !c.IsDeleted && c.BusinessFieldId == id);
-        var partners = await _partnerRepository.FindAsync(p => !p.IsDeleted && p.BusinessFieldId == id);
+        // Phải Include User và Company: thiếu Include thì navigation null nên UserCode/FullName/Phone/CompanyName trả về null.
+        var collaborators = await _collaboratorRepository.GetListWithIncludesAsync(
+            query => query.Include(c => c.User).Include(c => c.Company),
+            c => !c.IsDeleted && c.BusinessFieldId == id);
+        var partners = await _partnerRepository.GetListWithIncludesAsync(
+            query => query.Include(p => p.User).Include(p => p.Company),
+            p => !p.IsDeleted && p.BusinessFieldId == id);
 
         var users = new List<BusinessFieldUserDto>();
         users.AddRange(collaborators.Select(c => new BusinessFieldUserDto

@@ -74,10 +74,15 @@ public class ReferralEventService : IReferralEventService
     {
         var (from, to) = Range(query.From, query.To);
 
-        var paged = await _queryService.GetAllNoTracking<ReferralEvent>()
+        var eventsQuery = _queryService.GetAllNoTracking<ReferralEvent>()
             .Where(e => e.RecordReferrerCode == code)
             .Where(e => e.CreatedAt >= from && e.CreatedAt <= to)
-            .WhereIf(query.EventType.HasValue, e => e.EventType == query.EventType!.Value)
+            .WhereIf(query.EventType.HasValue, e => e.EventType == query.EventType!.Value);
+
+        // Từ khoá: searchField chỉ định thì CHỈ dò đúng cột đó; bỏ trống thì giữ nguyên hành vi cũ.
+        eventsQuery = ApplySearch(eventsQuery, query.Search, query.SearchField);
+
+        var paged = await eventsQuery
             .OrderByDescending(e => e.CreatedAt)
             .ToPagedListAsync(query.Page, query.PageSize, null, null, defaultSortBy: "CreatedAt");
 
@@ -121,6 +126,41 @@ public class ReferralEventService : IReferralEventService
         var start = from ?? DateTime.UtcNow.AddDays(-30);
         var end = to ?? DateTime.UtcNow;
         return start <= end ? (start, end) : (end, start);
+    }
+
+    /// <summary>
+    /// Lọc phát sinh theo từ khoá. Có <paramref name="searchField"/> thì CHỈ dò đúng cột đó;
+    /// bỏ trống thì giữ nguyên hành vi cũ (không lọc theo từ khoá). Cột EventType/Status khớp theo
+    /// tên hoặc số của enum, không khớp một phần.
+    /// </summary>
+    private static IQueryable<ReferralEvent> ApplySearch(
+        IQueryable<ReferralEvent> query, string? search, ReferralEventSearchField? searchField)
+    {
+        if (!searchField.HasValue)
+            return query;
+
+        var keyword = search?.Trim();
+        if (string.IsNullOrEmpty(keyword))
+            return query;
+
+        var pattern = $"%{keyword}%";
+
+        return searchField.Value switch
+        {
+            ReferralEventSearchField.ReferralCode =>
+                query.Where(e => e.RecordReferrerCode != null && EF.Functions.ILike(e.RecordReferrerCode, pattern)),
+            ReferralEventSearchField.RefEntityCode =>
+                query.Where(e => e.RefEntityCode != null && EF.Functions.ILike(e.RefEntityCode, pattern)),
+            ReferralEventSearchField.EventType =>
+                Enum.TryParse<ReferralEventType>(keyword, true, out var eventType)
+                    ? query.Where(e => e.EventType == eventType)
+                    : query.Where(e => false),
+            ReferralEventSearchField.Status =>
+                Enum.TryParse<ReferralEventStatus>(keyword, true, out var status)
+                    ? query.Where(e => e.Status == status)
+                    : query.Where(e => false),
+            _ => query
+        };
     }
 
     private async Task<ReferralStatsOverviewDto> BuildOverviewAsync(
