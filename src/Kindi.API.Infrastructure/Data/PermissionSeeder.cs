@@ -216,17 +216,23 @@ public static class PermissionSeeder
         // "hiệu lực = bản thân + mọi tổ tiên" sẽ chặn hết. Chỉ thêm dòng còn thiếu, giữ nguyên cấu hình đã sửa.
         var addedStructural = await EnsureStructuralGrantsAsync(context, byCode, cancellationToken);
 
+        // Cùng luật cho quyền riêng theo tài khoản: cấp node cha cho quyền con tài khoản đang có.
+        var addedUserStructural = await EnsureUserStructuralGrantsAsync(context, byCode, cancellationToken);
+
         // Chuyển quyền đã cấp (role + cấu hình riêng của tài khoản) từ mã gộp cũ sang các mã mới tách ra,
         // theo khai báo "Replaces" ở enum — bảo đảm không ai mất quyền đang có khi tách Xem/Sửa/Xoá.
         var copiedGrants = await CopyReplacedGrantsAsync(context, byCode, cancellationToken);
 
-        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới, {Structural} gán node cha, {Copied} quyền chuyển tiếp đã sao chép",
-            added, addedGroups, hiddenGroups, addedGrants, addedStructural, copiedGrants);
+        logger?.LogInformation("Permission catalogue seeded: {Added} quyền mới, {Groups} nhóm mới, {Hidden} nhóm cũ đã ẩn, {Grants} gán role mới, {Structural} gán node cha theo role, {UserStructural} gán node cha theo tài khoản, {Copied} quyền chuyển tiếp đã sao chép",
+            added, addedGroups, hiddenGroups, addedGrants, addedStructural, addedUserStructural, copiedGrants);
     }
 
     /// <summary>
     /// Cấp các node cha (màn hình, nhóm) cho mọi role đang có ít nhất một node con được cấp.
-    /// Idempotent: chỉ thêm dòng còn thiếu, không ghi đè và không tạo dòng cho node chưa từng được bật.
+    /// Idempotent: chỉ thêm dòng còn thiếu và BẬT LẠI dòng cha đang tắt (quyền con chỉ có hiệu lực khi
+    /// mọi tổ tiên đều được cấp — dòng cha bị tắt do lần lưu trước thiếu mã tổ tiên phải được sửa lại,
+    /// nếu không quyền con đã cấp sẽ mãi ở trạng thái isGranted=true nhưng isEffective=false).
+    /// Chỉ xử lý node cha của node đang được cấp nên KHÔNG bật lại quyền con nào bị tắt có chủ đích.
     /// </summary>
     private static async Task<int> EnsureStructuralGrantsAsync(
         ApplicationDbContext context,
@@ -242,34 +248,104 @@ public static class PermissionSeeder
             .GroupBy(x => (x.Role, x.PermissionId))
             .ToDictionary(x => x.Key, x => x.First());
 
-        var added = 0;
+        var changed = 0;
         foreach (var roleGroup in roleRows.Where(x => !x.IsDeleted && x.IsGranted).GroupBy(x => x.Role))
         {
-            var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            foreach (var row in roleGroup)
-            {
-                if (!idToCode.TryGetValue(row.PermissionId, out var code)) continue;
-                foreach (var ancestor in PermissionTreeCatalog.AncestorsOf(code)) needed.Add(ancestor);
-            }
-
-            foreach (var ancestorCode in needed)
+            foreach (var ancestorCode in AncestorsNeeded(roleGroup.Select(x => x.PermissionId), idToCode))
             {
                 if (!byCode.TryGetValue(ancestorCode, out var node)) continue;
-                if (existing.ContainsKey((roleGroup.Key, node.Id))) continue;
+
+                if (existing.TryGetValue((roleGroup.Key, node.Id), out var current))
+                {
+                    if (!current.IsGranted || current.IsDeleted)
+                    {
+                        current.IsGranted = true;
+                        current.IsDeleted = false;
+                        context.RolePermissions.Update(current);
+                        changed++;
+                    }
+                    continue;
+                }
 
                 var row = new RolePermission { Role = roleGroup.Key, PermissionId = node.Id, IsGranted = true };
                 context.RolePermissions.Add(row);
                 existing[(roleGroup.Key, node.Id)] = row;
-                added++;
+                changed++;
             }
         }
 
-        if (added > 0)
+        if (changed > 0)
         {
             await context.SaveChangesAsync(cancellationToken);
         }
 
-        return added;
+        return changed;
+    }
+
+    /// <summary>
+    /// Cấp các node cha cho quyền riêng của từng TÀI KHOẢN: quyền cấp riêng cho tài khoản cũng áp kế thừa
+    /// khi tính hiệu lực, nên nếu tài khoản được cấp một hành động mà màn hình/nhóm chứa nó chưa được cấp
+    /// (cả theo role lẫn theo tài khoản) thì hành động đó bị vô hiệu oan. Idempotent, chỉ bật/tạo node cha.
+    /// </summary>
+    private static async Task<int> EnsureUserStructuralGrantsAsync(
+        ApplicationDbContext context,
+        IReadOnlyDictionary<string, Permission> byCode,
+        CancellationToken cancellationToken)
+    {
+        var userRows = await context.UserPermissions.IgnoreQueryFilters().ToListAsync(cancellationToken);
+        var idToCode = byCode.Values
+            .GroupBy(x => x.Id)
+            .ToDictionary(x => x.Key, x => x.First().Code);
+
+        var existing = userRows
+            .GroupBy(x => (x.UserId, x.PermissionId))
+            .ToDictionary(x => x.Key, x => x.First());
+
+        var changed = 0;
+        foreach (var userGroup in userRows.Where(x => !x.IsDeleted && x.IsGranted).GroupBy(x => x.UserId))
+        {
+            foreach (var ancestorCode in AncestorsNeeded(userGroup.Select(x => x.PermissionId), idToCode))
+            {
+                if (!byCode.TryGetValue(ancestorCode, out var node)) continue;
+
+                if (existing.TryGetValue((userGroup.Key, node.Id), out var current))
+                {
+                    if (!current.IsGranted || current.IsDeleted)
+                    {
+                        current.IsGranted = true;
+                        current.IsDeleted = false;
+                        context.UserPermissions.Update(current);
+                        changed++;
+                    }
+                    continue;
+                }
+
+                var row = new UserPermission { UserId = userGroup.Key, PermissionId = node.Id, IsGranted = true };
+                context.UserPermissions.Add(row);
+                existing[(userGroup.Key, node.Id)] = row;
+                changed++;
+            }
+        }
+
+        if (changed > 0)
+        {
+            await context.SaveChangesAsync(cancellationToken);
+        }
+
+        return changed;
+    }
+
+    /// <summary>Mã các node cha (màn hình, nhóm) cần cấp cho tập quyền con đang được bật.</summary>
+    private static HashSet<string> AncestorsNeeded(IEnumerable<Guid> grantedPermissionIds, IReadOnlyDictionary<Guid, string> idToCode)
+    {
+        var needed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var permissionId in grantedPermissionIds)
+        {
+            if (!idToCode.TryGetValue(permissionId, out var code)) continue;
+            foreach (var ancestor in PermissionTreeCatalog.AncestorsOf(code)) needed.Add(ancestor);
+        }
+
+        return needed;
     }
 
     /// <summary>
