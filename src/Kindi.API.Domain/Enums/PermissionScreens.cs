@@ -77,6 +77,7 @@ public static class PermissionScreenCatalog
         new(PermissionScreens.Partners, "Đối tác", "Partners", PermissionGroupCodes.Admin, 120),
         new(PermissionScreens.PartnerProducts, "Sản phẩm đối tác", "Partner products", PermissionGroupCodes.Admin, 130),
         new(PermissionScreens.Companies, "Công ty", "Companies", PermissionGroupCodes.Admin, 140),
+        new(PermissionScreens.BusinessFields, "Lĩnh vực hoạt động", "Business fields", PermissionGroupCodes.Admin, 145),
         new(PermissionScreens.PurchaseRequests, "Yêu cầu mua hàng", "Purchase requests", PermissionGroupCodes.Admin, 150),
         new(PermissionScreens.Offers, "Offer", "Offers", PermissionGroupCodes.Admin, 160),
         new(PermissionScreens.GroupBuying, "Yêu cầu mua chung", "Group buying", PermissionGroupCodes.Admin, 170),
