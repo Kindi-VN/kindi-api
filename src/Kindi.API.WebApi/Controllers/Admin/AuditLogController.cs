@@ -1,5 +1,6 @@
 ﻿using Kindi.API.Application.Common.Interfaces;
 using Kindi.API.Application.DTOs.requests;
+using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Application.Resources;
 using Kindi.API.Domain.Enums;
 using Kindi.API.WebApi.Authorization;
@@ -127,5 +128,59 @@ public class AuditLogController : ApiControllerBase
             return NotFound(_localizer["AuditLogs_NotFound"]);
 
         return Ok(result, _localizer["AuditLogs_AuthDetailSuccess"]);
+    }
+
+    /// <summary>
+    /// Danh mục chọn nhanh cho bộ lọc nhật ký: hành động của từng loại nhật ký và tên bảng đã phát sinh
+    /// nhật ký (lấy từ dữ liệu).
+    /// </summary>
+    [HttpGet("filters")]
+    [HasPermission(PermissionCode.ViewAuthAuditLogs, PermissionCode.ViewEntityAuditLogs)]
+    public async Task<IActionResult> GetFilterOptions()
+    {
+        var result = await _auditLogQueryService.GetFilterOptionsAsync();
+        return Ok(result, _localizer["AuditLogs_FilterOptionsSuccess"]);
+    }
+
+    /// <summary>
+    /// Xoá nhật ký thao tác dữ liệu: theo các dòng được chọn (ids) hoặc theo khoảng ngày
+    /// (fromDate/toDate). Bảng nhật ký không có xoá mềm nên đây là xoá VĨNH VIỄN; chính thao tác xoá
+    /// được ghi lại một dòng nhật ký để giữ vết.
+    /// </summary>
+    [HttpDelete("entity")]
+    [HasPermission(PermissionCode.DeleteEntityAuditLogs)]
+    public async Task<IActionResult> DeleteEntityLogs([FromBody] AuditLogDeleteRequest request)
+    {
+        var deleted = await _auditLogQueryService.DeleteEntityLogsAsync(request);
+        return Ok(new AuditLogDeleteResponse(deleted), _localizer["AuditLogs_DeleteSuccess", deleted]);
+    }
+
+    /// <summary>Xoá nhật ký xác thực tài khoản (đăng nhập/đăng ký/đổi mật khẩu...) — xoá VĨNH VIỄN.</summary>
+    [HttpDelete("auth")]
+    [HasPermission(PermissionCode.DeleteAuthAuditLogs)]
+    public async Task<IActionResult> DeleteAuthLogs([FromBody] AuditLogDeleteRequest request)
+    {
+        var deleted = await _auditLogQueryService.DeleteAuthLogsAsync(request);
+        return Ok(new AuditLogDeleteResponse(deleted), _localizer["AuditLogs_DeleteSuccess", deleted]);
+    }
+
+    /// <summary>
+    /// Xoá nhật ký thao tác dữ liệu trong chế độ xem toàn bộ (kể cả hành động của SuperAdmin).
+    /// </summary>
+    [HttpDelete("full/entity")]
+    [HasPermission(PermissionCode.ViewFullAuditLogs)]
+    public async Task<IActionResult> DeleteFullEntityLogs([FromBody] AuditLogDeleteRequest request)
+    {
+        var deleted = await _auditLogQueryService.DeleteEntityLogsAsync(request, includeSuperAdminActors: true);
+        return Ok(new AuditLogDeleteResponse(deleted), _localizer["AuditLogs_DeleteSuccess", deleted]);
+    }
+
+    /// <summary>Xoá nhật ký xác thực trong chế độ xem toàn bộ (kể cả hành động của SuperAdmin).</summary>
+    [HttpDelete("full/auth")]
+    [HasPermission(PermissionCode.ViewFullAuditLogs)]
+    public async Task<IActionResult> DeleteFullAuthLogs([FromBody] AuditLogDeleteRequest request)
+    {
+        var deleted = await _auditLogQueryService.DeleteAuthLogsAsync(request, includeSuperAdminActors: true);
+        return Ok(new AuditLogDeleteResponse(deleted), _localizer["AuditLogs_DeleteSuccess", deleted]);
     }
 }

@@ -65,5 +65,20 @@ public interface IRepository<T> where T : class
     void DeleteRange(IEnumerable<T> entities);
     void Restore(T entity);
     void RestoreRange(IEnumerable<T> entities);
+
+    // ========== HARD DELETE (xoá vĩnh viễn, không phải xoá mềm) ==========
+    /// <summary>
+    /// Xoá VĨNH VIỄN bản ghi khỏi DB. Dùng cho bảng không có xoá mềm (nhật ký hoạt động) và cho
+    /// thao tác "xoá vĩnh viễn" ở màn xem mục đã xoá. Bản ghi kế thừa <c>BaseEntity</c> sẽ mất hẳn,
+    /// không thể khôi phục.
+    /// </summary>
+    void HardDelete(T entity);
+
+    /// <summary>Xoá vĩnh viễn nhiều bản ghi (một lần lưu).</summary>
+    void HardDeleteRange(IEnumerable<T> entities);
+
+    /// <summary>Xoá vĩnh viễn nhiều bản ghi, trả về số dòng đã xoá.</summary>
+    Task<int> HardDeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default);
+
     Task<int> SaveChangesAsync(CancellationToken cancellationToken = default);
 }

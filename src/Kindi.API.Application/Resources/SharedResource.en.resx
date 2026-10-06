@@ -1026,6 +1026,21 @@
   <data name="AuditLogs_NotFound">
     <value>Audit log not found</value>
   </data>
+  <data name="AuditLogs_FilterOptionsSuccess">
+    <value>Audit log filter options loaded</value>
+  </data>
+  <data name="AuditLogs_DeleteSuccess">
+    <value>Deleted {0} audit log rows.</value>
+  </data>
+  <data name="AuditLog_DeleteCriteriaRequired">
+    <value>Select rows or a date range to delete.</value>
+  </data>
+  <data name="AuditLog_DeleteRangeInvalid">
+    <value>Invalid date range: the from date is after the to date.</value>
+  </data>
+  <data name="AuditLog_TooManyIds">
+    <value>You can delete at most {0} rows at a time.</value>
+  </data>
 
   <!-- Mua chung (group buying) - join / admin -->
   <data name="GroupBuyingRequest_NotFound">
@@ -1671,5 +1686,8 @@
   <data name="Permission_P145"><value>Delete purchase request</value></data>
   <data name="Permission_P146"><value>View deleted purchase requests</value></data>
   <data name="Permission_P147"><value>Restore purchase request</value></data>
+  <data name="Permission_P152"><value>Delete data change logs</value></data>
+  <data name="Permission_P153"><value>Delete account authentication logs</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Purchase request deleted.</value></data>
+  <data name="AuditLog_NotFound"><value>Audit log not found</value></data>
 </root>

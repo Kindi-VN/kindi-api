@@ -403,6 +403,16 @@ public enum PermissionCode
     [PermissionInfo("Khôi phục yêu cầu mua hàng", PermissionModule.Purchase, PermissionKind.Delete, null,
         "POST /api/v1/purchaserequests/{id}/restore", Screen = PermissionScreens.PurchaseRequests)]
     RestorePurchaseRequest = 147,
+
+    // ===== Nhật ký hoạt động: xoá log (bảng nhật ký là append-only nên xoá là xoá thật) =====
+
+    [PermissionInfo("Xoá nhật ký thao tác dữ liệu", PermissionModule.System, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/audit-logs/entity", Screen = PermissionScreens.AuditLogs)]
+    DeleteEntityAuditLogs = 152,
+
+    [PermissionInfo("Xoá nhật ký xác thực tài khoản", PermissionModule.System, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/audit-logs/auth", Screen = PermissionScreens.AuditLogs)]
+    DeleteAuthAuditLogs = 153,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

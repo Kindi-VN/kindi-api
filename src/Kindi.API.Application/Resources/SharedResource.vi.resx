@@ -965,6 +965,21 @@
   <data name="AuditLogs_NotFound">
     <value>Không tìm thấy audit log</value>
   </data>
+  <data name="AuditLogs_FilterOptionsSuccess">
+    <value>Lấy danh mục lọc nhật ký thành công</value>
+  </data>
+  <data name="AuditLogs_DeleteSuccess">
+    <value>Đã xoá {0} dòng nhật ký.</value>
+  </data>
+  <data name="AuditLog_DeleteCriteriaRequired">
+    <value>Chọn dòng nhật ký hoặc khoảng ngày cần xoá.</value>
+  </data>
+  <data name="AuditLog_DeleteRangeInvalid">
+    <value>Khoảng ngày không hợp lệ: từ ngày lớn hơn đến ngày.</value>
+  </data>
+  <data name="AuditLog_TooManyIds">
+    <value>Mỗi lần chỉ xoá được tối đa {0} dòng nhật ký.</value>
+  </data>
 
   <!-- Mua chung (group buying) - join / admin -->
   <data name="GroupBuyingRequest_NotFound">
@@ -1610,5 +1625,8 @@
   <data name="Permission_P145"><value>Xoá yêu cầu mua hàng</value></data>
   <data name="Permission_P146"><value>Xem yêu cầu mua hàng đã xoá</value></data>
   <data name="Permission_P147"><value>Khôi phục yêu cầu mua hàng</value></data>
+  <data name="Permission_P152"><value>Xoá nhật ký thao tác dữ liệu</value></data>
+  <data name="Permission_P153"><value>Xoá nhật ký xác thực tài khoản</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Đã xoá yêu cầu mua hàng.</value></data>
+  <data name="AuditLog_NotFound"><value>Không tìm thấy nhật ký</value></data>
 </root>
