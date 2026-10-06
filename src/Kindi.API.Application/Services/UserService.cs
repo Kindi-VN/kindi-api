@@ -286,6 +286,21 @@ public class UserService : IUserService
     }
 
     /// <summary>
+    /// Tài khoản quản trị (Admin/SuperAdmin) không được gắn vào bất cứ dạng tài khoản nào: không nhận
+    /// ghi nhận giới thiệu, không đứng tên hồ sơ CTV/đối tác.
+    /// </summary>
+    public async Task<bool> IsAdminAccountAsync(string? userId)
+    {
+        if (!Guid.TryParse(userId, out var id))
+            return false;
+
+        var user = await _userRepo.GetFirstAsync(u => u.Id == id && !u.IsDeleted
+            && (u.Role == UserRole.Admin || u.Role == UserRole.SuperAdmin));
+
+        return user != null;
+    }
+
+    /// <summary>
     /// Cấp lại mật khẩu về số điện thoại của tài khoản và bắt buộc đổi ở lần đăng nhập kế tiếp.
     /// Tài khoản quản trị không cấp lại theo cách này.
     /// </summary>

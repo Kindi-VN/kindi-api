@@ -59,7 +59,11 @@ public class PartnerService : IPartnerService
     {
         // 1. Lấy hoặc tạo User
         var userId = _currentUserService.UserId;
-        var isPublicRegistration = string.IsNullOrEmpty(userId);
+
+        // Tài khoản quản trị không được đứng tên hồ sơ đối tác: đang đăng nhập bằng tài khoản quản trị
+        // (kể cả token cũ còn trong trình duyệt) thì xử lý như đăng ký công khai, không gắn vào tài khoản đó.
+        var isAdminAccount = await _userService.IsAdminAccountAsync(userId);
+        var isPublicRegistration = string.IsNullOrEmpty(userId) || isAdminAccount;
         var isNewAccount = false;
         string? accountUsername = null;
 
