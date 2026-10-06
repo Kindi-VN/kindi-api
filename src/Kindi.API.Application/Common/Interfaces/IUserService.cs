@@ -22,6 +22,12 @@ public interface IUserService
     Task<User?> FindByIdAsync(Guid userId);
 
     /// <summary>
+    /// Tài khoản này có phải tài khoản quản trị (Admin/SuperAdmin) không — dùng để chặn mọi luồng gắn hồ sơ
+    /// (CTV/đối tác) và ghi nhận giới thiệu vào tài khoản quản trị.
+    /// </summary>
+    Task<bool> IsAdminAccountAsync(string? userId);
+
+    /// <summary>
     /// Xử lý tài khoản cho luồng công khai: dùng lại tài khoản theo SĐT/email nếu đã có,
     /// tạo tài khoản tự động nếu chưa, rồi cập nhật thông tin cá nhân vào bảng <c>Users</c>.
     /// Không ghi đè họ tên/SĐT/email/Zalo của tài khoản đã tồn tại.

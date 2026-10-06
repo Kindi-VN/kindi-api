@@ -69,11 +69,14 @@ public class CollaboratorService : ICollaboratorService
 
         // Đăng ký công khai (chưa đăng nhập): cần biết trước đây là tài khoản mới hay dùng lại
         // để trả thông tin đăng nhập (username user<sđt> / mật khẩu = SĐT) cho người đăng ký.
-        var isPublicRegistration = string.IsNullOrEmpty(userId);
+        // Tài khoản quản trị cũng đi đường công khai: không cho hồ sơ CTV đứng tên tài khoản quản trị
+        // (kể cả token cũ còn trong trình duyệt).
+        var isAdminAccount = await _userService.IsAdminAccountAsync(userId);
+        var isPublicRegistration = string.IsNullOrEmpty(userId) || isAdminAccount;
         var isNewAccount = false;
         string? accountUsername = null;
 
-        if (!string.IsNullOrEmpty(userId))
+        if (!isPublicRegistration)
         {
             userGuid = Guid.Parse(userId);
         }

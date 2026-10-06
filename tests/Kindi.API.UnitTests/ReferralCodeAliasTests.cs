@@ -196,6 +196,8 @@ public class ReferralCodeAliasTests
             => Task.CompletedTask;
 
         public Task<User?> FindByIdAsync(Guid userId) => throw new NotImplementedException();
+        public Task<bool> IsAdminAccountAsync(string? userId) => Task.FromResult(false);
+
         public Task<PublicUserResult> ResolvePublicUserAsync(string fullName, string phone, string? email, string? zalo) => throw new NotImplementedException();
         public Task<PagedList<UserInfoResponse>> GetPagedAsync(UserQueryDto query) => throw new NotImplementedException();
         public Task<UserInfoResponse?> ResetPasswordToPhoneAsync(Guid userId) => throw new NotImplementedException();

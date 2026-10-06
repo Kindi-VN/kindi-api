@@ -76,8 +76,11 @@ public class ReferralService : IReferralService
 
         var code = referralCode.Trim().ToUpperInvariant();
 
+        // Mã chia sẻ của tài khoản quản trị không dùng để giới thiệu (tài khoản quản trị không được
+        // đứng ra giới thiệu ai trong bất cứ luồng nào) → coi như mã không tồn tại.
         var exists =
-            await _queryService.AnyAsync<User>(u => u.ReferralCode == code) ||
+            await _queryService.AnyAsync<User>(u => u.ReferralCode == code
+                && u.Role != UserRole.Admin && u.Role != UserRole.SuperAdmin) ||
             await _queryService.AnyAsync<Collaborator>(c => c.ReferralCode == code || c.CollaboratorCode == code);
 
         return exists ? code : null;
@@ -91,6 +94,11 @@ public class ReferralService : IReferralService
         var user = await _userRepository.GetByIdAsync(userId);
         if (user == null)
             return await ResolveAsync(referralCode);
+
+        // Tài khoản quản trị không nhận ghi nhận giới thiệu ở BẤT KỲ dạng tài khoản nào (tài khoản thường,
+        // hồ sơ CTV, hồ sơ đối tác, yêu cầu mua hàng/mua chung...) vì mọi luồng đều đi qua đây.
+        if (IsAdminAccount(user))
+            return null;
 
         // Đã ghi nhận người giới thiệu → giữ nguyên, không đổi dù sau này mở link của CTV khác.
         if (!string.IsNullOrWhiteSpace(user.AccountReferrerCode))
@@ -305,6 +313,12 @@ public class ReferralService : IReferralService
                 setReferralName(item, name);
         }
     }
+
+    /// <summary>
+    /// Tài khoản quản trị (Admin/SuperAdmin) không được gắn vào bất cứ dạng tài khoản nào — không nhận
+    /// ghi nhận giới thiệu, không đứng tên hồ sơ CTV/đối tác.
+    /// </summary>
+    private static bool IsAdminAccount(User user) => user.Role is UserRole.Admin or UserRole.SuperAdmin;
 
     /// <summary>Mã chia sẻ riêng dạng "CTV-XXXXXX" (như mã CTV) và không trùng ở bảng nào.</summary>
     private async Task<string> GenerateUniqueCodeAsync()
