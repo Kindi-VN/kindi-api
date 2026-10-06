@@ -1123,9 +1123,19 @@
   <data name="User_EmailAlreadyExists">
     <value>Email '{0}' đã tồn tại trong hệ thống</value>
   </data>
+  <data name="User_UsernameAlreadyExists"><value>Tên đăng nhập đã tồn tại.</value></data>
+  <data name="User_PasswordTooWeak"><value>Mật khẩu phải có ít nhất {0} ký tự.</value></data>
+  <data name="User_FullNameRequired"><value>Vui lòng nhập họ tên.</value></data>
+  <data name="User_EmailRequired"><value>Vui lòng nhập email.</value></data>
+  <data name="User_RoleNotAssignable"><value>Vai trò này không gán được qua API.</value></data>
+  <data name="User_SuperAdminImmutable"><value>Tài khoản quản trị tối cao không sửa được ở màn quản lý người dùng.</value></data>
   <data name="User_ResetPasswordSuccess">
     <value>Đã cấp lại mật khẩu. Mật khẩu mới là số điện thoại của người dùng, đổi lại ở lần đăng nhập kế tiếp.</value>
   </data>
+  <data name="User_DetailSuccess"><value>Lấy chi tiết người dùng thành công</value></data>
+  <data name="User_UpdateInfoSuccess"><value>Cập nhật thông tin người dùng thành công</value></data>
+  <data name="User_CreateAdminSuccess"><value>Tạo tài khoản quản trị thành công</value></data>
+  <data name="User_UpdateRoleSuccess"><value>Cập nhật vai trò người dùng thành công</value></data>
   <data name="Permissions_ListSuccess">
     <value>Lấy danh mục quyền thành công</value>
   </data>
@@ -1627,6 +1637,9 @@
   <data name="Permission_P147"><value>Khôi phục yêu cầu mua hàng</value></data>
   <data name="Permission_P152"><value>Xoá nhật ký thao tác dữ liệu</value></data>
   <data name="Permission_P153"><value>Xoá nhật ký xác thực tài khoản</value></data>
+  <data name="Permission_P154"><value>Xem chi tiết người dùng (hồ sơ CTV/đối tác liên kết)</value></data>
+  <data name="Permission_P155"><value>Sửa thông tin người dùng</value></data>
+  <data name="Permission_P156"><value>Tạo tài khoản quản trị</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Đã xoá yêu cầu mua hàng.</value></data>
   <data name="AuditLog_NotFound"><value>Không tìm thấy nhật ký</value></data>
 </root>

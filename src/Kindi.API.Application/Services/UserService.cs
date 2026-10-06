@@ -9,6 +9,7 @@ using Kindi.API.Domain.Entities;
 using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Interfaces;
 using Kindi.API.Domain.Models;
+using Kindi.API.Domain.Rules;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
 using Microsoft.EntityFrameworkCore;
@@ -24,6 +25,8 @@ namespace Kindi.API.Infrastructure.Services;
 public class UserService : IUserService
 {
     private readonly IRepository<User> _userRepo;
+    private readonly IRepository<Collaborator> _collaboratorRepo;
+    private readonly IRepository<Partner> _partnerRepo;
     private readonly ICurrentUserService _currentUserService;
     private readonly IStringLocalizer<SharedResource> _localizer;
     private readonly IStringLocalizer<ExceptionMessages> _exceptionLocalizer;
@@ -31,12 +34,16 @@ public class UserService : IUserService
 
     public UserService(
         IRepository<User> userRepo,
+        IRepository<Collaborator> collaboratorRepo,
+        IRepository<Partner> partnerRepo,
         ICurrentUserService currentUserService,
         IStringLocalizer<SharedResource> localizer,
         IStringLocalizer<ExceptionMessages> exceptionLocalizer,
         IAuthAuditService authAuditService)
     {
         _userRepo = userRepo;
+        _collaboratorRepo = collaboratorRepo;
+        _partnerRepo = partnerRepo;
         _currentUserService = currentUserService;
         _localizer = localizer;
         _exceptionLocalizer = exceptionLocalizer;
@@ -242,6 +249,14 @@ public class UserService : IUserService
         // Tài khoản SuperAdmin không hiện ở màn quản trị của admin thường.
         var users = _userRepo.GetQueryable().Where(u => !u.IsDeleted && u.Role != UserRole.SuperAdmin);
 
+        // Tab "Tài khoản thường" / "Tài khoản quản trị" trên màn quản lý người dùng.
+        users = query.Scope switch
+        {
+            UserAccountScope.Admin => users.Where(u => u.Role == UserRole.Admin),
+            UserAccountScope.Customer => users.Where(u => u.Role != UserRole.Admin),
+            _ => users
+        };
+
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
             // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn, ILIKE nên tìm không phân biệt hoa/thường.
@@ -297,6 +312,174 @@ public class UserService : IUserService
             "Quản trị cấp lại mật khẩu bằng số điện thoại");
 
         return ToInfoResponse(user);
+    }
+
+    /// <summary>Số ký tự tối thiểu của mật khẩu đặt tay cho tài khoản quản trị.</summary>
+    private const int MinPasswordLength = 8;
+
+    /// <summary>
+    /// Chi tiết tài khoản cho màn quản lý người dùng: thông tin tài khoản + hồ sơ CTV/đối tác liên kết.
+    /// Tài khoản SuperAdmin không hiện với quản trị thường (giống màn danh sách).
+    /// </summary>
+    public async Task<UserDetailResponse?> GetDetailAsync(Guid userId)
+    {
+        var user = await FindManagedUserAsync(userId);
+        if (user == null)
+            return null;
+
+        var collaborator = await _collaboratorRepo.GetQueryable()
+            .FirstOrDefaultAsync(c => c.UserId == userId && !c.IsDeleted);
+
+        var partner = await _partnerRepo.GetQueryable()
+            .FirstOrDefaultAsync(p => p.UserId == userId && !p.IsDeleted);
+
+        return new UserDetailResponse
+        {
+            User = ToInfoResponse(user),
+            Collaborator = collaborator == null ? null : new UserCollaboratorSummaryDto
+            {
+                Id = collaborator.Id,
+                CollaboratorCode = collaborator.CollaboratorCode,
+                ReferralCode = collaborator.ReferralCode,
+                Position = collaborator.Position,
+                BusinessName = collaborator.BusinessName,
+                BusinessFieldName = collaborator.BusinessFieldName,
+                Website = collaborator.Website,
+                Address = collaborator.Address,
+                IsApproved = collaborator.IsApproved,
+                Level = collaborator.Level,
+                ApprovedAt = collaborator.ApprovedAt,
+                RejectedAt = collaborator.RejectedAt
+            },
+            Partner = partner == null ? null : new UserPartnerSummaryDto
+            {
+                Id = partner.Id,
+                PartnerCode = partner.PartnerCode,
+                Position = partner.Position,
+                CompanyName = partner.CompanyName,
+                CompanyTax = partner.CompanyTax,
+                CompanyAddress = partner.CompanyAddress,
+                CompanyWebsite = partner.CompanyWebsite,
+                Status = partner.Status.ToString(),
+                ApprovedAt = partner.ApprovedAt
+            }
+        };
+    }
+
+    /// <summary>
+    /// Sửa thông tin tài khoản ở màn quản lý — điểm ghi tập trung, được phép ghi đè hồ sơ
+    /// (<c>allowContactChange: true</c>) vì đây là thao tác có chủ đích của quản trị.
+    /// </summary>
+    public async Task<UserInfoResponse?> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request)
+    {
+        var user = await FindManagedUserAsync(userId);
+        if (user == null)
+            return null;
+
+        await UpdatePersonalInfoAsync(userId, request.FullName, request.Phone, request.Email, request.Zalo,
+            allowContactChange: true);
+
+        if (request.IsActive.HasValue && user.IsActive != request.IsActive.Value)
+        {
+            user.IsActive = request.IsActive.Value;
+            _userRepo.Update(user);
+            await _userRepo.SaveChangesAsync();
+        }
+
+        return ToInfoResponse(user);
+    }
+
+    /// <summary>
+    /// Tạo tài khoản quản trị từ màn quản lý người dùng: mật khẩu do quản trị đặt tay nên KHÔNG bắt
+    /// đổi ở lần đăng nhập đầu (<c>MustChangeCredentials = false</c>). Chặn trùng tên đăng nhập/email/SĐT
+    /// trên cả bản ghi đã xoá mềm vì unique index của bảng Users không lọc IsDeleted.
+    /// </summary>
+    public async Task<UserInfoResponse> CreateAdminAsync(CreateAdminUserRequest request)
+    {
+        var username = (request.Username ?? string.Empty).Trim();
+        var fullName = (request.FullName ?? string.Empty).Trim();
+        var email = (request.Email ?? string.Empty).Trim();
+        var password = (request.Password ?? string.Empty).Trim();
+        var phone = string.IsNullOrWhiteSpace(request.Phone) ? null : PhoneHelper.Normalize(request.Phone);
+
+        if (string.IsNullOrWhiteSpace(username))
+            throw new AppException(UserError.UsernameAlreadyExists);
+        if (string.IsNullOrWhiteSpace(fullName))
+            throw new AppException(UserError.FullNameRequired);
+        if (string.IsNullOrWhiteSpace(email))
+            throw new AppException(UserError.EmailRequired);
+        if (password.Length < MinPasswordLength)
+            throw new AppException(UserError.PasswordTooWeak.WithParams(MinPasswordLength));
+
+        var existing = _userRepo.GetQueryable().IgnoreQueryFilters();
+        if (await existing.AnyAsync(u => u.Username.ToLower() == username.ToLower()))
+            throw new AppException(UserError.UsernameAlreadyExists.WithParams(username));
+        if (await existing.AnyAsync(u => u.Email.ToLower() == email.ToLower()))
+            throw new AppException(UserError.EmailAlreadyExists.WithParams(email));
+        if (phone != null && await existing.AnyAsync(u => u.Phone == phone))
+            throw new AppException(UserError.PhoneAlreadyExists.WithParams(phone));
+
+        var user = new User
+        {
+            UserCode = CodeGenerator.Generate("USR"),
+            ReferralCode = CodeGenerator.Generate("CTV"),
+            Username = username,
+            FullName = fullName,
+            Email = email,
+            Phone = phone,
+            Role = UserRole.Admin,
+            IsActive = true,
+            MustChangeCredentials = false,
+            PasswordHash = HashPassword(password)
+        };
+
+        await _userRepo.AddAsync(user);
+        await _userRepo.SaveChangesAsync();
+
+        await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.Register, true,
+            $"Quản trị tạo tài khoản quản trị ({username})");
+
+        return ToInfoResponse(user);
+    }
+
+    /// <summary>Gán / đổi vai trò tài khoản; không gán được SuperAdmin và không đụng tài khoản SuperAdmin.</summary>
+    public async Task<UserInfoResponse?> UpdateRoleAsync(Guid userId, UserRole role)
+    {
+        if (!RoleRules.IsAssignable(role))
+            throw new AppException(UserError.RoleNotAssignable);
+
+        var user = await _userRepo.GetQueryable().FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+        if (user == null)
+            return null;
+
+        if (user.Role == UserRole.SuperAdmin)
+            throw new AppException(UserError.SuperAdminImmutable);
+
+        if (user.Role != role)
+        {
+            user.Role = role;
+            _userRepo.Update(user);
+            await _userRepo.SaveChangesAsync();
+        }
+
+        return ToInfoResponse(user);
+    }
+
+    /// <summary>
+    /// Tài khoản mà màn quản lý người dùng được xem/sửa: bỏ tài khoản đã xoá mềm và tài khoản
+    /// SuperAdmin (quản trị thường không thấy tài khoản này ở danh sách).
+    /// </summary>
+    private async Task<User?> FindManagedUserAsync(Guid userId)
+    {
+        var user = await _userRepo.GetQueryable().FirstOrDefaultAsync(u => u.Id == userId && !u.IsDeleted);
+        if (user == null)
+            return null;
+
+        var isSuperAdminCaller = _currentUserService.IsInRole(UserRole.SuperAdmin);
+        if (user.Role == UserRole.SuperAdmin && !isSuperAdminCaller)
+            return null;
+
+        return user;
     }
 
     /// <summary>Thông tin tài khoản trả ra DTO (email tạm <c>{sđt}@temp.com</c> không trả ra ngoài).</summary>

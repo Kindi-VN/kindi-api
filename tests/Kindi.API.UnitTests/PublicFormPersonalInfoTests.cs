@@ -34,7 +34,8 @@ public class PublicFormPersonalInfoTests
         => new MapperConfiguration(cfg => cfg.AddProfile<MappingProfile>()).CreateMapper();
 
     private static UserService CreateService(FakeUserRepository repository)
-        => new(repository, new StubCurrentUserService(),
+        => new(repository, new FakeRepository<Collaborator>(), new FakeRepository<Partner>(),
+            new StubCurrentUserService(),
             new NullLocalizer<Kindi.API.Application.Resources.SharedResource>(),
             new NullLocalizer<Kindi.API.Shared.Resources.ExceptionMessages>(), new StubAuthAuditService());
 
