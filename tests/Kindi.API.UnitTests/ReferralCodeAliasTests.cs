@@ -264,5 +264,8 @@ public class ReferralCodeAliasTests
         public void DeleteRange(IEnumerable<T> entities) => throw new NotImplementedException();
         public void Restore(T entity) => throw new NotImplementedException();
         public void RestoreRange(IEnumerable<T> entities) => throw new NotImplementedException();
+        public void HardDelete(T entity) => throw new NotImplementedException();
+        public void HardDeleteRange(IEnumerable<T> entities) => throw new NotImplementedException();
+        public Task<int> HardDeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 }

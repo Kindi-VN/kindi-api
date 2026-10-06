@@ -17,4 +17,17 @@ public interface IAuditLogQueryService
     Task<PagedList<AuthAuditLogDto>> GetAuthLogsAsync(AuthAuditLogQueryDto query, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default);
 
     Task<AuthAuditLogDto?> GetAuthLogByIdAsync(Guid id, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default);
+
+    /// <summary>Danh mục chọn nhanh cho bộ lọc nhật ký (hành động + tên bảng).</summary>
+    Task<AuditLogFilterOptionsResponse> GetFilterOptionsAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Xoá nhật ký thao tác dữ liệu theo danh sách dòng được chọn hoặc theo khoảng ngày (xoá THẬT).
+    /// <paramref name="includeSuperAdminActors"/> = false thì không xoá được nhật ký của SuperAdmin.
+    /// Trả về số dòng đã xoá.
+    /// </summary>
+    Task<int> DeleteEntityLogsAsync(AuditLogDeleteRequest request, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default);
+
+    /// <summary>Như trên, áp dụng cho nhật ký xác thực tài khoản.</summary>
+    Task<int> DeleteAuthLogsAsync(AuditLogDeleteRequest request, bool includeSuperAdminActors = false, CancellationToken cancellationToken = default);
 }

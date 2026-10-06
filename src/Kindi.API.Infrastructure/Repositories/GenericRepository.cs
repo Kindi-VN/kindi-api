@@ -302,6 +302,25 @@ public class GenericRepository<T> : IRepository<T> where T : class
     public async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
         => await _unitOfWork.SaveChangesAsync(cancellationToken);
 
+    /// <summary>Xoá VĨNH VIỄN bản ghi (không set IsDeleted) — xem chú thích ở <see cref="IRepository{T}"/>.</summary>
+    public void HardDelete(T entity)
+    {
+        _dbSet.Remove(entity);
+        _unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
+    }
+
+    public void HardDeleteRange(IEnumerable<T> entities)
+    {
+        _dbSet.RemoveRange(entities);
+        _unitOfWork.SaveChangesAsync().GetAwaiter().GetResult();
+    }
+
+    public async Task<int> HardDeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default)
+    {
+        _dbSet.RemoveRange(entities);
+        return await _unitOfWork.SaveChangesAsync(cancellationToken);
+    }
+
     public IQueryable<T> GetQueryable()
         => _context.Set<T>().AsQueryable();
 
