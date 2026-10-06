@@ -1689,4 +1689,5 @@
   <data name="Permission_P152"><value>Delete data change logs</value></data>
   <data name="Permission_P153"><value>Delete account authentication logs</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Purchase request deleted.</value></data>
+  <data name="AuditLog_NotFound"><value>Audit log not found</value></data>
 </root>

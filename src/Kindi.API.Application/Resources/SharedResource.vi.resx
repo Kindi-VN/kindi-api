@@ -1628,4 +1628,5 @@
   <data name="Permission_P152"><value>Xoá nhật ký thao tác dữ liệu</value></data>
   <data name="Permission_P153"><value>Xoá nhật ký xác thực tài khoản</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Đã xoá yêu cầu mua hàng.</value></data>
+  <data name="AuditLog_NotFound"><value>Không tìm thấy nhật ký</value></data>
 </root>
