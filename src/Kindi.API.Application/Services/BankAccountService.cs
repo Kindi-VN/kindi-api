@@ -139,9 +139,9 @@ public sealed class BankAccountService : IBankAccountService
         var keyword = query.Search?.Trim().ToLower();
         if (!string.IsNullOrEmpty(keyword))
             accounts = accounts.Where(x =>
-                x.AccountNumber.ToLower().Contains(keyword) ||
-                x.AccountHolder.ToLower().Contains(keyword) ||
-                (x.User != null && (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword))));
+                x.AccountNumber.Like(keyword) ||
+                x.AccountHolder.Like(keyword) ||
+                (x.User != null && (x.User.Username.Like(keyword) || x.User.FullName.Like(keyword))));
 
         // Thông tin chờ xác minh lên trước để quản trị viên xử lý nhanh.
         accounts = accounts

@@ -80,7 +80,8 @@ public class AuthService : IAuthService
 
         var roles = GetRoles(user.Role);
         var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
-        var token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, roles, permissions.Codes, permissions.Version);
+        var token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, roles, permissions.Codes,
+            permissions.Version, LanguageHelper.Normalize(request.Language));
 
         user.LastLoginAt = DateTime.UtcNow;
         await _userRepository.SaveChangesAsync();
@@ -152,7 +153,7 @@ public class AuthService : IAuthService
 
 		var permissions = await _permissionService.GetUserPermissionsAsync(user.Id, user.Role);
 		var newToken = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role),
-			permissions.Codes, permissions.Version);
+			permissions.Codes, permissions.Version, oldPrincipal.FindFirst(AuthClaimConstants.Language)?.Value);
 
 		await _authAuditService.LogAsync(user.Id, user.Username, AuditAction.RefreshToken, true);
 
@@ -231,7 +232,8 @@ public class AuthService : IAuthService
 
 		return new LoginResponse
 		{
-			Token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role), permissions.Codes, permissions.Version),
+			Token = _jwtService.GenerateToken(user.Id.ToString(), user.Username, GetRoles(user.Role), permissions.Codes,
+				permissions.Version, CurrentLanguage()),
 			ExpiresAt = DateTime.UtcNow.AddMinutes(_jwtSettings.ExpiryMinutes),
 			Username = user.Username,
 			FullName = user.FullName,
@@ -374,6 +376,9 @@ public class AuthService : IAuthService
 		var normalized = PhoneHelper.Normalize(password);
 		return normalized.Length > 0 && normalized != password && PasswordHasher.Verify(normalized, hash);
 	}
+
+	private static string? CurrentLanguage()
+	    => LanguageHelper.Normalize(System.Globalization.CultureInfo.CurrentUICulture.Name);
 
 	private static List<string> GetRoles(UserRole role)
 	{

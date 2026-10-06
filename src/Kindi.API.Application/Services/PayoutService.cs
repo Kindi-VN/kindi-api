@@ -217,7 +217,7 @@ public sealed class PayoutService : IPayoutService
         var keyword = query.Search?.Trim().ToLower();
         if (!string.IsNullOrEmpty(keyword))
             statements = statements.Where(x => x.User != null &&
-                (x.User.Username.ToLower().Contains(keyword) || x.User.FullName.ToLower().Contains(keyword)));
+                (x.User.Username.Like(keyword) || x.User.FullName.Like(keyword)));
 
         // Lọc theo ngày tạo; bỏ trống thì không giới hạn (giữ nguyên hành vi cũ).
         if (query.FromDate.HasValue)

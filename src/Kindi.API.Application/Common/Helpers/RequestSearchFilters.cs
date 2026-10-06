@@ -47,28 +47,28 @@ public static class RequestSearchFilters
         return searchField switch
         {
             null => query.Where(x =>
-                x.ProductName.Contains(search) ||
-                (x.User != null && x.User.FullName.Contains(search)) ||
-                (x.User != null && x.User.Phone != null && x.User.Phone.Contains(search)) ||
-                (x.User != null && x.User.Email != null && x.User.Email.Contains(search)) ||
-                (x.OfferRequestCode != null && x.OfferRequestCode.Contains(search)) ||
+                x.ProductName.Like(search) ||
+                (x.User != null && x.User.FullName.Like(search)) ||
+                (x.User != null && x.User.Phone != null && x.User.Phone.Like(search)) ||
+                (x.User != null && x.User.Email != null && x.User.Email.Like(search)) ||
+                (x.OfferRequestCode != null && x.OfferRequestCode.EqualsCode(search)) ||
                 (x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)) ||
                 (x.User != null && x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!))),
 
-            RequestSearchField.ProductName => query.Where(x => x.ProductName.Contains(search)),
-            RequestSearchField.Code => query.Where(x => x.OfferRequestCode != null && x.OfferRequestCode.Contains(search)),
-            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && x.RecordReferrerCode.Contains(search)),
+            RequestSearchField.ProductName => query.Where(x => x.ProductName.Like(search)),
+            RequestSearchField.Code => query.Where(x => x.OfferRequestCode != null && x.OfferRequestCode.EqualsCode(search)),
+            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && x.RecordReferrerCode.EqualsCode(search)),
             RequestSearchField.RecordReferrerName => query.Where(x => x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)),
             RequestSearchField.AccountReferrerName => query.Where(x => x.User != null && x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!)),
-            RequestSearchField.CustomerName => query.Where(x => x.User != null && x.User.FullName.Contains(search)),
-            RequestSearchField.CustomerPhone => query.Where(x => x.User != null && x.User.Phone != null && x.User.Phone.Contains(search)),
-            RequestSearchField.CustomerEmail => query.Where(x => x.User != null && x.User.Email != null && x.User.Email.Contains(search)),
+            RequestSearchField.CustomerName => query.Where(x => x.User != null && x.User.FullName.Like(search)),
+            RequestSearchField.CustomerPhone => query.Where(x => x.User != null && x.User.Phone != null && x.User.Phone.Like(search)),
+            RequestSearchField.CustomerEmail => query.Where(x => x.User != null && x.User.Email != null && x.User.Email.Like(search)),
             _ => query
         };
     }
 
     /// <summary>
-    /// Lọc danh sách yêu cầu mua. <paramref name="searchTerm"/> là từ khoá đã bỏ dấu + escape cho ILIKE.
+    /// Lọc danh sách yêu cầu mua. <paramref name="searchTerm"/> là từ khoá thô (Like() tự bỏ dấu + không phân biệt hoa/thường).
     /// <paramref name="referrerNameCodes"/> là tập mã chia sẻ của những người có tên khớp từ khoá
     /// (dùng cho tên người giới thiệu).
     /// </summary>
@@ -84,29 +84,29 @@ public static class RequestSearchFilters
         return searchField switch
         {
             null => query.Where(x =>
-                (x.PurchaseRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PurchaseRequestCode), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                (x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")) ||
-                (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
-                (x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
-                (x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")) ||
+                (x.PurchaseRequestCode != null && x.PurchaseRequestCode.EqualsCode(searchTerm)) ||
+                x.ProductName.Like(searchTerm) ||
+                (x.RecordReferrerCode != null && x.RecordReferrerCode.EqualsCode(searchTerm)) ||
+                (x.User != null && x.User.FullName.Like(searchTerm)) ||
+                (x.User != null && x.User.Phone != null && x.User.Phone.Like(searchTerm)) ||
+                (x.User != null && x.User.Email != null && x.User.Email.Like(searchTerm)) ||
                 (x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)) ||
                 (x.User != null && x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!))),
 
-            RequestSearchField.ProductName => query.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.Code => query.Where(x => x.PurchaseRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.PurchaseRequestCode), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")),
+            RequestSearchField.ProductName => query.Where(x => x.ProductName.Like(searchTerm)),
+            RequestSearchField.Code => query.Where(x => x.PurchaseRequestCode != null && x.PurchaseRequestCode.EqualsCode(searchTerm)),
+            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && x.RecordReferrerCode.EqualsCode(searchTerm)),
             RequestSearchField.RecordReferrerName => query.Where(x => x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)),
             RequestSearchField.AccountReferrerName => query.Where(x => x.User != null && x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!)),
-            RequestSearchField.CustomerName => query.Where(x => x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.CustomerPhone => query.Where(x => x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.CustomerEmail => query.Where(x => x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")),
+            RequestSearchField.CustomerName => query.Where(x => x.User != null && x.User.FullName.Like(searchTerm)),
+            RequestSearchField.CustomerPhone => query.Where(x => x.User != null && x.User.Phone != null && x.User.Phone.Like(searchTerm)),
+            RequestSearchField.CustomerEmail => query.Where(x => x.User != null && x.User.Email != null && x.User.Email.Like(searchTerm)),
             _ => query
         };
     }
 
     /// <summary>
-    /// Lọc danh sách yêu cầu mua chung. <paramref name="searchTerm"/> là từ khoá đã bỏ dấu + escape cho ILIKE.
+    /// Lọc danh sách yêu cầu mua chung. <paramref name="searchTerm"/> là từ khoá thô (Like() tự bỏ dấu + không phân biệt hoa/thường).
     /// Người mở nhóm nằm ở bảng Users nên tên/SĐT/email lấy qua quan hệ <c>User</c>.
     /// <paramref name="referrerNameCodes"/> là tập mã chia sẻ của những người có tên khớp từ khoá
     /// (dùng cho tên người giới thiệu).
@@ -123,23 +123,23 @@ public static class RequestSearchFilters
         return searchField switch
         {
             null => query.Where(x =>
-                (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                (x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\") ||
-                (x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
-                (x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")) ||
+                (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.EqualsCode(searchTerm)) ||
+                x.ProductName.Like(searchTerm) ||
+                (x.RecordReferrerCode != null && x.RecordReferrerCode.EqualsCode(searchTerm)) ||
+                x.User.FullName.Like(searchTerm) ||
+                (x.User.Phone != null && x.User.Phone.Like(searchTerm)) ||
+                (x.User.Email != null && x.User.Email.Like(searchTerm)) ||
                 (x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)) ||
                 (x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!))),
 
-            RequestSearchField.ProductName => query.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.Code => query.Where(x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RecordReferrerCode), "%" + searchTerm + "%", "\\")),
+            RequestSearchField.ProductName => query.Where(x => x.ProductName.Like(searchTerm)),
+            RequestSearchField.Code => query.Where(x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.EqualsCode(searchTerm)),
+            RequestSearchField.RecordReferrerCode => query.Where(x => x.RecordReferrerCode != null && x.RecordReferrerCode.EqualsCode(searchTerm)),
             RequestSearchField.RecordReferrerName => query.Where(x => x.RecordReferrerCode != null && codes.Contains(x.RecordReferrerCode!)),
             RequestSearchField.AccountReferrerName => query.Where(x => x.User.AccountReferrerCode != null && codes.Contains(x.User.AccountReferrerCode!)),
-            RequestSearchField.CustomerName => query.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.CustomerPhone => query.Where(x => x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")),
-            RequestSearchField.CustomerEmail => query.Where(x => x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")),
+            RequestSearchField.CustomerName => query.Where(x => x.User.FullName.Like(searchTerm)),
+            RequestSearchField.CustomerPhone => query.Where(x => x.User.Phone != null && x.User.Phone.Like(searchTerm)),
+            RequestSearchField.CustomerEmail => query.Where(x => x.User.Email != null && x.User.Email.Like(searchTerm)),
             _ => query
         };
     }

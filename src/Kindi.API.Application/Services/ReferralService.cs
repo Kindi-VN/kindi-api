@@ -260,17 +260,9 @@ public class ReferralService : IReferralService
         var collaboratorQuery = _queryService.GetQueryableNoTracking<Collaborator>()
             .Where(c => c.ReferralCode != null || c.CollaboratorCode != null);
 
-        if (unaccentAndCaseInsensitive)
-        {
-            var pattern = "%" + searchTerm + "%";
-            userQuery = userQuery.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\"));
-            collaboratorQuery = collaboratorQuery.Where(c => EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), pattern, "\\"));
-        }
-        else
-        {
-            userQuery = userQuery.Where(u => u.FullName.Contains(searchTerm));
-            collaboratorQuery = collaboratorQuery.Where(c => c.User.FullName.Contains(searchTerm));
-        }
+        // Like() luôn bỏ dấu tiếng Việt và không phân biệt hoa/thường nên hai chế độ trước đây nay như nhau.
+        userQuery = userQuery.Where(u => u.FullName.Like(searchTerm));
+        collaboratorQuery = collaboratorQuery.Where(c => c.User.FullName.Like(searchTerm));
 
         foreach (var code in await userQuery.Select(u => u.ReferralCode!).ToListAsync())
         {

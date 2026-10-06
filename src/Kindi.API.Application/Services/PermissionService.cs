@@ -25,19 +25,22 @@ public class PermissionService : IPermissionService
     private readonly IRepository<UserPermission> _userPermissionRepo;
     private readonly IMemoryCache _cache;
     private readonly ILogger<PermissionService> _logger;
+    private readonly IStringLocalizer<SharedResource> _localizer;
 
     public PermissionService(
         IQueryService queryService,
         IRepository<RolePermission> rolePermissionRepo,
         IRepository<UserPermission> userPermissionRepo,
         IMemoryCache cache,
-        ILogger<PermissionService> logger)
+        ILogger<PermissionService> logger,
+        IStringLocalizer<SharedResource> localizer)
     {
         _queryService = queryService;
         _rolePermissionRepo = rolePermissionRepo;
         _userPermissionRepo = userPermissionRepo;
         _cache = cache;
         _logger = logger;
+        _localizer = localizer;
     }
 
     private sealed record Snapshot(
@@ -121,7 +124,7 @@ public class PermissionService : IPermissionService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var keyword = search.Trim();
-            query = query.Where(x => x.Username.Contains(keyword) || x.FullName.Contains(keyword));
+            query = query.Where(x => x.Username.Like(keyword) || x.FullName.Like(keyword));
         }
 
         var rows = await query
@@ -314,18 +317,18 @@ public class PermissionService : IPermissionService
         var tree = new List<PermissionTreeNodeResponse>();
         foreach (var group in PermissionGroupCatalog.All.OrderBy(x => x.SortOrder))
         {
-            var groupNode = BuildTreeNode(group.Code, PermissionNameKeys.Group(group.Code), PermissionNodeKind.Group, null, raw, effective);
+            var groupNode = BuildTreeNode(group.Code, PermissionNameKeys.Group(group.Code), PermissionNodeKind.Group, null, raw, effective, LocalizedName(group.Name, group.NameEn));
 
             if (screensByGroup.TryGetValue(group.Code, out var screens))
             {
                 foreach (var screen in screens)
                 {
-                    var screenNode = BuildTreeNode(screen.Code, PermissionNameKeys.Screen(screen.Code), PermissionNodeKind.Screen, group.Code, raw, effective);
+                    var screenNode = BuildTreeNode(screen.Code, PermissionNameKeys.Screen(screen.Code), PermissionNodeKind.Screen, group.Code, raw, effective, LocalizedName(screen.Name, screen.NameEn));
 
                     if (actionsByScreen.TryGetValue(screen.Code, out var actions))
                     {
                         foreach (var action in actions)
-                            screenNode.Children.Add(BuildTreeNode(action.PermissionCode, action.NameKey, PermissionNodeKind.Action, screen.Code, raw, effective));
+                            screenNode.Children.Add(BuildTreeNode(action.PermissionCode, action.NameKey, PermissionNodeKind.Action, screen.Code, raw, effective, LocalizedActionName(action), action));
                     }
 
                     groupNode.Children.Add(screenNode);
@@ -338,17 +341,41 @@ public class PermissionService : IPermissionService
         return tree;
     }
 
+    /// <summary>
+    /// Tên nhóm/màn hình: danh mục trong code đã có sẵn 2 ngôn ngữ, chọn theo ngôn ngữ của request
+    /// (ngôn ngữ lấy từ claim trong token — xem <c>TokenCultureMiddleware</c>).
+    /// </summary>
+    private static string LocalizedName(string name, string nameEn)
+        => CultureInfo.CurrentUICulture.TwoLetterISOLanguageName.Equals("en", StringComparison.OrdinalIgnoreCase)
+            ? nameEn
+            : name;
+
+    /// <summary>Tên quyền: API tra resx theo NameKey (đủ vi/en), thiếu bản dịch thì lấy tên gốc trong danh mục.</summary>
+    private string LocalizedActionName(PermissionDefinition definition)
+    {
+        var localized = _localizer[definition.NameKey];
+        return localized.ResourceNotFound ? definition.Name : localized.Value;
+    }
+
     private static PermissionTreeNodeResponse BuildTreeNode(
         string code,
         string nameKey,
         PermissionNodeKind kind,
         string? parentCode,
         IReadOnlySet<string> raw,
-        IReadOnlySet<string> effective)
+        IReadOnlySet<string> effective,
+        string name,
+        PermissionDefinition? definition = null)
         => new()
         {
             Code = code,
             NameKey = nameKey,
+            // Tên hiển thị API đã chọn/dịch sẵn theo ngôn ngữ của request — UI chỉ việc hiển thị.
+            Name = name,
+            ActionKind = definition?.Kind.ToString().ToLowerInvariant(),
+            Module = definition?.Module.ToString(),
+            Route = definition?.Route,
+            Endpoints = definition?.Endpoints,
             Kind = kind switch
             {
                 PermissionNodeKind.Group => "group",

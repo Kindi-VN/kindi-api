@@ -78,9 +78,8 @@ public class BusinessGroupService : IBusinessGroupService
     {
         var me = GetCurrentUserId();
         var search = query.Search.NormalizeSearchFilter();
-        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
-        // ILIKE nên tìm không phân biệt hoa/thường.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
+        var searchTerm = search?.Trim();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             // Trang Nhóm ngành chỉ hiển thị nhóm ngành (hội nhóm có danh sách riêng)
@@ -91,9 +90,9 @@ public class BusinessGroupService : IBusinessGroupService
         q = query.SearchField.HasValue
             ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
             : q.WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
-                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+                x.Name.Like(searchTerm) ||
+                (x.Description != null && x.Description.Like(searchTerm)) ||
+                (x.BusinessFieldName != null && x.BusinessFieldName.Like(searchTerm)));
 
         q = q.WhereIf(query.MineOnly && me != null,
                 x => x.Members.Any(m => m.UserId == me!.Value && m.Status == GroupMemberStatus.Active))
@@ -334,7 +333,7 @@ public class BusinessGroupService : IBusinessGroupService
 
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         // Tab "Đã xoá" (chỉ admin): bỏ global soft-delete filter để lấy các bài đã xoá mềm.
         var onlyDeleted = query.IsDeleted == true;
@@ -349,9 +348,9 @@ public class BusinessGroupService : IBusinessGroupService
             .WhereIf(query.PrivateOnly, x => x.IsPrivateToAdmin)
             .WhereIf(query.Type.HasValue, x => x.Type == query.Type!.Value)
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.Title != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Title), "%" + searchTerm + "%", "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Content), "%" + searchTerm + "%", "\\") ||
-                (x.RefCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.RefCode), "%" + searchTerm + "%", "\\")))
+                (x.Title != null && x.Title.Like(searchTerm)) ||
+                x.Content.Like(searchTerm) ||
+                (x.RefCode != null && x.RefCode.EqualsCode(searchTerm)))
             .Include(x => x.Author)
             .OrderByDescending(x => x.IsPinned)
             .ThenByDescending(x => x.CreatedAt);
@@ -624,7 +623,7 @@ public class BusinessGroupService : IBusinessGroupService
         var me = GetCurrentUserId();
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>()
             .Where(x => x.Type == BusinessGroupType.Community);
@@ -633,9 +632,9 @@ public class BusinessGroupService : IBusinessGroupService
         q = query.SearchField.HasValue
             ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
             : q.WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
-                (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
-                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
+                x.Name.Like(searchTerm) ||
+                (x.Topic != null && x.Topic.Like(searchTerm)) ||
+                (x.Description != null && x.Description.Like(searchTerm)));
 
         if (me != null)
         {
@@ -668,7 +667,7 @@ public class BusinessGroupService : IBusinessGroupService
         var meId = GetCurrentUserId() ?? throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         var q = _queryService.GetAllNoTracking<BusinessGroup>();
 
@@ -676,9 +675,9 @@ public class BusinessGroupService : IBusinessGroupService
         q = query.SearchField.HasValue
             ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
             : q.WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
-                (x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), "%" + searchTerm + "%", "\\")) ||
-                (x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), "%" + searchTerm + "%", "\\")));
+                x.Name.Like(searchTerm) ||
+                (x.Topic != null && x.Topic.Like(searchTerm)) ||
+                (x.Description != null && x.Description.Like(searchTerm)));
 
         // Khoảng ngày tạo + trạng thái duyệt: bỏ trống thì không lọc (giữ nguyên hành vi cũ).
         q = q
@@ -779,7 +778,7 @@ public class BusinessGroupService : IBusinessGroupService
     {
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         // Tab "Đã xoá": bỏ global soft-delete filter để lấy các nhóm đã xoá mềm.
         var q = (query.IsDeleted == true
@@ -794,9 +793,9 @@ public class BusinessGroupService : IBusinessGroupService
         q = query.SearchField.HasValue
             ? BusinessGroupSearchFilters.ApplyField(q, searchTerm, query.SearchField)
             : q.WhereIf(!string.IsNullOrEmpty(search), x =>
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), "%" + searchTerm + "%", "\\") ||
-                (x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), "%" + searchTerm + "%", "\\")) ||
-                (x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), "%" + searchTerm + "%", "\\")));
+                x.Name.Like(searchTerm) ||
+                (x.BusinessGroupCode != null && x.BusinessGroupCode.EqualsCode(searchTerm)) ||
+                (x.BusinessFieldName != null && x.BusinessFieldName.Like(searchTerm)));
 
         q = q.WhereIf(query.HasPendingMembers,
                 x => x.Members.Any(m => m.Status == GroupMemberStatus.Pending))
@@ -930,16 +929,16 @@ public class BusinessGroupService : IBusinessGroupService
 
         var search = query.Search.NormalizeSearchFilter();
         // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn.
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         var q = _queryService.GetAllNoTracking<BusinessGroupMember>()
             .Where(x => x.BusinessGroupId == id)
             .WhereIf(query.Status.HasValue, x => x.Status == query.Status!.Value)
             // Họ tên/SĐT/email của thành viên nằm ở bảng Users
             .WhereIf(!string.IsNullOrEmpty(search), x =>
-                (x.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.FullName), "%" + searchTerm + "%", "\\")) ||
-                (x.User != null && x.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Phone), "%" + searchTerm + "%", "\\")) ||
-                (x.User != null && x.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.User.Email), "%" + searchTerm + "%", "\\")))
+                (x.User != null && x.User.FullName.Like(searchTerm)) ||
+                (x.User != null && x.User.Phone != null && x.User.Phone.Like(searchTerm)) ||
+                (x.User != null && x.User.Email != null && x.User.Email.Like(searchTerm)))
             .Include(x => x.User)
             .OrderBy(x => x.Status)
             .ThenByDescending(x => x.CreatedAt);

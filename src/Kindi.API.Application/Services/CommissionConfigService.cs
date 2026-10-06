@@ -58,7 +58,7 @@ public sealed class CommissionConfigService : ICommissionConfigService
         var keyword = query.Search?.Trim().ToLower();
         if (!string.IsNullOrEmpty(keyword))
             configs = configs.Where(x => x.User != null &&
-                (x.User.FullName.ToLower().Contains(keyword) || x.User.Username.ToLower().Contains(keyword)));
+                (x.User.FullName.Like(keyword) || x.User.Username.Like(keyword)));
 
         // Bản chung trước, rồi tới bản riêng mới cập nhật.
         configs = configs
@@ -236,9 +236,9 @@ public sealed class CommissionConfigService : ICommissionConfigService
 
         var keyword = search?.Trim().ToLower();
         if (!string.IsNullOrEmpty(keyword))
-            query = query.Where(x => x.Username.ToLower().Contains(keyword)
-                || x.FullName.ToLower().Contains(keyword)
-                || (x.Phone != null && x.Phone.Contains(keyword)));
+            query = query.Where(x => x.Username.Like(keyword)
+                || x.FullName.Like(keyword)
+                || (x.Phone != null && x.Phone.Like(keyword)));
 
         return await query
             .OrderBy(x => x.Username)

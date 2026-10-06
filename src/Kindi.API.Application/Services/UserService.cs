@@ -259,25 +259,24 @@ public class UserService : IUserService
 
         if (!string.IsNullOrWhiteSpace(query.Search))
         {
-            // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn, ILIKE nên tìm không phân biệt hoa/thường.
-            var searchTerm = query.Search.RemoveVietnameseSign().ToLikeEscaped();
-            var pattern = "%" + searchTerm + "%";
+            // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
+            var searchTerm = query.Search.Trim();
 
             // searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
             users = query.SearchField switch
             {
-                UserSearchField.Username => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), pattern, "\\")),
-                UserSearchField.FullName => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\")),
-                UserSearchField.UserCode => users.Where(u => u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), pattern, "\\")),
-                UserSearchField.ReferralCode => users.Where(u => u.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.ReferralCode), pattern, "\\")),
-                UserSearchField.AccountReferrerCode => users.Where(u => u.AccountReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.AccountReferrerCode), pattern, "\\")),
-                UserSearchField.Phone => users.Where(u => u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), pattern, "\\")),
-                UserSearchField.Email => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), pattern, "\\")),
-                _ => users.Where(u => EF.Functions.ILike(KindiDbFunctions.Unaccent(u.FullName), pattern, "\\") ||
-                                     (u.Username != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Username), pattern, "\\")) ||
-                                     (u.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Phone), pattern, "\\")) ||
-                                     (u.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.Email), pattern, "\\")) ||
-                                     (u.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(u.UserCode), pattern, "\\")))
+                UserSearchField.Username => users.Where(u => u.Username.Like(searchTerm)),
+                UserSearchField.FullName => users.Where(u => u.FullName.Like(searchTerm)),
+                UserSearchField.UserCode => users.Where(u => u.UserCode != null && u.UserCode.EqualsCode(searchTerm)),
+                UserSearchField.ReferralCode => users.Where(u => u.ReferralCode != null && u.ReferralCode.EqualsCode(searchTerm)),
+                UserSearchField.AccountReferrerCode => users.Where(u => u.AccountReferrerCode != null && u.AccountReferrerCode.EqualsCode(searchTerm)),
+                UserSearchField.Phone => users.Where(u => u.Phone != null && u.Phone.Like(searchTerm)),
+                UserSearchField.Email => users.Where(u => u.Email.Like(searchTerm)),
+                _ => users.Where(u => u.FullName.Like(searchTerm) ||
+                                     (u.Username != null && u.Username.Like(searchTerm)) ||
+                                     (u.Phone != null && u.Phone.Like(searchTerm)) ||
+                                     (u.Email != null && u.Email.Like(searchTerm)) ||
+                                     (u.UserCode != null && u.UserCode.EqualsCode(searchTerm)))
             };
         }
 

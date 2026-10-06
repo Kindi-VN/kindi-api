@@ -21,6 +21,12 @@ public static class AuthClaimConstants
 
     /// <summary>Phiên bản quyền của role — đổi quyền thì tăng số này để client biết cần refresh token.</summary>
     public const string PermissionsVersion = "permv";
+
+    /// <summary>
+    /// Ngôn ngữ người dùng chọn lúc đăng nhập (vi | en) — API trả nội dung dịch theo claim này,
+    /// không phải chờ client gửi header Accept-Language ở từng request.
+    /// </summary>
+    public const string Language = "lang";
 }
 
 public static class PolicyConstants

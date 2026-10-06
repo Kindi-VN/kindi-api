@@ -80,12 +80,12 @@ public class SocialService : ISocialService
         {
             Expression<Func<SocialPost, bool>> searchPredicate = query.SearchField switch
             {
-                SocialPostSearchField.Content => p => p.Content.Contains(keyword),
-                SocialPostSearchField.AuthorFullName => p => p.Author.FullName.Contains(keyword),
-                SocialPostSearchField.AuthorUserCode => p => p.Author.UserCode != null && p.Author.UserCode.Contains(keyword),
-                _ => p => p.Content.Contains(keyword)
-                    || p.Author.FullName.Contains(keyword)
-                    || (p.Author.UserCode != null && p.Author.UserCode.Contains(keyword))
+                SocialPostSearchField.Content => p => p.Content.Like(keyword),
+                SocialPostSearchField.AuthorFullName => p => p.Author.FullName.Like(keyword),
+                SocialPostSearchField.AuthorUserCode => p => p.Author.UserCode != null && p.Author.UserCode.EqualsCode(keyword),
+                _ => p => p.Content.Like(keyword)
+                    || p.Author.FullName.Like(keyword)
+                    || (p.Author.UserCode != null && p.Author.UserCode.EqualsCode(keyword))
             };
             predicate = predicate.And(searchPredicate);
         }
@@ -484,10 +484,10 @@ public class SocialService : ISocialService
         if (!string.IsNullOrEmpty(keyword))
         {
             dbQuery = dbQuery.Where(p =>
-                p.Author.FullName.Contains(keyword) ||
-                p.Author.Username.Contains(keyword) ||
-                (p.Author.UserCode != null && p.Author.UserCode.Contains(keyword)) ||
-                (p.Title != null && p.Title.Contains(keyword)));
+                p.Author.FullName.Like(keyword) ||
+                p.Author.Username.Like(keyword) ||
+                (p.Author.UserCode != null && p.Author.UserCode.EqualsCode(keyword)) ||
+                (p.Title != null && p.Title.Like(keyword)));
         }
 
         // Lọc theo khoảng ngày tạo

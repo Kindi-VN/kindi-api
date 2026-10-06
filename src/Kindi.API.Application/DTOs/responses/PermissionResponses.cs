@@ -64,6 +64,24 @@ public class PermissionTreeNodeResponse
     /// <summary>Khoá dịch của tên node (ví dụ Permission_P020, PermissionScreen_OFFERS, PermissionGroup_ADMIN).</summary>
     public string NameKey { get; set; } = string.Empty;
 
+    /// <summary>
+    /// Tên hiển thị ĐÃ DỊCH theo ngôn ngữ của request (API tự tra resx theo <see cref="NameKey"/>) — UI chỉ
+    /// cần hiển thị, không phải giữ bản dịch riêng cho từng mã quyền.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>Loại hành động (view | action | update | delete) — chỉ có ở node hành động.</summary>
+    public string? ActionKind { get; set; }
+
+    /// <summary>Module nghiệp vụ của quyền — chỉ có ở node hành động.</summary>
+    public string? Module { get; set; }
+
+    /// <summary>Route UI mà quyền này mở (nếu có) — hiển thị cho quản trị biết quyền dùng ở đâu.</summary>
+    public string? Route { get; set; }
+
+    /// <summary>Các endpoint API nằm dưới quyền này (mô tả, cách nhau bằng dấu phẩy).</summary>
+    public string? Endpoints { get; set; }
+
     /// <summary>Loại node: <c>group</c> | <c>screen</c> | <c>action</c>.</summary>
     public string Kind { get; set; } = string.Empty;
 

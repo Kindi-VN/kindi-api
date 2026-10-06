@@ -21,8 +21,8 @@ public static class BusinessGroupSearchFilters
     };
 
     /// <summary>
-    /// Lọc theo đúng một trường khi client chỉ định. <paramref name="searchTerm"/> là từ khoá đã bỏ dấu + escape
-    /// cho ILIKE; từ khoá rỗng hoặc không chỉ định trường thì trả về nguyên trạng.
+    /// Lọc theo đúng một trường khi client chỉ định. <paramref name="searchTerm"/> là từ khoá thô (Like() tự bỏ
+    /// dấu và không phân biệt hoa/thường ở tầng DB); từ khoá rỗng hoặc không chỉ định trường thì trả về nguyên trạng.
     /// </summary>
     public static IQueryable<BusinessGroup> ApplyField(
         IQueryable<BusinessGroup> query, string? searchTerm, BusinessGroupSearchField? searchField)
@@ -30,15 +30,14 @@ public static class BusinessGroupSearchFilters
         if (string.IsNullOrEmpty(searchTerm) || searchField is null)
             return query;
 
-        var pattern = "%" + searchTerm + "%";
 
         return searchField switch
         {
-            BusinessGroupSearchField.Name => query.Where(x => EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Name), pattern, "\\")),
-            BusinessGroupSearchField.Description => query.Where(x => x.Description != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Description), pattern, "\\")),
-            BusinessGroupSearchField.Topic => query.Where(x => x.Topic != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Topic), pattern, "\\")),
-            BusinessGroupSearchField.BusinessFieldName => query.Where(x => x.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessFieldName), pattern, "\\")),
-            BusinessGroupSearchField.Code => query.Where(x => x.BusinessGroupCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.BusinessGroupCode), pattern, "\\")),
+            BusinessGroupSearchField.Name => query.Where(x => x.Name.Like(searchTerm)),
+            BusinessGroupSearchField.Description => query.Where(x => x.Description != null && x.Description.Like(searchTerm)),
+            BusinessGroupSearchField.Topic => query.Where(x => x.Topic != null && x.Topic.Like(searchTerm)),
+            BusinessGroupSearchField.BusinessFieldName => query.Where(x => x.BusinessFieldName != null && x.BusinessFieldName.Like(searchTerm)),
+            BusinessGroupSearchField.Code => query.Where(x => x.BusinessGroupCode != null && x.BusinessGroupCode.EqualsCode(searchTerm)),
             _ => query
         };
     }
