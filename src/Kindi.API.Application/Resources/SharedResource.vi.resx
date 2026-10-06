@@ -1642,4 +1642,10 @@
   <data name="Permission_P156"><value>Tạo tài khoản quản trị</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Đã xoá yêu cầu mua hàng.</value></data>
   <data name="AuditLog_NotFound"><value>Không tìm thấy nhật ký</value></data>
+  <data name="Purge_CriteriaRequired"><value>Vui lòng chọn ít nhất một dòng hoặc một khoảng ngày để xoá vĩnh viễn</value></data>
+  <data name="Purge_RangeInvalid"><value>Khoảng ngày không hợp lệ: từ ngày lớn hơn đến ngày</value></data>
+  <data name="Purge_TooManyIds"><value>Chỉ xoá vĩnh viễn tối đa {0} dòng mỗi lần</value></data>
+  <data name="Purge_HasRelatedData"><value>Không xoá vĩnh viễn được: {0} còn dữ liệu liên kết (sản phẩm, hoa hồng, thành viên...). Hãy xoá dữ liệu liên kết trước.</value></data>
+  <data name="Purge_NothingDeleted"><value>Không có bản ghi đã xoá nào khớp điều kiện</value></data>
+  <data name="Purge_Success"><value>Đã xoá vĩnh viễn {0} bản ghi</value></data>
 </root>
