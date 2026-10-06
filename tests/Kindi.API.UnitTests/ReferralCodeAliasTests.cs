@@ -199,6 +199,10 @@ public class ReferralCodeAliasTests
         public Task<PublicUserResult> ResolvePublicUserAsync(string fullName, string phone, string? email, string? zalo) => throw new NotImplementedException();
         public Task<PagedList<UserInfoResponse>> GetPagedAsync(UserQueryDto query) => throw new NotImplementedException();
         public Task<UserInfoResponse?> ResetPasswordToPhoneAsync(Guid userId) => throw new NotImplementedException();
+        public Task<UserDetailResponse?> GetDetailAsync(Guid userId) => throw new NotImplementedException();
+        public Task<UserInfoResponse?> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request) => throw new NotImplementedException();
+        public Task<UserInfoResponse> CreateAdminAsync(CreateAdminUserRequest request) => throw new NotImplementedException();
+        public Task<UserInfoResponse?> UpdateRoleAsync(Guid userId, UserRole role) => throw new NotImplementedException();
     }
 
     private sealed class RecordingReferralService : IReferralService

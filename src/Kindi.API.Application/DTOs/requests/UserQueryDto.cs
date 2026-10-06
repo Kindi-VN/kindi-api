@@ -16,4 +16,20 @@ public class UserQueryDto : PagedRequest
     /// Giá trị hợp lệ: username, fullName, userCode, referralCode, accountReferrerCode, phone, email.
     /// </summary>
     public UserSearchField? SearchField { get; set; }
+
+    /// <summary>
+    /// Tab tài khoản trên màn quản lý: bỏ trống = tất cả; <c>Admin</c> = chỉ tài khoản quản trị;
+    /// <c>Customer</c> = tài khoản thường (khách hàng/CTV/đối tác, không gồm quản trị).
+    /// </summary>
+    public UserAccountScope? Scope { get; set; }
+}
+
+/// <summary>Phạm vi tài khoản cho tab ở màn quản lý người dùng.</summary>
+public enum UserAccountScope
+{
+    /// <summary>Tài khoản thường: mọi vai trò trừ quản trị.</summary>
+    Customer = 1,
+
+    /// <summary>Tài khoản quản trị (role Admin).</summary>
+    Admin = 2
 }

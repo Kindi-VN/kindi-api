@@ -413,6 +413,20 @@ public enum PermissionCode
     [PermissionInfo("Xoá nhật ký xác thực tài khoản", PermissionModule.System, PermissionKind.Delete, null,
         "DELETE /api/v1/admin/audit-logs/auth", Screen = PermissionScreens.AuditLogs)]
     DeleteAuthAuditLogs = 153,
+
+    // ===== Quản lý người dùng: xem chi tiết (kèm hồ sơ liên kết) / sửa thông tin / tạo tài khoản quản trị =====
+
+    [PermissionInfo("Xem chi tiết người dùng (hồ sơ CTV/đối tác liên kết)", PermissionModule.User, PermissionKind.View, "/admin/users",
+        "GET /api/v1/users/{id}", Screen = PermissionScreens.Users)]
+    ViewUserDetail = 154,
+
+    [PermissionInfo("Sửa thông tin người dùng", PermissionModule.User, PermissionKind.Update, null,
+        "PUT /api/v1/users/{id}", Screen = PermissionScreens.Users)]
+    UpdateUserInfo = 155,
+
+    [PermissionInfo("Tạo tài khoản quản trị", PermissionModule.User, PermissionKind.Update, null,
+        "POST /api/v1/users/admin", Screen = PermissionScreens.Users)]
+    CreateAdminAccount = 156,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>
