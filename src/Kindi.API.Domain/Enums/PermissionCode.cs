@@ -468,6 +468,10 @@ public enum PermissionCode
     [PermissionInfo("Xoá vĩnh viễn cấu hình loại thu/chi", PermissionModule.Revenue, PermissionKind.Delete, null,
         "DELETE /api/v1/admin/trash/revenue-configs", Screen = PermissionScreens.RevenueConfig)]
     PurgeRevenueConfig = 166,
+
+    [PermissionInfo("Xem thư viện giao diện nội bộ (dành cho dev)", PermissionModule.SuperAdmin, PermissionKind.View,
+        null, null, Screen = PermissionScreens.SystemSettings)]
+    ViewUiGallery = 167,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

@@ -1715,6 +1715,7 @@
   <data name="Permission_P164"><value>Permanently delete commission config</value></data>
   <data name="Permission_P165"><value>Permanently delete membership tier</value></data>
   <data name="Permission_P166"><value>Permanently delete revenue/expense config</value></data>
+  <data name="Permission_P167"><value>View internal UI library</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Purchase request deleted.</value></data>
   <data name="AuditLog_NotFound"><value>Audit log not found</value></data>
   <data name="Purge_CriteriaRequired"><value>Select at least one row or a date range to permanently delete</value></data>
