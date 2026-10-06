@@ -2,6 +2,7 @@ using Kindi.API.Application.Common.Models;
 using Kindi.API.Application.DTOs.requests;
 using Kindi.API.Application.DTOs.responses;
 using Kindi.API.Domain.Entities;
+using Kindi.API.Domain.Enums;
 using Kindi.API.Domain.Models;
 
 namespace Kindi.API.Application.Common.Interfaces;
@@ -49,4 +50,22 @@ public interface IUserService
     /// và bắt buộc đổi ở lần đăng nhập kế tiếp. Trả về null nếu không tìm thấy tài khoản.
     /// </summary>
     Task<UserInfoResponse?> ResetPasswordToPhoneAsync(Guid userId);
+
+    /// <summary>
+    /// Chi tiết tài khoản cho màn quản lý: thông tin tài khoản + hồ sơ CTV / đối tác đang liên kết
+    /// (một điểm xem tập trung). Trả về null nếu không tìm thấy tài khoản.
+    /// </summary>
+    Task<UserDetailResponse?> GetDetailAsync(Guid userId);
+
+    /// <summary>
+    /// Sửa thông tin tài khoản ở màn quản lý (điểm ghi tập trung, được phép ghi đè hồ sơ).
+    /// Trả về null nếu không tìm thấy tài khoản.
+    /// </summary>
+    Task<UserInfoResponse?> UpdateInfoAsync(Guid userId, UpdateUserInfoRequest request);
+
+    /// <summary>Tạo tài khoản quản trị (role Admin) từ màn quản lý người dùng.</summary>
+    Task<UserInfoResponse> CreateAdminAsync(CreateAdminUserRequest request);
+
+    /// <summary>Gán / đổi vai trò tài khoản; vai trò SuperAdmin bị chặn.</summary>
+    Task<UserInfoResponse?> UpdateRoleAsync(Guid userId, UserRole role);
 }

@@ -413,6 +413,61 @@ public enum PermissionCode
     [PermissionInfo("Xoá nhật ký xác thực tài khoản", PermissionModule.System, PermissionKind.Delete, null,
         "DELETE /api/v1/admin/audit-logs/auth", Screen = PermissionScreens.AuditLogs)]
     DeleteAuthAuditLogs = 153,
+
+    // ===== Quản lý người dùng: xem chi tiết (kèm hồ sơ liên kết) / sửa thông tin / tạo tài khoản quản trị =====
+
+    [PermissionInfo("Xem chi tiết người dùng (hồ sơ CTV/đối tác liên kết)", PermissionModule.User, PermissionKind.View, "/admin/users",
+        "GET /api/v1/users/{id}", Screen = PermissionScreens.Users)]
+    ViewUserDetail = 154,
+
+    [PermissionInfo("Sửa thông tin người dùng", PermissionModule.User, PermissionKind.Update, null,
+        "PUT /api/v1/users/{id}", Screen = PermissionScreens.Users)]
+    UpdateUserInfo = 155,
+
+    [PermissionInfo("Tạo tài khoản quản trị", PermissionModule.User, PermissionKind.Update, null,
+        "POST /api/v1/users/admin", Screen = PermissionScreens.Users)]
+    CreateAdminAccount = 156,
+    // ===== Xoá VĨNH VIỄN bản ghi ở màn "Đã xoá" (màn thường chỉ được xoá mềm) =====
+
+    [PermissionInfo("Xoá vĩnh viễn hồ sơ CTV", PermissionModule.User, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/collaborators", Screen = PermissionScreens.Collaborators)]
+    PurgeCollaborator = 157,
+
+    [PermissionInfo("Xoá vĩnh viễn đối tác", PermissionModule.Partner, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/partners", Screen = PermissionScreens.Partners)]
+    PurgePartner = 158,
+
+    [PermissionInfo("Xoá vĩnh viễn yêu cầu mua hàng", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/purchase-requests", Screen = PermissionScreens.PurchaseRequests)]
+    PurgePurchaseRequest = 159,
+
+    [PermissionInfo("Xoá vĩnh viễn offer", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/offers", Screen = PermissionScreens.Offers)]
+    PurgeOfferRequest = 160,
+
+    [PermissionInfo("Xoá vĩnh viễn yêu cầu mua chung", PermissionModule.Purchase, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/group-buying", Screen = PermissionScreens.GroupBuying)]
+    PurgeGroupBuyingRequest = 161,
+
+    [PermissionInfo("Xoá vĩnh viễn nhóm", PermissionModule.Group, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/groups", Screen = PermissionScreens.Groups)]
+    PurgeGroup = 162,
+
+    [PermissionInfo("Xoá vĩnh viễn bài đăng", PermissionModule.Community, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/social-posts", Screen = PermissionScreens.SocialPosts)]
+    PurgeSocialPost = 163,
+
+    [PermissionInfo("Xoá vĩnh viễn cấu hình hoa hồng", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/commissions", Screen = PermissionScreens.CommissionConfig)]
+    PurgeCommissionConfig = 164,
+
+    [PermissionInfo("Xoá vĩnh viễn hạng thành viên", PermissionModule.SuperAdmin, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/membership-tiers", Screen = PermissionScreens.MembershipTiers)]
+    PurgeMembershipTier = 165,
+
+    [PermissionInfo("Xoá vĩnh viễn cấu hình loại thu/chi", PermissionModule.Revenue, PermissionKind.Delete, null,
+        "DELETE /api/v1/admin/trash/revenue-configs", Screen = PermissionScreens.RevenueConfig)]
+    PurgeRevenueConfig = 166,
 }
 
 /// <summary>Tiện ích chuyển giữa member enum và mã P### dùng trong DB/claim/UI.</summary>

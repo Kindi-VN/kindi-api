@@ -1184,9 +1184,19 @@
   <data name="User_EmailAlreadyExists">
     <value>Email '{0}' already exists</value>
   </data>
+  <data name="User_UsernameAlreadyExists"><value>Username already exists.</value></data>
+  <data name="User_PasswordTooWeak"><value>Password must be at least {0} characters.</value></data>
+  <data name="User_FullNameRequired"><value>Full name is required.</value></data>
+  <data name="User_EmailRequired"><value>Email is required.</value></data>
+  <data name="User_RoleNotAssignable"><value>This role cannot be assigned via the API.</value></data>
+  <data name="User_SuperAdminImmutable"><value>The super admin account cannot be modified from the user screen.</value></data>
   <data name="User_ResetPasswordSuccess">
     <value>Password reset. The new password is the user's phone number; the user must change it at next sign-in.</value>
   </data>
+  <data name="User_DetailSuccess"><value>User detail loaded</value></data>
+  <data name="User_UpdateInfoSuccess"><value>User information updated</value></data>
+  <data name="User_CreateAdminSuccess"><value>Admin account created</value></data>
+  <data name="User_UpdateRoleSuccess"><value>User role updated</value></data>
   <data name="Permissions_ListSuccess">
     <value>Permission catalogue retrieved successfully</value>
   </data>
@@ -1688,6 +1698,15 @@
   <data name="Permission_P147"><value>Restore purchase request</value></data>
   <data name="Permission_P152"><value>Delete data change logs</value></data>
   <data name="Permission_P153"><value>Delete account authentication logs</value></data>
+  <data name="Permission_P154"><value>View user detail (linked collaborator/partner)</value></data>
+  <data name="Permission_P155"><value>Update user information</value></data>
+  <data name="Permission_P156"><value>Create admin account</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Purchase request deleted.</value></data>
   <data name="AuditLog_NotFound"><value>Audit log not found</value></data>
+  <data name="Purge_CriteriaRequired"><value>Select at least one row or a date range to permanently delete</value></data>
+  <data name="Purge_RangeInvalid"><value>Invalid date range: from date is after to date</value></data>
+  <data name="Purge_TooManyIds"><value>At most {0} rows can be permanently deleted per request</value></data>
+  <data name="Purge_HasRelatedData"><value>Cannot permanently delete: {0} still has related data (products, commissions, members...). Remove related data first.</value></data>
+  <data name="Purge_NothingDeleted"><value>No deleted records match the criteria</value></data>
+  <data name="Purge_Success"><value>Permanently deleted {0} records</value></data>
 </root>
