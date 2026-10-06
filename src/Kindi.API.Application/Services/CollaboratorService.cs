@@ -391,32 +391,31 @@ public class CollaboratorService : ICollaboratorService
 
         if (!string.IsNullOrEmpty(search))
         {
-            // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
-            // ILIKE nên tìm không phân biệt hoa/thường.
-            var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
+            // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
+            var searchTerm = search.Trim();
 
             // searchField chỉ định thì CHỈ dò đúng một cột; bỏ trống giữ nguyên hành vi cũ (dò nhiều trường).
             Expression<Func<Collaborator, bool>> searchPredicate = searchField switch
             {
-                CollaboratorSearchField.FullName => c => c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.CollaboratorCode => c => c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.UserCode => c => c.User != null && c.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.UserCode), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.ReferralCode => c => c.ReferralCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.ReferralCode), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.AccountReferrerCode => c => c.User != null && c.User.AccountReferrerCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.AccountReferrerCode), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.Phone => c => c.User != null && c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), "%" + searchTerm + "%", "\\"),
-                CollaboratorSearchField.Email => c => c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Email), "%" + searchTerm + "%", "\\"),
+                CollaboratorSearchField.FullName => c => c.User != null && c.User.FullName.Like(searchTerm),
+                CollaboratorSearchField.CollaboratorCode => c => c.CollaboratorCode != null && c.CollaboratorCode.EqualsCode(searchTerm),
+                CollaboratorSearchField.UserCode => c => c.User != null && c.User.UserCode != null && c.User.UserCode.EqualsCode(searchTerm),
+                CollaboratorSearchField.ReferralCode => c => c.ReferralCode != null && c.ReferralCode.EqualsCode(searchTerm),
+                CollaboratorSearchField.AccountReferrerCode => c => c.User != null && c.User.AccountReferrerCode != null && c.User.AccountReferrerCode.EqualsCode(searchTerm),
+                CollaboratorSearchField.Phone => c => c.User != null && c.User.Phone != null && c.User.Phone.Like(searchTerm),
+                CollaboratorSearchField.Email => c => c.User != null && c.User.Email.Like(searchTerm),
                 CollaboratorSearchField.BusinessFieldName => c =>
-                    (c.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
-                    (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.Name), "%" + searchTerm + "%", "\\")),
-                _ => c => (c.User != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), "%" + searchTerm + "%", "\\") ||
-                             (c.User != null && c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), "%" + searchTerm + "%", "\\")) ||
-                             (c.User != null && c.User.Email != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Email), "%" + searchTerm + "%", "\\")) ||
-                             (c.CollaboratorCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CollaboratorCode), "%" + searchTerm + "%", "\\")) ||
+                    (c.BusinessFieldName != null && c.BusinessFieldName.Like(searchTerm)) ||
+                    (c.BusinessField != null && c.BusinessField.Name.Like(searchTerm)),
+                _ => c => (c.User != null && c.User.FullName.Like(searchTerm) ||
+                             (c.User != null && c.User.Phone != null && c.User.Phone.Like(searchTerm)) ||
+                             (c.User != null && c.User.Email != null && c.User.Email.Like(searchTerm)) ||
+                             (c.CollaboratorCode != null && c.CollaboratorCode.EqualsCode(searchTerm)) ||
                              // Tìm theo lĩnh vực kinh doanh: khớp cả cột denormalized
                              // (bản ghi cũ) lẫn tên trong bảng BusinessFields (tên hiển thị).
-                             (c.BusinessFieldName != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessFieldName), "%" + searchTerm + "%", "\\")) ||
-                             (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.Name), "%" + searchTerm + "%", "\\")) ||
-                             (c.BusinessField != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.BusinessField.NormalizedName), "%" + searchTerm + "%", "\\")))
+                             (c.BusinessFieldName != null && c.BusinessFieldName.Like(searchTerm)) ||
+                             (c.BusinessField != null && c.BusinessField.Name.Like(searchTerm)) ||
+                             (c.BusinessField != null && c.BusinessField.NormalizedName.Like(searchTerm)))
             };
 
             predicate = predicate.And(searchPredicate);
@@ -469,12 +468,12 @@ public class CollaboratorService : ICollaboratorService
         {
             var s = search.Trim();
             query = query.Where(c =>
-                (c.User != null && c.User.FullName.Contains(s)) ||
-                (c.User != null && c.User.Phone != null && c.User.Phone.Contains(s)) ||
-                (c.User != null && c.User.Email != null && c.User.Email.Contains(s)) ||
-                (c.CollaboratorCode != null && c.CollaboratorCode.Contains(s)) ||
-                (c.BusinessFieldName != null && c.BusinessFieldName.Contains(s)) ||
-                (c.BusinessField != null && c.BusinessField.Name.Contains(s)));
+                (c.User != null && c.User.FullName.Like(s)) ||
+                (c.User != null && c.User.Phone != null && c.User.Phone.Like(s)) ||
+                (c.User != null && c.User.Email != null && c.User.Email.Like(s)) ||
+                (c.CollaboratorCode != null && c.CollaboratorCode.EqualsCode(s)) ||
+                (c.BusinessFieldName != null && c.BusinessFieldName.Like(s)) ||
+                (c.BusinessField != null && c.BusinessField.Name.Like(s)));
         }
 
         query = query.IncludeMultiple(c => c.User, c => c.BusinessField, c => c.Company).OrderByDescending(c => c.CreatedAt);

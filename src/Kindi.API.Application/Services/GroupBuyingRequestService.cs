@@ -155,10 +155,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (query.MineOnly && me == null)
             throw new UnauthorizedException(_localizer["UserNotAuthenticated"]);
 
-        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
-        // ILIKE nên tìm không phân biệt hoa/thường.
+        // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         var mineOnly = query.MineOnly && me != null;
         var meId = me;
@@ -198,9 +197,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
             else
             {
                 q = q.Where(x =>
-                    EF.Functions.ILike(KindiDbFunctions.Unaccent(x.ProductName), "%" + searchTerm + "%", "\\") ||
-                    (x.Note != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.Note), "%" + searchTerm + "%", "\\")) ||
-                    (x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), "%" + searchTerm + "%", "\\")));
+                    x.ProductName.Like(searchTerm) ||
+                    (x.Note != null && x.Note.Like(searchTerm)) ||
+                    (x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.EqualsCode(searchTerm)));
             }
         }
 
@@ -223,9 +222,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
     {
         // So khớp đúng mã (không phân biệt hoa/thường) bằng ILIKE: mẫu là chính từ khoá,
         // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
-        var normalized = code.Trim().RemoveVietnameseSign().ToLikeEscaped();
+        var normalized = code.Trim();
         var entity = await _repository.GetFirstWithIncludesAsync(
-            x => x.GroupBuyingRequestCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(x.GroupBuyingRequestCode), normalized, "\\"),
+            x => x.GroupBuyingRequestCode != null && x.GroupBuyingRequestCode.EqualsCode(normalized),
             includes: q => q.Include(x => x.User)
                 .Include(x => x.BusinessField)
                 .Include(x => x.Participants).ThenInclude(p => p.User));
@@ -412,10 +411,9 @@ public class GroupBuyingRequestService : IGroupBuyingRequestService
         if (!isAdmin && string.IsNullOrEmpty(userId))
             return new PagedList<GroupBuyingRequestResponseDto>(new List<GroupBuyingRequestResponseDto>(), 0, query.Page, query.PageSize);
 
-        // Từ khoá đã trim + escape; mẫu LIKE được ghép ngay trong biểu thức truy vấn,
-        // ILIKE nên tìm không phân biệt hoa/thường và không phân biệt dấu.
+        // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
         var statusFilter = GroupBuyingStatus.Pending;
         var normalizedStatus = query.Status.NormalizeSearchFilter();

@@ -143,14 +143,13 @@ public class ReferralEventService : IReferralEventService
         if (string.IsNullOrEmpty(keyword))
             return query;
 
-        var pattern = $"%{keyword}%";
 
         return searchField.Value switch
         {
             ReferralEventSearchField.ReferralCode =>
-                query.Where(e => e.RecordReferrerCode != null && EF.Functions.ILike(e.RecordReferrerCode, pattern)),
+                query.Where(e => e.RecordReferrerCode != null && e.RecordReferrerCode.EqualsCode(keyword)),
             ReferralEventSearchField.RefEntityCode =>
-                query.Where(e => e.RefEntityCode != null && EF.Functions.ILike(e.RefEntityCode, pattern)),
+                query.Where(e => e.RefEntityCode != null && e.RefEntityCode.EqualsCode(keyword)),
             ReferralEventSearchField.EventType =>
                 Enum.TryParse<ReferralEventType>(keyword, true, out var eventType)
                     ? query.Where(e => e.EventType == eventType)
@@ -229,8 +228,8 @@ public class ReferralEventService : IReferralEventService
         {
             var keyword = search.ToLowerInvariant();
             items = items
-                .Where(i => i.RecordReferrerCode.ToLowerInvariant().Contains(keyword)
-                    || (i.ReferrerName ?? string.Empty).ToLowerInvariant().Contains(keyword))
+                .Where(i => i.RecordReferrerCode.EqualsCode(keyword)
+                    || i.ReferrerName.Like(keyword))
                 .ToList();
         }
 

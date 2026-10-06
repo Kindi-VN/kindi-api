@@ -421,6 +421,8 @@ static void ConfigureMiddleware(WebApplication app)
     }
 
     app.UseAuthentication();
+    // Dịch nội dung theo ngôn ngữ trong token (đăng ký sau UseAuthentication để có ClaimsPrincipal).
+    app.UseMiddleware<Kindi.API.WebApi.Middlewares.TokenCultureMiddleware>();
     app.UseAuthorization();
     Log.Information("✅ Authentication & Authorization configured");
 }

@@ -60,7 +60,7 @@ public sealed class TransactionRevenueService : ITransactionRevenueService
         if (!string.IsNullOrWhiteSpace(query.Keyword))
         {
             var keyword = query.Keyword.Trim();
-            source = source.Where(r => r.ReferenceCode.Contains(keyword));
+            source = source.Where(r => r.ReferenceCode.EqualsCode(keyword));
         }
 
         if (query.Type.HasValue)

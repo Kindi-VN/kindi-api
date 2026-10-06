@@ -141,49 +141,8 @@ public class PermissionAncestorGrantTests
     }
 
     private static PermissionService CreateService(ApplicationDbContext context)
-        => new(
-            new QueryService(context, new ReadContextStub(context)),
-            new GenericRepository<RolePermission>(context, new UnitOfWorkStub(context)),
-            new GenericRepository<UserPermission>(context, new UnitOfWorkStub(context)),
-            new MemoryCache(new MemoryCacheOptions()),
-            NullLogger<PermissionService>.Instance);
+        => PermissionTestFixture.CreateService(context);
 
     private static ApplicationDbContext CreateContext()
-    {
-        var options = new DbContextOptionsBuilder<ApplicationDbContext>()
-            .UseInMemoryDatabase($"kindi-permission-ancestor-{Guid.NewGuid()}")
-            .Options;
-
-        return new ApplicationDbContext(options, new StubCurrentUserService());
-    }
-
-    private sealed class ReadContextStub(ApplicationDbContext context) : IReadDbContext
-    {
-        public DbSet<T> Set<T>() where T : class => context.Set<T>();
-    }
-
-    private sealed class UnitOfWorkStub(ApplicationDbContext context) : IUnitOfWork
-    {
-        public Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-            => context.SaveChangesAsync(cancellationToken);
-
-        public Task<IDbContextTransaction> BeginTransactionAsync(CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task CommitTransactionAsync(IDbContextTransaction transaction, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-
-        public Task RollbackTransactionAsync(IDbContextTransaction transaction, CancellationToken cancellationToken = default)
-            => throw new NotSupportedException();
-    }
-
-    private sealed class StubCurrentUserService : ICurrentUserService
-    {
-        public string? UserId => null;
-        public string? UserName => "system";
-        public bool IsAuthenticated => false;
-        public bool IsInRole(string role) => false;
-        public string? IpAddress => null;
-        public string? UserAgent => null;
-    }
+        => PermissionTestFixture.CreateContext();
 }

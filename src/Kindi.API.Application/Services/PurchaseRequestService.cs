@@ -109,7 +109,7 @@ public class PurchaseRequestService : IPurchaseRequestService
 	{
         // Từ khoá đã trim + escape; tìm không phân biệt hoa/thường và không phân biệt dấu.
         var search = query.Search.NormalizeSearchFilter();
-        var searchTerm = search?.RemoveVietnameseSign().ToLikeEscaped();
+        var searchTerm = search?.Trim();
 
 		// Quyền xem: admin thấy tất cả (hoặc chỉ của mình khi truyền mineOnly), người dùng thường chỉ thấy yêu cầu của chính mình.
 		var isAdmin = _currentUserService.IsInRole(UserRole.Admin);

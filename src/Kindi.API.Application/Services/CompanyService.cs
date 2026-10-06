@@ -52,10 +52,9 @@ public class CompanyService : ICompanyService
 
         if (existing == null)
         {
-            // So khớp tên công ty không phân biệt hoa/thường bằng ILIKE: mẫu là tên đã escape,
-            // không thêm % nên chỉ khớp khi bằng nhau toàn bộ.
-            var nameLike = nameTrim.RemoveVietnameseSign().ToLikeEscaped();
-            existing = await _companyRepo.GetFirstAsync(c => EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Name), nameLike, "\\") && !c.IsDeleted);
+            // Kiểm tra trùng tên công ty: khớp ĐÚNG toàn bộ tên (SameText bỏ dấu + không phân biệt hoa/thường).
+            var nameLike = nameTrim;
+            existing = await _companyRepo.GetFirstAsync(c => c.Name.SameText(nameLike) && !c.IsDeleted);
         }
 
         if (existing != null)
@@ -170,7 +169,7 @@ public class CompanyService : ICompanyService
         if (!string.IsNullOrWhiteSpace(search))
         {
             var s = search.Trim();
-            queryable = queryable.Where(c => c.Name.Contains(s) || (c.TaxCode != null && c.TaxCode.Contains(s)));
+            queryable = queryable.Where(c => c.Name.Like(s) || (c.TaxCode != null && c.TaxCode.EqualsCode(s)));
         }
 
         // Mặc định mới nhất trước để bản ghi vừa tạo nằm đầu danh sách.

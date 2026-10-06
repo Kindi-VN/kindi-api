@@ -44,9 +44,13 @@ public class RequestSearchFieldTests
         RequestSearchFilters.ApplyOffer(Offers(), "AAA", RequestSearchField.Code).Should().BeEmpty();
         RequestSearchFilters.ApplyOffer(Offers(), "AAA", RequestSearchField.CustomerName).Should().BeEmpty();
 
-        // Chọn đúng trường chứa từ khoá thì mới khớp.
-        RequestSearchFilters.ApplyOffer(Offers(), "AAA", RequestSearchField.RecordReferrerCode)
+        // Chọn đúng trường chứa từ khoá thì mới khớp — nhưng với cột MÃ, từ khoá phải là CẢ mã:
+        // mã là duy nhất và có index nên tra bằng dấu = (EqualsCode) để không phá index.
+        RequestSearchFilters.ApplyOffer(Offers(), "CTV-AAA", RequestSearchField.RecordReferrerCode)
             .Select(x => x.OfferRequestCode).Should().Equal("OFR-002");
+
+        // Tìm MỘT PHẦN mã thì không còn khớp (thay đổi có chủ ý: xem EqualsCode trong StringQueryExtensions).
+        RequestSearchFilters.ApplyOffer(Offers(), "AAA", RequestSearchField.RecordReferrerCode).Should().BeEmpty();
     }
 
     [Fact]

@@ -28,7 +28,7 @@ public class JwtService : IJwtService
 	}
 
 	public string GenerateToken(string userId, string username, IEnumerable<string> roles,
-		IEnumerable<string>? permissions = null, long permissionsVersion = 0)
+		IEnumerable<string>? permissions = null, long permissionsVersion = 0, string? language = null)
 	{
 		var claims = new List<Claim>
 		{
@@ -50,6 +50,13 @@ public class JwtService : IJwtService
 
 		claims.Add(new Claim(Kindi.API.Shared.Constants.AuthClaimConstants.PermissionsVersion,
 			permissionsVersion.ToString(System.Globalization.CultureInfo.InvariantCulture)));
+
+		// Ngôn ngữ người dùng chọn lúc đăng nhập → middleware đọc claim này để dịch mọi response sau đó.
+		var normalizedLanguage = Kindi.API.Shared.Common.Helpers.LanguageHelper.Normalize(language);
+		if (normalizedLanguage != null)
+		{
+			claims.Add(new Claim(Kindi.API.Shared.Constants.AuthClaimConstants.Language, normalizedLanguage));
+		}
 
 		var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSettings.Secret));
 		var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -168,6 +175,8 @@ public class JwtService : IJwtService
 		var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 		var username = principal.FindFirst(ClaimTypes.Name)?.Value;
 		var roles = principal.FindAll(ClaimTypes.Role).Select(c => c.Value);
+		// Giữ nguyên ngôn ngữ người dùng đã chọn khi cấp lại token.
+		var language = principal.FindFirst(Kindi.API.Shared.Constants.AuthClaimConstants.Language)?.Value;
 
 		if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(username))
 			return null;
@@ -176,6 +185,6 @@ public class JwtService : IJwtService
 		BlacklistToken(token);
 
 		// Generate new token
-		return GenerateToken(userId, username, roles);
+		return GenerateToken(userId, username, roles, language: language);
 	}
 }

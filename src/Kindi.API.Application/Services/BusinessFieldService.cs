@@ -166,9 +166,8 @@ public class BusinessFieldService : IBusinessFieldService
 
         (page, pageSize) = NormalizePaging(page, pageSize);
 
-        // Từ khoá đã bỏ dấu tiếng Việt + escape ký tự LIKE; ILIKE nên tìm không phân biệt hoa/thường.
-        var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
-        var pattern = "%" + searchTerm + "%";
+        // Từ khoá chỉ cần trim: Like() bỏ dấu tiếng Việt và không phân biệt hoa/thường ở tầng DB.
+        var searchTerm = search.Trim();
 
         var query = _queryService.GetAllNoTracking<Company>()
             .Where(c => !c.IsDeleted && c.BusinessFieldId == id);
@@ -176,9 +175,9 @@ public class BusinessFieldService : IBusinessFieldService
         if (!string.IsNullOrEmpty(searchTerm))
         {
             query = query.Where(c =>
-                (c.CompanyCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.CompanyCode), pattern, "\\")) ||
-                EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Name), pattern, "\\") ||
-                (c.TaxCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.TaxCode), pattern, "\\")));
+                (c.CompanyCode != null && c.CompanyCode.EqualsCode(searchTerm)) ||
+                c.Name.Like(searchTerm) ||
+                (c.TaxCode != null && c.TaxCode.EqualsCode(searchTerm)));
         }
 
         var paged = await query
@@ -234,8 +233,7 @@ public class BusinessFieldService : IBusinessFieldService
 
         (page, pageSize) = NormalizePaging(page, pageSize);
 
-        var searchTerm = search.RemoveVietnameseSign().ToLikeEscaped();
-        var pattern = "%" + searchTerm + "%";
+        var searchTerm = search.Trim();
         var hasSearch = !string.IsNullOrEmpty(searchTerm);
 
         // role chỉ nhận Collaborator/Partner; bỏ trống hoặc giá trị khác thì lấy cả hai loại hồ sơ.
@@ -253,10 +251,10 @@ public class BusinessFieldService : IBusinessFieldService
             if (hasSearch)
             {
                 collaboratorQuery = collaboratorQuery.Where(c =>
-                    (c.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.UserCode), pattern, "\\")) ||
-                    EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.FullName), pattern, "\\") ||
-                    (c.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.User.Phone), pattern, "\\")) ||
-                    (c.Company != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(c.Company.Name), pattern, "\\")));
+                    (c.User.UserCode != null && c.User.UserCode.EqualsCode(searchTerm)) ||
+                    c.User.FullName.Like(searchTerm) ||
+                    (c.User.Phone != null && c.User.Phone.Like(searchTerm)) ||
+                    (c.Company != null && c.Company.Name.Like(searchTerm)));
             }
 
             // Chiếu thẳng trong câu truy vấn: EF tự JOIN Users/Companies nên UserCode/FullName/Phone/CompanyName
@@ -281,10 +279,10 @@ public class BusinessFieldService : IBusinessFieldService
             if (hasSearch)
             {
                 partnerQuery = partnerQuery.Where(p =>
-                    (p.User.UserCode != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.User.UserCode), pattern, "\\")) ||
-                    EF.Functions.ILike(KindiDbFunctions.Unaccent(p.User.FullName), pattern, "\\") ||
-                    (p.User.Phone != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.User.Phone), pattern, "\\")) ||
-                    (p.Company != null && EF.Functions.ILike(KindiDbFunctions.Unaccent(p.Company.Name), pattern, "\\")));
+                    (p.User.UserCode != null && p.User.UserCode.EqualsCode(searchTerm)) ||
+                    p.User.FullName.Like(searchTerm) ||
+                    (p.User.Phone != null && p.User.Phone.Like(searchTerm)) ||
+                    (p.Company != null && p.Company.Name.Like(searchTerm)));
             }
 
             var partnerProjection = partnerQuery.Select(p => new BusinessFieldUserDto
