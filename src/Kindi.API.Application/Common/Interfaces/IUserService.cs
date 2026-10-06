@@ -23,7 +23,7 @@ public interface IUserService
     /// <summary>
     /// Xử lý tài khoản cho luồng công khai: dùng lại tài khoản theo SĐT/email nếu đã có,
     /// tạo tài khoản tự động nếu chưa, rồi cập nhật thông tin cá nhân vào bảng <c>Users</c>.
-    /// Không ghi đè SĐT/email của tài khoản đã tồn tại.
+    /// Không ghi đè họ tên/SĐT/email/Zalo của tài khoản đã tồn tại.
     /// </summary>
     Task<PublicUserResult> ResolvePublicUserAsync(string fullName, string phone, string? email, string? zalo);
 
@@ -34,8 +34,10 @@ public interface IUserService
 
     /// <summary>
     /// Cập nhật thông tin cá nhân vào bảng <c>Users</c> — điểm ghi DUY NHẤT cho mọi luồng form.
-    /// <paramref name="allowContactChange"/> = false ở luồng công khai: chỉ điền thêm khi tài khoản còn trống,
-    /// không ghi đè SĐT/email của tài khoản đã có (tránh nhập SĐT người khác để sửa hồ sơ của họ).
+    /// <paramref name="allowContactChange"/> = false ở luồng công khai: chỉ điền thêm khi hồ sơ còn trống,
+    /// không ghi đè họ tên/SĐT/email/Zalo của tài khoản đã có (tránh form ghi đè hồ sơ người khác,
+    /// kể cả khi người gửi đang đăng nhập). Đổi hồ sơ phải truyền true (chủ hồ sơ qua <c>PUT /Auth/me</c>
+    /// hoặc endpoint quản trị).
     /// </summary>
     Task UpdatePersonalInfoAsync(Guid userId, string? fullName, string? phone, string? email, string? zalo, bool allowContactChange = false);
 

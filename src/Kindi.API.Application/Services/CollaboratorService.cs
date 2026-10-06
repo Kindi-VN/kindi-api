@@ -105,7 +105,7 @@ public class CollaboratorService : ICollaboratorService
             throw new AppException(CollaboratorError.UserAlreadyExists);
 
         //  Thông tin cá nhân (họ tên/SĐT/email/Zalo) chỉ lưu ở bảng Users — ghi qua UserService;
-        //  luồng công khai không được ghi đè SĐT/email của tài khoản đã tồn tại.
+        //  luồng công khai không được ghi đè hồ sơ của tài khoản đã tồn tại (chỉ điền chỗ trống).
         await _userService.UpdatePersonalInfoAsync(
             userGuid, request.FullName, request.Phone, request.Email, request.Zalo);
 

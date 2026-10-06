@@ -151,15 +151,23 @@ public class UserService : IUserService
 
         var changed = false;
 
+        // Họ tên: luồng công khai chỉ ĐIỀN CHỖ TRỐNG — hồ sơ đã có tên thì không ghi đè, tránh form
+        // ghi tên rác lên tài khoản đã có (kể cả khi người gửi đang đăng nhập). Muốn đổi hồ sơ phải
+        // qua endpoint của chính chủ hồ sơ hoặc quản trị (allowContactChange: true).
         var newFullName = fullName?.Trim();
-        if (!string.IsNullOrWhiteSpace(newFullName) && !string.Equals(user.FullName, newFullName, StringComparison.Ordinal))
+        if (!string.IsNullOrWhiteSpace(newFullName)
+            && (allowContactChange || string.IsNullOrWhiteSpace(user.FullName))
+            && !string.Equals(user.FullName, newFullName, StringComparison.Ordinal))
         {
             user.FullName = newFullName;
             changed = true;
         }
 
+        // Zalo: như họ tên — luồng công khai chỉ điền khi tài khoản chưa có Zalo.
         var newZalo = zalo?.Trim();
-        if (!string.IsNullOrWhiteSpace(newZalo) && !string.Equals(user.Zalo, newZalo, StringComparison.Ordinal))
+        if (!string.IsNullOrWhiteSpace(newZalo)
+            && (allowContactChange || string.IsNullOrWhiteSpace(user.Zalo))
+            && !string.Equals(user.Zalo, newZalo, StringComparison.Ordinal))
         {
             user.Zalo = newZalo;
             changed = true;

@@ -136,8 +136,9 @@ public class PartnerService : IPartnerService
         await _referralService.RecordEventAsync(partner.ReferralCode, partner.UserId, ReferralEventType.PartnerRegister,
             partner.Id, partner.PartnerCode, null);
 
-        // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì cập nhật vào tài khoản;
-        // nhánh đăng ký công khai đã ghi qua ResolvePublicUserAsync ở bước 1.
+        // Thông tin cá nhân chỉ lưu ở bảng Users — người đã đăng nhập thì điền vào tài khoản
+        // (chỉ chỗ còn trống, không ghi đè hồ sơ đã có); nhánh đăng ký công khai đã ghi qua
+        // ResolvePublicUserAsync ở bước 1.
         if (!isPublicRegistration)
         {
             await _userService.UpdatePersonalInfoAsync(
