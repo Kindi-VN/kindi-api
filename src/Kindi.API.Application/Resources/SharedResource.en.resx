@@ -1672,4 +1672,22 @@
   <data name="Permission_P146"><value>View deleted purchase requests</value></data>
   <data name="Permission_P147"><value>Restore purchase request</value></data>
   <data name="PurchaseRequest_DeleteSuccess"><value>Purchase request deleted.</value></data>
+	<data name="Purge_CriteriaRequired" xml:space="preserve">
+    <value>Select at least one row or a date range to permanently delete</value>
+  </data>
+	<data name="Purge_RangeInvalid" xml:space="preserve">
+    <value>Invalid date range: from date is after to date</value>
+  </data>
+	<data name="Purge_TooManyIds" xml:space="preserve">
+    <value>At most {0} rows can be permanently deleted per request</value>
+  </data>
+	<data name="Purge_HasRelatedData" xml:space="preserve">
+    <value>Cannot permanently delete: {0} still has related data (products, commissions, members...). Remove related data first.</value>
+  </data>
+	<data name="Purge_NothingDeleted" xml:space="preserve">
+    <value>No deleted records match the criteria</value>
+  </data>
+	<data name="Purge_Success" xml:space="preserve">
+    <value>Permanently deleted {0} records</value>
+  </data>
 </root>

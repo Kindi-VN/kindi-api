@@ -197,6 +197,9 @@ public class PublicFormPersonalInfoTests
         public void DeleteRange(IEnumerable<User> entities) => throw new NotImplementedException();
         public void Restore(User entity) => throw new NotImplementedException();
         public void RestoreRange(IEnumerable<User> entities) => throw new NotImplementedException();
+        public void HardDelete(User entity) => throw new NotImplementedException();
+        public void HardDeleteRange(IEnumerable<User> entities) => throw new NotImplementedException();
+        public Task<int> HardDeleteRangeAsync(IEnumerable<User> entities, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private sealed class FakeRepository<T> : IRepository<T> where T : class
@@ -235,6 +238,9 @@ public class PublicFormPersonalInfoTests
         public void DeleteRange(IEnumerable<T> entities) => throw new NotImplementedException();
         public void Restore(T entity) => throw new NotImplementedException();
         public void RestoreRange(IEnumerable<T> entities) => throw new NotImplementedException();
+        public void HardDelete(T entity) => throw new NotImplementedException();
+        public void HardDeleteRange(IEnumerable<T> entities) => throw new NotImplementedException();
+        public Task<int> HardDeleteRangeAsync(IEnumerable<T> entities, CancellationToken cancellationToken = default) => throw new NotImplementedException();
     }
 
     private sealed class StubReferralService : IReferralService
